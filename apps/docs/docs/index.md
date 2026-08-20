@@ -19,7 +19,7 @@ hero:
 features:
   - icon: ✨
     title: 精致界面
-    details: 基于 Material Design 3 设计，简洁、流畅且耐看。
+    details: macOS 桌面端，侧栏导航与底栏播控，听歌时不打扰。
 
   - icon: 🔄
     title: 在线与本地
@@ -51,7 +51,7 @@ features:
     link: https://github.com/bbplayer-app/bbplayer
     linkText: 前往 GitHub
 
-  - icon: ⚛️
-    title: btw, I use React Native
-    details: 基于 React Native 与 Expo 构建。
+  - icon: 🖥️
+    title: macOS 桌面端
+    details: 基于 Electron 与 React 构建。
 ---

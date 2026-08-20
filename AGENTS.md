@@ -1,49 +1,64 @@
 # BBPlayer
 
-BBPlayer 是一个基于 React Native 开发的 BiliBili 流媒体音乐软件，整个仓库为 monorepo
+BBPlayer 是本地优先的 Bilibili 音频播放器。当前仓库交付 macOS 桌面端。
+
+<!--VITE PLUS START-->
+
+# Using Vite+, the Unified Toolchain for the Web
+
+This project is using Vite+, a unified toolchain built on top of Vite, Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps runtime management, package management, and frontend tooling in a single global CLI called `vp`. Vite+ is distinct from Vite, and it invokes Vite through `vp dev` and `vp build`. Run `vp help` to print a list of commands and `vp <command> --help` for information about a specific command.
+
+Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.dev/guide/.
+
+## Built-in Commands vs Scripts
+
+`vp <name>` runs a built-in command. `vp run <name>` runs a `package.json` script or a `vite.config.ts` task. Scripts cannot overwrite built-ins, so `vp dev` and `vp run dev` may do different things. Check `package.json` and `vite.config.ts` first, and run `vp run <name>` when the project defines a script or task with that name.
+
+## Tool Versions
+
+Run `vp toolchain` to show versions and relationships in the active Vite+
+release. Add a tool name to select part of the graph. For example, run
+`vp toolchain vite`. Use `--global` to ignore the local `vite-plus` package. Use
+`vp why <package>` to show the package-manager dependency graph.
+
+## Review Checklist
+
+- [ ] Run `vp install` after pulling remote changes and before getting started.
+- [ ] Run `vp check` and `vp test` to format, lint, type check and test changes.
+- [ ] Check if there are `vite.config.ts` tasks or `package.json` scripts necessary for validation, run via `vp run <script>`.
+- [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
+
+<!--VITE PLUS END-->
 
 ## 命令
 
-注意，所有命令都应当在项目根目录运行
+注意，所有命令都应当在项目根目录运行。
 
 ```bash
 pnpm install                   # Only pnpm — npm/yarn breaks workspace resolution
-pnpm lint                      # oxlint + eslint
-pnpm lint:fix                  # Auto-fix
-pnpm format                    # oxfmt
-pnpm type-check             # TypeScript type checking
+pnpm desktop                   # 启动桌面端（也可用 vp dev）
+vp check                       # 格式化检查 + oxlint
+vp lint                        # 仅 lint
+vp fmt --write .               # 格式化
+pnpm type-check                # TypeScript type checking
 ```
+
+不要直接安装或调用 `eslint`、`oxlint`、`oxfmt`。用 Vite+ 命令：`vp lint`、`vp fmt`、`vp check`。
 
 ## 最佳实践
 
-### 运行检查和构建
-
-如果任务涉及 TypeScript / JavaScript，你应当在每个任务完成后都**在项目根目录**运行一次 `pnpm type-check` 与 `pnpm lint`，检查是否引入了新的错误。
-
-如果任务涉及原生代码，你应当在每个任务完成后**只对那个包**运行一次 `gradlew build`，并检查是否有构建错误。
-
-### 搜索文件和 symbol
-
-我们推荐使用 `codedb` mcp 搜索，而非使用 grep 手动搜索
+如果任务涉及 TypeScript / JavaScript，你应当在每个任务完成后都**在项目根目录**运行一次 `vp check`，检查是否引入了新的错误。
 
 ## 仓库结构
 
 ### /apps
 
-- mobile - React Native 移动应用（技术栈：Expo + Drizzle ORM + Material Design 3 + Zustand + TanStack Query）
-- backend - 后端服务，主要提供歌单共享与软件更新查询（技术栈：Hono + ArkType + Drizzle ORM + CloudFlare Worker）
-- docs - VuePress 文档网站
-- update-publisher - 用于发布更新的工具
+- desktop - macOS 桌面客户端（Electron + React + Vite+）
+- backend - 后端服务，主要提供歌单共享（Hono + ArkType + Drizzle ORM + Cloudflare Worker）
+- docs - 文档网站
 
 ### /packages
 
-- bottom-tabs-react-navigation — React Native 原生底部标签栏与 React Navigation 的桥接适配层
-- eslint-plugin — 项目自定义 ESLint 规则集合
-- expo-wavy-slider — Android 原生波形滑动条（Jetpack Compose）的 Expo 模块封装
-- heatmap — 基于 SVG 的日期热力图组件
-- image-theme-colors — 从图片中提取主题色的 Expo 原生模块
-- logs — React Native 日志库
-- native — BBPlayer 原生能力集成模块
-- orpheus — BBPlayer 核心音频播放引擎
-- react-native-bottom-tabs — 跨平台原生底部标签栏组件
+- core — 搜索策略、BV/AV、歌词行转换
+- db — 本机 SQLite 歌单库
 - splash — 歌词转换与解析库

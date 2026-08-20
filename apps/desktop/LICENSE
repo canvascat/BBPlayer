@@ -1,0 +1,5 @@
+BBPlayer 桌面端使用 GNU Affero General Public License v3.0 only（AGPL-3.0-only）。
+
+原因：播放页歌词界面使用了 Apple Music-like Lyrics（AMLL），该组件为 AGPL-3.0。
+
+完整许可证文本：https://www.gnu.org/licenses/agpl-3.0.html

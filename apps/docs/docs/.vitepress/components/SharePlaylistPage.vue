@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
 import {
 	ListMusic,
 	Play,
@@ -10,6 +9,7 @@ import {
 	Users,
 	Share2,
 } from 'lucide-vue-next'
+import { ref, onMounted, computed } from 'vue'
 
 // ── State ──────────────────────────────────────────────────────────────────
 const shareId = ref('')

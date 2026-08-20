@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
 import { Play, Tv2, AlertCircle, Music2, ExternalLink } from 'lucide-vue-next'
+import { ref, onMounted, computed } from 'vue'
 
 const id = ref('')
 const title = ref('')

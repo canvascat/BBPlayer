@@ -1,0 +1,48 @@
+{
+	"name": "@bbplayer/desktop",
+	"version": "0.1.0",
+	"private": true,
+	"description": "BBPlayer macOS 桌面端",
+	"license": "AGPL-3.0-only",
+	"author": "Roitium",
+	"type": "module",
+	"main": "dist-electron/main/index.js",
+	"scripts": {
+		"build": "vp build",
+		"dev": "vp dev",
+		"pack:mac": "vp build && electron-builder --mac --publish never",
+		"preview": "vp preview",
+		"release:mac": "vp build && electron-builder --mac --publish always",
+		"test": "node --experimental-strip-types --test src/renderer/src/playback.test.ts src/main/auth.test.ts src/main/downloads.test.ts src/main/export-audio.test.ts src/main/backup.test.ts src/main/phone-login.test.ts src/main/share-link.test.ts src/main/bbplayer-account.test.ts src/main/bili.test.ts src/main/updater.test.ts"
+	},
+	"dependencies": {
+		"@applemusic-like-lyrics/core": "0.5.2",
+		"@applemusic-like-lyrics/react": "0.5.2",
+		"@bbplayer/core": "workspace:*",
+		"@bbplayer/db": "workspace:*",
+		"@bbplayer/splash": "workspace:*",
+		"electron-store": "10.1.0",
+		"electron-updater": "6.6.2",
+		"jszip": "3.10.1",
+		"qrcode": "1.5.4"
+	},
+	"devDependencies": {
+		"@types/qrcode": "1.5.5",
+		"@types/react": "19.2.3",
+		"@types/react-dom": "19.2.3",
+		"@vitejs/plugin-react": "5.1.4",
+		"electron": "37.2.6",
+		"electron-builder": "26.0.12",
+		"react": "19.2.3",
+		"react-dom": "19.2.3",
+		"typescript": "~6.0.3",
+		"vite": "npm:@voidzero-dev/vite-plus-core@0.2.9",
+		"vite-plugin-electron": "0.29.0",
+		"vite-plus": "0.2.9"
+	},
+	"debug": {
+		"env": {
+			"VITE_DEV_SERVER_URL": "http://127.0.0.1:5173/"
+		}
+	}
+}
