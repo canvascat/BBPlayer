@@ -21,7 +21,6 @@ pnpm desktop
 ## 项目结构
 
 - **[apps/desktop](./apps/desktop)**: macOS 桌面客户端（Electron + React + Vite+）
-- **[apps/backend](./apps/backend)**: 后端服务，提供歌单共享（Cloudflare Worker）
 - **[apps/docs](./apps/docs)**: 项目文档站点
 - **[packages/](./packages)**: 共享库
   - **[@bbplayer/core](./packages/core)**: 搜索策略、BV/AV、歌词转换

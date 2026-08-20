@@ -54,7 +54,6 @@ pnpm type-check                # TypeScript type checking
 ### /apps
 
 - desktop - macOS 桌面客户端（Electron + React + Vite+）
-- backend - 后端服务，主要提供歌单共享（Hono + ArkType + Drizzle ORM + Cloudflare Worker）
 - docs - 文档网站
 
 ### /packages

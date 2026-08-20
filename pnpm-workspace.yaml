@@ -8,6 +8,3 @@ onlyBuiltDependencies:
   - esbuild
   - sharp
   - unrs-resolver
-  - workerd
-patchedDependencies:
-  '@ark/schema': patches/@ark__schema.patch
