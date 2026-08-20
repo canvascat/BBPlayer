@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { parseTimeTag } from './time'
 
 describe('Time Utils (时间工具)', () => {

@@ -13,7 +13,7 @@
 		"pack:mac": "vp build && electron-builder --mac --publish never",
 		"preview": "vp preview",
 		"release:mac": "vp build && electron-builder --mac --publish always",
-		"test": "node --experimental-strip-types --test src/renderer/src/playback.test.ts src/main/auth.test.ts src/main/downloads.test.ts src/main/export-audio.test.ts src/main/backup.test.ts src/main/phone-login.test.ts src/main/share-link.test.ts src/main/bbplayer-account.test.ts src/main/bili.test.ts src/main/updater.test.ts"
+		"test": "vp test"
 	},
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "0.5.2",

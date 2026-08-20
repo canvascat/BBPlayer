@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { parseSpl, verify } from './index'
 
 describe('SPL Parser Integration (整体集成测试)', () => {

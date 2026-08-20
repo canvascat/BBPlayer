@@ -40,10 +40,11 @@ pnpm desktop                   # 启动桌面端（也可用 vp dev）
 vp check                       # 格式化检查 + oxlint
 vp lint                        # 仅 lint
 vp fmt --write .               # 格式化
+vp test                        # 跑 Vitest（Vite+ 内置）
 pnpm type-check                # TypeScript type checking
 ```
 
-不要直接安装或调用 `eslint`、`oxlint`、`oxfmt`。用 Vite+ 命令：`vp lint`、`vp fmt`、`vp check`。
+不要直接安装或调用 `eslint`、`oxlint`、`oxfmt`、`jest`、`vitest`。用 Vite+ 命令：`vp lint`、`vp fmt`、`vp check`、`vp test`。
 
 ## 最佳实践
 

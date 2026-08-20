@@ -1,9 +1,11 @@
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+
+import { describe, expect, it } from 'vitest'
 
 import { parseSpl } from '../parser'
 
-import { parseYrc, formatSplTime } from './netease'
+import { formatSplTime, parseYrc } from './netease'
 
 describe('网易云 YRC 转换器', () => {
 	it('应该正确格式化时间', () => {

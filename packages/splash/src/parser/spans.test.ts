@@ -1,3 +1,5 @@
+import { describe, expect, test, vi } from 'vitest'
+
 import { parseSpans } from './spans'
 
 describe('Span Parser (逐字解析)', () => {
@@ -67,7 +69,9 @@ describe('Span Parser (逐字解析)', () => {
 	})
 
 	test('应该警告并忽略时间倒流的戳', () => {
-		const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+		const consoleSpy = vi
+			.spyOn(console, 'warn')
+			.mockImplementation(() => undefined)
 		// Start 5s. Tag 4s.
 		const input = 'Hello[00:04.00]World'
 		const result = parseSpans(input, 5000, 1)

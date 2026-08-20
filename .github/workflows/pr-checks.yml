@@ -29,3 +29,6 @@ jobs:
 
       - name: 🚀 Run Lint
         run: pnpm check
+
+      - name: 🧪 Run Tests
+        run: vp test

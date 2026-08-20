@@ -146,4 +146,14 @@ export default defineConfig({
 	staged: {
 		'*': 'vp check --fix',
 	},
+	test: {
+		environment: 'node',
+		include: ['apps/desktop/src/**/*.test.ts', 'packages/**/*.test.ts'],
+		exclude: [
+			'**/node_modules/**',
+			'**/dist/**',
+			'**/dist-electron/**',
+			'**/release/**',
+		],
+	},
 })

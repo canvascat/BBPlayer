@@ -9,7 +9,7 @@
 		".": "./src/index.ts"
 	},
 	"scripts": {
-		"test": "node --experimental-strip-types --test src/*.test.ts"
+		"test": "vp test"
 	},
 	"dependencies": {
 		"@bbplayer/splash": "workspace:*"
