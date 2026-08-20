@@ -1,6 +1,6 @@
 **Privacy Policy**
 
-This privacy policy applies to the BBPlayer app (hereby referred to as "Application") for mobile devices that was created by Roitium (hereby referred to as "Service Provider") as an Open Source service. This service is intended for use "AS IS".
+This privacy policy applies to the BBPlayer app (hereby referred to as "Application") that was created by Roitium (hereby referred to as "Service Provider") as an Open Source service. This service is intended for use "AS IS".
 
 **Information Collection and Use**
 
@@ -9,15 +9,9 @@ The Application collects information when you download and use it. This informat
 - Your device's Internet Protocol address (e.g. IP address)
 - The pages of the Application that you visit, the time and date of your visit, the time spent on those pages
 - The time spent on the Application
-- The operating system you use on your mobile device
+- The operating system you use
 
-The Application does not gather precise information about the location of your mobile device.
-
-The Application collects your device's location, which helps the Service Provider determine your approximate geographical location and make use of in below ways:
-
-- Geolocation Services: The Service Provider utilizes location data to provide features such as personalized content, relevant recommendations, and location-based services.
-- Analytics and Improvements: Aggregated and anonymized location data helps the Service Provider to analyze user behavior, identify trends, and improve the overall performance and functionality of the Application.
-- Third-Party Services: Periodically, the Service Provider may transmit anonymized location data to external services. These services assist them in enhancing the Application and optimizing their offerings.
+The Application does not gather precise information about your location.
 
 The Service Provider may use the information you provided to contact you from time to time to provide you with important information, required notices and marketing promotions.
 
@@ -29,9 +23,7 @@ Only aggregated, anonymized data is periodically transmitted to external service
 
 Please note that the Application utilizes third-party services that have their own Privacy Policy about handling data. Below are the links to the Privacy Policy of the third-party service providers used by the Application:
 
-- [Expo](https://expo.io/privacy)
 - [Sentry](https://sentry.io/privacy/)
-- [Google / Firebase Analytics](https://policies.google.com/privacy)
 
 The Service Provider may disclose User Provided and Automatically Collected Information:
 
@@ -45,7 +37,7 @@ The Application provides an in-app toggle to stop all anonymous data collection 
 
 **Opt-Out Rights**
 
-You can stop all collection of information by the Application easily by uninstalling it. You may use the standard uninstall processes as may be available as part of your mobile device or via the mobile application marketplace or network.
+You can stop all collection of information by the Application easily by uninstalling it. You may use the standard uninstall processes available on your computer.
 
 **Data Retention Policy**
 

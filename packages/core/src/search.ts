@@ -1,4 +1,4 @@
-import { av2bv } from './bilibili-id'
+import { av2bv } from './bilibili-id.ts'
 
 export const BV_REGEX = /(?<![A-Za-z0-9])(bv[0-9A-Za-z]{10})(?![A-Za-z0-9])/i
 export const AV_REGEX = /(?<![A-Za-z0-9])av(\d+)(?![A-Za-z0-9])/i

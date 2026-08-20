@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+if command -v gitleaks >/dev/null 2>&1; then
+	extra=""
+	if [ -f .gitleaks-baseline.json ]; then
+		extra="--baseline-path .gitleaks-baseline.json"
+	fi
+	gitleaks protect --staged --verbose $extra
+else
+	echo "⚠️ gitleaks is not installed, skipping secret scan. Install with: brew install gitleaks"
+fi
+
+vp staged

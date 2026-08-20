@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import { Download, Github, RefreshCw } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
 
 const githubUrl = 'https://github.com/bbplayer-app/bbplayer/releases'
 

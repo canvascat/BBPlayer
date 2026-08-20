@@ -1,0 +1,17 @@
+appId: com.roitium.bbplayer
+productName: BBPlayer
+directories:
+  output: release
+files:
+  - dist-electron
+  - dist
+mac:
+  category: public.app-category.music
+  darkModeSupport: true
+  target:
+    - dmg
+    - zip
+publish:
+  provider: github
+  owner: bbplayer-app
+  repo: BBPlayer

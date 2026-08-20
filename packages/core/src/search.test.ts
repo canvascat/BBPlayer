@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { matchSearchStrategies } from './search'
+import { matchSearchStrategies } from './search.ts'
 
 test('提取 BV 号', async () => {
 	const result = await matchSearchStrategies('看看 BV1GJ411x7h7 这首')
