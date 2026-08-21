@@ -10,6 +10,7 @@ import {
 	type RepeatMode as RepeatModeValue,
 	type TrackItem,
 } from './playback'
+import { trpc } from './trpc'
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
@@ -272,7 +273,7 @@ export function usePlayback() {
 	}, [sleepUntil])
 
 	useEffect(() => {
-		void window.bbplayer.getSession().then((session) => {
+		void trpc.session.get.query().then((session) => {
 			if (!session?.queue?.length) return
 			setQueue(session.queue)
 			setIndex(session.index)
@@ -286,7 +287,7 @@ export function usePlayback() {
 
 	useEffect(() => {
 		const handle = window.setTimeout(() => {
-			void window.bbplayer.setSession({
+			void trpc.session.set.mutate({
 				queue,
 				index,
 				positionMs: currentTime,

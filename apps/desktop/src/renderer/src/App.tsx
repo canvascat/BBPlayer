@@ -8,6 +8,7 @@ import { CommentsPanel } from './CommentsPanel'
 import { PhoneLogin } from './PhoneLogin'
 import { formatMs, repeatLabel, type TrackItem } from './playback'
 import { SkinPicker, type SkinTheme } from './SkinPicker'
+import { trpc } from './trpc'
 import { usePlayback } from './usePlayback'
 
 type Tab = 'home' | 'library' | 'settings' | 'player'
@@ -182,7 +183,7 @@ export default function App() {
 			: 'none'
 
 	useEffect(() => {
-		void window.bbplayer.getSettings().then((settings) => {
+		void trpc.settings.get.query().then((settings) => {
 			setCookie(settings.cookie)
 			setContinuePlayingAfterClose(settings.continuePlayingAfterClose)
 			setLyricsAlwaysOnTop(settings.lyricsAlwaysOnTop)
@@ -228,7 +229,7 @@ export default function App() {
 		return window.bbplayer.onQrUpdate(async (payload) => {
 			setQr(payload)
 			if (payload.status === 'success') {
-				const settings = await window.bbplayer.getSettings()
+				const settings = await trpc.settings.get.query()
 				setCookie(settings.cookie)
 				setAccount(settings.account)
 				await loadRemoteLibrary()
@@ -237,7 +238,7 @@ export default function App() {
 	}, [])
 
 	const refreshPlaylists = async () => {
-		setPlaylists(await window.bbplayer.listPlaylists())
+		setPlaylists(await trpc.library.list.query())
 	}
 
 	const loadRemoteLibrary = async () => {
@@ -299,12 +300,12 @@ export default function App() {
 	}
 
 	const openPlaylist = async (id: string) => {
-		let playlist = await window.bbplayer.getPlaylist(id)
+		let playlist = await trpc.library.get.query({ id })
 		if (!playlist) return
 		if (playlist.shareId) {
 			try {
 				await window.bbplayer.pullSharedPlaylist(id)
-				playlist = (await window.bbplayer.getPlaylist(id)) ?? playlist
+				playlist = (await trpc.library.get.query({ id })) ?? playlist
 			} catch (error) {
 				setLibraryNotice(error instanceof Error ? error.message : String(error))
 			}
@@ -460,7 +461,7 @@ export default function App() {
 	}
 
 	const saveSettings = async () => {
-		await window.bbplayer.setSettings({
+		await trpc.settings.set.mutate({
 			cookie,
 			continuePlayingAfterClose,
 			lyricsAlwaysOnTop,
@@ -509,14 +510,14 @@ export default function App() {
 			return
 		}
 		player.setError('')
-		const playlist = await window.bbplayer.createPlaylist({ title, tracks })
+		const playlist = await trpc.library.create.mutate({ title, tracks })
 		setCreateTitle('')
 		await refreshPlaylists()
 		await openPlaylist(playlist.id)
 	}
 
 	const addTrackToPlaylist = async (playlistId: string, track: TrackItem) => {
-		await window.bbplayer.addToPlaylist({ playlistId, tracks: [track] })
+		await trpc.library.addTracks.mutate({ playlistId, tracks: [track] })
 		setPickPlaylistFor(null)
 		await refreshPlaylists()
 		if (activePlaylistId === playlistId) await openPlaylist(playlistId)
@@ -553,7 +554,7 @@ export default function App() {
 		try {
 			if (action === 'delete') {
 				if (!window.confirm(`删除「${playlist?.title ?? ''}」？`)) return
-				await window.bbplayer.deletePlaylist(id)
+				await trpc.library.delete.mutate({ id })
 				await refreshPlaylists()
 				if (activePlaylistId === id) {
 					setActivePlaylistId(null)
@@ -567,7 +568,7 @@ export default function App() {
 				setLibraryNotice(
 					result.alreadyShared ? `已复制订阅链接` : '已设为共享，链接已复制',
 				)
-				await window.bbplayer.copyText(result.subscribeUrl)
+				await trpc.desktop.copyText.mutate({ text: result.subscribeUrl })
 				await refreshPlaylists()
 				return
 			}
@@ -1093,7 +1094,9 @@ export default function App() {
 													className='chip'
 													type='button'
 													onClick={() =>
-														void window.bbplayer.openExternal(qr.url!)
+														void trpc.desktop.openExternal.mutate({
+															url: qr.url!,
+														})
 													}
 												>
 													在浏览器打开
@@ -1105,7 +1108,7 @@ export default function App() {
 								<PhoneLogin
 									disabled={Boolean(account)}
 									onLoggedIn={() => {
-										void window.bbplayer.getSettings().then((settings) => {
+										void trpc.settings.get.query().then((settings) => {
 											setCookie(settings.cookie)
 											setAccount(settings.account)
 										})
@@ -1223,9 +1226,7 @@ export default function App() {
 										className='chip'
 										type='button'
 										onClick={async () => {
-											const result = (await window.bbplayer.checkUpdate()) as {
-												message: string
-											}
+											const result = await trpc.desktop.checkUpdate.mutate()
 											setSaved(result.message)
 										}}
 									>
@@ -1236,7 +1237,7 @@ export default function App() {
 									value={skin}
 									onChange={(next) => {
 										setSkin(next)
-										void window.bbplayer.setSettings({ skin: next })
+										void trpc.settings.set.mutate({ skin: next })
 									}}
 								/>
 								<button
