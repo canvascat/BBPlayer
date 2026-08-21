@@ -15,6 +15,7 @@ import {
 	type LocalPlaylist,
 } from '@bbplayer/db'
 import { parseAndMergeLyrics } from '@bbplayer/splash'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import {
 	app,
 	BrowserWindow,
@@ -35,6 +36,10 @@ const { autoUpdater } = createRequire(import.meta.url)(
 	'electron-updater',
 ) as typeof import('electron-updater')
 
+import {
+	installAppProtocolHandler,
+	registerAppSchemePrivileged,
+} from './app-protocol'
 import { audioProxy } from './audio-proxy'
 import { generateLoginQr, pollLoginQr, QrStatusCode } from './auth'
 import {
@@ -95,7 +100,14 @@ import {
 	rotateInvite,
 	subscribeToSharedPlaylist,
 } from './shared-playlists'
+import { createTRPCContext } from './trpc/context'
+import { createDesktopEvents } from './trpc/events'
+import { appRouter } from './trpc/router'
 import { interpretUpdate, notesFromRelease } from './updater'
+
+registerAppSchemePrivileged()
+
+const events = createDesktopEvents()
 
 interface Settings {
 	cookie: string
@@ -1316,6 +1328,15 @@ app.on('open-url', (event, url) => {
 })
 
 app.whenReady().then(async () => {
+	installAppProtocolHandler({
+		handleTrpc: (req) =>
+			fetchRequestHandler({
+				endpoint: '/trpc',
+				req,
+				router: appRouter,
+				createContext: () => createTRPCContext(events),
+			}),
+	})
 	store = new Store<Settings & Persisted>({
 		defaults: {
 			cookie: '',
