@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 import { test } from 'vitest'
 
 import {
 	headersWithoutHost,
+	installAppProtocolHandler,
 	rendererUrl,
 	resolveAppRequest,
 	resolveRendererFile,
@@ -124,4 +126,108 @@ test('非法 percent-encoding 返回 404', () => {
 		}),
 		{ type: 'error', status: 404 },
 	)
+})
+
+async function dispatch(
+	options: Parameters<typeof installAppProtocolHandler>[0],
+	request: Request,
+) {
+	let listener: ((request: Request) => Response | Promise<Response>) | undefined
+	installAppProtocolHandler({
+		...options,
+		handle: (_scheme, next) => {
+			listener = next
+		},
+	})
+	if (!listener) throw new Error('missing listener')
+	return listener(request)
+}
+
+test('开发转发 fetch 目标为 Vite，且不含 Host', async () => {
+	const calls: { url: string; init?: RequestInit }[] = []
+	const res = await dispatch(
+		{
+			handleTrpc: async () => new Response('trpc'),
+			rendererDist: dist,
+			viteDevServerUrl: vite,
+			fetch: async (url, init) => {
+				calls.push({ url, init })
+				return new Response('vite')
+			},
+		},
+		new Request('app://localhost/@vite/client?v=1', {
+			headers: { Host: 'localhost', Accept: '*/*' },
+		}),
+	)
+	assert.equal(await res.text(), 'vite')
+	assert.equal(calls.length, 1)
+	assert.equal(calls[0]?.url, 'http://127.0.0.1:5173/@vite/client?v=1')
+	const headers = new Headers(calls[0]?.init?.headers)
+	assert.equal(headers.has('host'), false)
+	assert.equal(headers.get('accept'), '*/*')
+	assert.equal(
+		(calls[0]?.init as { bypassCustomProtocolHandlers?: boolean })
+			?.bypassCustomProtocolHandlers,
+		true,
+	)
+})
+
+test('开发转发失败返回 502', async () => {
+	const res = await dispatch(
+		{
+			handleTrpc: async () => new Response('trpc'),
+			rendererDist: dist,
+			viteDevServerUrl: vite,
+			fetch: async () => {
+				throw new Error('vite down')
+			},
+		},
+		new Request('app://localhost/'),
+	)
+	assert.equal(res.status, 502)
+})
+
+test('生产存在的文件走 file URL，缺失 404', async () => {
+	const index = resolve(dist, 'index.html')
+	const fetched: string[] = []
+	const ok = await dispatch(
+		{
+			handleTrpc: async () => new Response('trpc'),
+			rendererDist: dist,
+			isFile: (absPath) => absPath === index,
+			fetch: async (url) => {
+				fetched.push(url)
+				return new Response('html')
+			},
+		},
+		new Request('app://localhost/'),
+	)
+	assert.equal(await ok.text(), 'html')
+	assert.deepEqual(fetched, [pathToFileURL(index).href])
+
+	const missing = await dispatch(
+		{
+			handleTrpc: async () => new Response('trpc'),
+			rendererDist: dist,
+			isFile: () => false,
+			fetch: async () => new Response('nope'),
+		},
+		new Request('app://localhost/missing.js'),
+	)
+	assert.equal(missing.status, 404)
+})
+
+test('POST /trpc 仍进 handleTrpc', async () => {
+	const res = await dispatch(
+		{
+			handleTrpc: async () => new Response('trpc-ok'),
+			rendererDist: dist,
+			viteDevServerUrl: vite,
+			fetch: async () => new Response('should-not-forward'),
+		},
+		new Request('app://localhost/trpc/auth.qrStart?batch=1', {
+			method: 'POST',
+		}),
+	)
+	assert.equal(await res.text(), 'trpc-ok')
 })

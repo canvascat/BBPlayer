@@ -773,6 +773,8 @@ app.on('open-url', (event, url) => {
 
 app.whenReady().then(async () => {
 	installAppProtocolHandler({
+		rendererDist: RENDERER_DIST,
+		viteDevServerUrl: process.env.VITE_DEV_SERVER_URL,
 		handleTrpc: (req) =>
 			fetchRequestHandler({
 				endpoint: '/trpc',

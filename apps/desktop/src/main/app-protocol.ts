@@ -1,5 +1,7 @@
+import { existsSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { isAbsolute, relative, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 const electronRequire = createRequire(import.meta.url)
 
@@ -94,16 +96,55 @@ export function registerAppSchemePrivileged() {
 	])
 }
 
+export type AppAssetFetch = (
+	input: string,
+	init?: RequestInit & { bypassCustomProtocolHandlers?: boolean },
+) => Promise<Response>
+
 export function installAppProtocolHandler({
 	handleTrpc,
+	rendererDist,
+	viteDevServerUrl,
+	handle: handleScheme = (scheme, listener) =>
+		electron().protocol.handle(scheme, listener),
+	fetch: fetchAsset = (input, init) => electron().net.fetch(input, init),
+	isFile = (absPath) => existsSync(absPath) && statSync(absPath).isFile(),
 }: {
 	handleTrpc: (request: Request) => Response | Promise<Response>
+	rendererDist: string
+	viteDevServerUrl?: string
+	handle?: (
+		scheme: string,
+		listener: (request: Request) => Response | Promise<Response>,
+	) => void
+	fetch?: AppAssetFetch
+	isFile?: (absPath: string) => boolean
 }) {
-	electron().protocol.handle(APP_SCHEME, (request) => {
-		const { pathname } = new URL(request.url)
-		if (pathname === '/trpc' || pathname.startsWith('/trpc/')) {
-			return handleTrpc(request)
+	handleScheme(APP_SCHEME, async (request) => {
+		const route = resolveAppRequest(request.url, request.method, {
+			rendererDist,
+			viteDevServerUrl,
+		})
+		switch (route.type) {
+			case 'trpc':
+				return handleTrpc(request)
+			case 'error':
+				return new Response(null, { status: route.status })
+			case 'forward':
+				try {
+					return await fetchAsset(route.url, {
+						method: request.method,
+						headers: headersWithoutHost(request.headers),
+						bypassCustomProtocolHandlers: true,
+					})
+				} catch {
+					return new Response(null, { status: 502 })
+				}
+			case 'file':
+				if (!isFile(route.absPath)) {
+					return new Response(null, { status: 404 })
+				}
+				return fetchAsset(pathToFileURL(route.absPath).href)
 		}
-		return new Response(null, { status: 404 })
 	})
 }
