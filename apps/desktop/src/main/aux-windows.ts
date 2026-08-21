@@ -128,11 +128,3 @@ export function applyAuxSettings(
 		win.setMovable(!patch.locked)
 	}
 }
-
-export function sendToAux(channel: string, payload: unknown) {
-	for (const kind of ['lyrics', 'mini'] as const) {
-		const win = windows[kind]
-		if (!win || win.isDestroyed()) continue
-		win.webContents.send(channel, payload)
-	}
-}

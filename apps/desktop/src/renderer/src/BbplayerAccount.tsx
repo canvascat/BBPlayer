@@ -60,13 +60,13 @@ export function BbplayerAccount({
 		try {
 			const settings =
 				mode === 'register'
-					? await window.bbplayer.registerBbplayer({
+					? await trpc.account.register.mutate({
 							username,
 							password,
 							name: name.trim() || undefined,
 							face: face.trim() || undefined,
 						})
-					: await window.bbplayer.loginBbplayer({ username, password })
+					: await trpc.account.login.mutate({ username, password })
 			setPassword('')
 			applySettings(settings)
 		} catch (error) {
@@ -99,7 +99,7 @@ export function BbplayerAccount({
 						className='chip'
 						type='button'
 						onClick={() => {
-							void window.bbplayer.logoutBbplayer().then((settings) => {
+							void trpc.account.logout.mutate().then((settings) => {
 								setAccount(settings.bbplayerAccount)
 								setMessage('')
 							})
@@ -122,8 +122,8 @@ export function BbplayerAccount({
 						disabled={busy}
 						onClick={() => {
 							setBusy(true)
-							void window.bbplayer
-								.updateBbplayerProfile({ name, face: face || undefined })
+							void trpc.account.updateProfile
+								.mutate({ name, face: face || undefined })
 								.then(applySettings)
 								.catch((error) =>
 									setMessage(
@@ -141,8 +141,8 @@ export function BbplayerAccount({
 						disabled={busy || !biliLoggedIn}
 						onClick={() => {
 							setBusy(true)
-							void window.bbplayer
-								.fillBbplayerFromBili()
+							void trpc.account.fillFromBili
+								.mutate()
 								.then(applySettings)
 								.catch((error) =>
 									setMessage(
@@ -160,8 +160,8 @@ export function BbplayerAccount({
 						disabled={busy}
 						onClick={() => {
 							setBusy(true)
-							void window.bbplayer
-								.restoreSharedPlaylists()
+							void trpc.account.restore
+								.mutate()
 								.then((result) => {
 									setMessage(result.message)
 									onPlaylistsChanged()

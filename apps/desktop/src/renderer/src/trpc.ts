@@ -20,3 +20,14 @@ export const trpc = createTRPCClient<AppRouter>({
 		}),
 	],
 })
+
+export function listen<T>(
+	subscribe: (
+		input: undefined,
+		opts: { onData: (value: T) => void },
+	) => { unsubscribe: () => void },
+	onData: (value: T) => void,
+) {
+	const sub = subscribe(undefined, { onData })
+	return () => sub.unsubscribe()
+}

@@ -86,12 +86,12 @@ export function usePlayback() {
 			setIndex(start)
 			setStatus('正在获取音频…')
 			try {
-				const resolved = await window.bbplayer.resolvePlay(track)
+				const resolved = await trpc.player.resolve.mutate(track)
 				const audio = audioRef.current
 				if (!audio) return
 				audio.src = resolved.playUrl
 				audio.playbackRate = playbackRate
-				setLyrics(resolved.lyrics ?? [])
+				setLyrics((resolved.lyrics ?? []) as AmllLyricLine[])
 				if (seekMs > 0) {
 					const onLoaded = () => {
 						audio.currentTime = seekMs / 1000
@@ -302,7 +302,7 @@ export function usePlayback() {
 	const lyricLine = currentLyricText(lyrics, currentTime)
 
 	useEffect(() => {
-		window.bbplayer.reportState({
+		void trpc.player.reportState.mutate({
 			title: current?.title ?? '',
 			artist: current?.artist ?? '',
 			playing,
@@ -313,7 +313,7 @@ export function usePlayback() {
 
 	useEffect(() => {
 		const handle = window.setTimeout(() => {
-			window.bbplayer.pushLyrics({
+			void trpc.lyrics.push.mutate({
 				lyrics,
 				currentTime,
 				playing,

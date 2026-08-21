@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { trpc } from './trpc'
+
 export interface SkinTheme {
 	name: string
 	coverUrl: string
@@ -59,7 +61,7 @@ export function SkinPicker({
 		setBusy(true)
 		setMessage('')
 		try {
-			const result = await window.bbplayer.searchSkins(q)
+			const result = await trpc.bili.garbSearch.query({ keyword: q })
 			setList(result.list)
 			if (!result.list.length) setMessage('没有找到装扮')
 		} catch (err) {
@@ -74,7 +76,7 @@ export function SkinPicker({
 		try {
 			let primary = '232, 92, 108'
 			if (item.coverUrl) {
-				const dataUrl = await window.bbplayer.fetchSkinCover(item.coverUrl)
+				const dataUrl = await trpc.bili.skinCover.query({ url: item.coverUrl })
 				primary = await samplePrimary(dataUrl)
 			}
 			onChange({ name: item.name, coverUrl: item.coverUrl, primary })

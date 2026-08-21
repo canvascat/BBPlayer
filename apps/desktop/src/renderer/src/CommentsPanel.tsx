@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { trpc } from './trpc'
+
 export interface CommentItem {
 	rpid: number
 	mid: number
@@ -95,7 +97,7 @@ export function CommentsPanel({
 		setLoading(true)
 		setError('')
 		try {
-			const page = await window.bbplayer.getComments({
+			const page = await trpc.bili.comments.query({
 				bvid,
 				next: reset ? 0 : next,
 				mode,
@@ -121,7 +123,7 @@ export function CommentsPanel({
 	const like = async (item: CommentItem) => {
 		try {
 			const action = item.action ? 0 : 1
-			await window.bbplayer.likeComment({
+			await trpc.bili.commentLike.mutate({
 				bvid,
 				rpid: item.rpid,
 				action,
@@ -145,7 +147,7 @@ export function CommentsPanel({
 	const replies = async (item: CommentItem) => {
 		if (item.replies.length) return
 		try {
-			const list = (await window.bbplayer.getReplyComments({
+			const list = (await trpc.bili.commentReplies.query({
 				bvid,
 				rpid: item.rpid,
 			})) as CommentItem[]
