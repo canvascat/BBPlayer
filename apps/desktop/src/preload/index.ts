@@ -133,6 +133,7 @@ export interface PlayerSnapshot {
 }
 
 const api = {
+	trpcUrl: 'app://localhost/trpc',
 	getSettings: (): Promise<DesktopSettings> =>
 		ipcRenderer.invoke('settings:get'),
 	setSettings: (patch: Partial<DesktopSettings>) =>
