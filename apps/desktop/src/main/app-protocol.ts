@@ -18,9 +18,38 @@ export function rendererUrl(page: RendererPage) {
 	return page === 'index.html' ? `${APP_ORIGIN}/` : `${APP_ORIGIN}/${page}`
 }
 
+const FORBIDDEN_FORWARD_HEADERS = new Set([
+	'accept-charset',
+	'accept-encoding',
+	'access-control-request-headers',
+	'access-control-request-method',
+	'connection',
+	'content-length',
+	'cookie',
+	'cookie2',
+	'date',
+	'dnt',
+	'expect',
+	'host',
+	'keep-alive',
+	'origin',
+	'referer',
+	'te',
+	'trailer',
+	'transfer-encoding',
+	'upgrade',
+	'via',
+])
+
 export function headersWithoutHost(headers: Headers) {
-	const next = new Headers(headers)
-	next.delete('host')
+	const next = new Headers()
+	for (const [key, value] of headers.entries()) {
+		const lower = key.toLowerCase()
+		if (FORBIDDEN_FORWARD_HEADERS.has(lower) || lower.startsWith('sec-')) {
+			continue
+		}
+		next.append(key, value)
+	}
 	return next
 }
 
@@ -107,7 +136,13 @@ export function installAppProtocolHandler({
 	viteDevServerUrl,
 	handle: handleScheme = (scheme, listener) =>
 		electron().protocol.handle(scheme, listener),
-	fetch: fetchAsset = (input, init) => electron().net.fetch(input, init),
+	fetch: fetchAsset = (input, init = {}) => {
+		if (/^https?:/i.test(input)) {
+			const { bypassCustomProtocolHandlers: _ignored, ...rest } = init
+			return globalThis.fetch(input, rest)
+		}
+		return electron().net.fetch(input, init)
+	},
 	isFile = (absPath) => existsSync(absPath) && statSync(absPath).isFile(),
 }: {
 	handleTrpc: (request: Request) => Response | Promise<Response>
@@ -137,7 +172,8 @@ export function installAppProtocolHandler({
 						headers: headersWithoutHost(request.headers),
 						bypassCustomProtocolHandlers: true,
 					})
-				} catch {
+				} catch (error) {
+					console.error('[app-protocol] 转发 Vite 失败', route.url, error)
 					return new Response(null, { status: 502 })
 				}
 			case 'file':

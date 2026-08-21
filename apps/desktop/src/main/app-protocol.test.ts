@@ -29,6 +29,24 @@ test('去掉 Host，保留其它头', () => {
 	assert.equal(next.get('accept'), 'text/html')
 })
 
+test('转发头去掉 Origin Referer 与 sec-fetch，避免 net.fetch 抛错', () => {
+	const next = headersWithoutHost(
+		new Headers({
+			Host: 'localhost',
+			Origin: 'app://localhost',
+			Referer: 'app://localhost/',
+			'Sec-Fetch-Mode': 'cors',
+			'Sec-Fetch-Dest': 'script',
+			Accept: '*/*',
+		}),
+	)
+	assert.equal(next.has('origin'), false)
+	assert.equal(next.has('referer'), false)
+	assert.equal(next.has('sec-fetch-mode'), false)
+	assert.equal(next.has('sec-fetch-dest'), false)
+	assert.equal(next.get('accept'), '*/*')
+})
+
 test('/trpc 与 /trpc/* 走 tRPC，含 POST', () => {
 	assert.deepEqual(
 		resolveAppRequest('app://localhost/trpc', 'POST', { rendererDist: dist }),
