@@ -1,4 +1,4 @@
-import { publicProcedure, router } from './trpc.ts'
+import { publicProcedure, router } from './trpc'
 
 export const appRouter = router({
 	health: router({
