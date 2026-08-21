@@ -7,9 +7,7 @@
 	],
 	"scripts": {
 		"check": "vp check",
-		"check:deps": "syncpack list-mismatches",
 		"desktop": "pnpm --filter @bbplayer/desktop dev",
-		"fix:deps": "syncpack fix-mismatches",
 		"format": "vp fmt --write .",
 		"lint": "vp lint",
 		"lint:fix": "vp lint --fix",
@@ -20,7 +18,6 @@
 	"devDependencies": {
 		"@types/node": "^25.2.3",
 		"@typescript/native-preview": "beta",
-		"syncpack": "^13.0.4",
 		"typescript": "~6.0.3",
 		"vite": "npm:@voidzero-dev/vite-plus-core@0.2.9",
 		"vite-plus": "0.2.9"

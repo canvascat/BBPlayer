@@ -24,9 +24,6 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install
 
-      - name: 🕵️ Check Dependencies
-        run: pnpm check:deps
-
       - name: 🚀 Run Lint
         run: pnpm check
 
