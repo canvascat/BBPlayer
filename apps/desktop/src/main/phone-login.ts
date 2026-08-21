@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { BrowserWindow, ipcMain, app } from 'electron'
+import { BrowserWindow, app } from 'electron'
 
 import { setCookiesToHeader } from './auth'
 import { phoneLoginError } from './phone-form'
@@ -164,13 +164,17 @@ function buildGeetestHtml(gt: string, challenge: string) {
       captchaObj.appendTo('#captcha');
       captchaObj.onSuccess(function() {
         var r = captchaObj.getValidate();
-        if (window.bbplayer && window.bbplayer.completeGeetest) {
-          window.bbplayer.completeGeetest({
-            validate: r.geetest_validate,
-            seccode: r.geetest_seccode,
-            challenge: r.geetest_challenge
-          });
-        }
+        fetch('app://localhost/trpc/auth.completeGeetest', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            json: {
+              validate: r.geetest_validate,
+              seccode: r.geetest_seccode,
+              challenge: r.geetest_challenge
+            }
+          })
+        });
       });
       captchaObj.onError(function() {
         document.getElementById('err-msg').textContent = '验证出错，请关闭后重试';
@@ -186,6 +190,11 @@ export function openGeetestWindow(options: {
 	challenge: string
 	preload: string
 	parent?: Electron.BrowserWindow | null
+	waitForDone: () => Promise<{
+		validate: string
+		seccode: string
+		challenge: string
+	}>
 }) {
 	return new Promise<{
 		validate: string
@@ -219,24 +228,16 @@ export function openGeetestWindow(options: {
 		) => {
 			if (settled) return
 			settled = true
-			ipcMain.removeListener('geetest:done', onDone)
 			if (!win.isDestroyed()) win.close()
 			if (error) reject(error)
 			else if (result) resolve(result)
 			else reject(new Error('已取消安全验证'))
 		}
-		const onDone = (
-			_event: Electron.IpcMainEvent,
-			payload: { validate?: string; seccode?: string; challenge?: string },
-		) => {
-			if (!payload?.validate || !payload.seccode || !payload.challenge) return
-			finish(null, {
-				validate: payload.validate,
-				seccode: payload.seccode,
-				challenge: payload.challenge,
-			})
-		}
-		ipcMain.on('geetest:done', onDone)
+		void options.waitForDone().then(
+			(result) => finish(null, result),
+			(error: unknown) =>
+				finish(error instanceof Error ? error : new Error(String(error))),
+		)
 		win.on('closed', () => {
 			finish(new Error('已取消安全验证'))
 		})

@@ -8,7 +8,7 @@ import { CommentsPanel } from './CommentsPanel'
 import { PhoneLogin } from './PhoneLogin'
 import { formatMs, repeatLabel, type TrackItem } from './playback'
 import { SkinPicker, type SkinTheme } from './SkinPicker'
-import { trpc } from './trpc'
+import { listen, trpc } from './trpc'
 import { usePlayback } from './usePlayback'
 
 type Tab = 'home' | 'library' | 'settings' | 'player'
@@ -198,9 +198,9 @@ export default function App() {
 		})
 		void refreshPlaylists()
 		void loadRemoteLibrary()
-		void window.bbplayer.listDownloads().then(setDownloads)
-		void window.bbplayer.downloadStatus().then(setDownloadTasks)
-		void window.bbplayer.takePendingShare().then((payload) => {
+		void trpc.downloads.list.query().then(setDownloads)
+		void trpc.downloads.status.query().then(setDownloadTasks)
+		void trpc.share.pending.query().then((payload) => {
 			if (!payload?.shareId) return
 			setShareInput(payload.shareId)
 			if (payload.inviteCode) setShareInvite(payload.inviteCode)
@@ -209,7 +209,7 @@ export default function App() {
 	}, [])
 
 	useEffect(() => {
-		return window.bbplayer.onShareIncoming((payload) => {
+		return listen(trpc.share.incoming.subscribe, (payload) => {
 			if (!payload.shareId) return
 			setShareInput(payload.shareId)
 			if (payload.inviteCode) setShareInvite(payload.inviteCode)
@@ -218,22 +218,24 @@ export default function App() {
 	}, [])
 
 	useEffect(() => {
-		return window.bbplayer.onDownloadsUpdate((payload) => {
-			setDownloads(payload.records)
+		return listen(trpc.downloads.updates.subscribe, (payload) => {
+			setDownloads(payload.records as TrackItem[])
 			setDownloadTasks(payload.tasks)
-			if (listTitle === '已下载') setPages(payload.records)
+			if (listTitle === '已下载') setPages(payload.records as TrackItem[])
 		})
 	}, [listTitle])
 
 	useEffect(() => {
-		return window.bbplayer.onQrUpdate(async (payload) => {
-			setQr(payload)
-			if (payload.status === 'success') {
-				const settings = await trpc.settings.get.query()
-				setCookie(settings.cookie)
-				setAccount(settings.account)
-				await loadRemoteLibrary()
-			}
+		return listen(trpc.auth.qrUpdates.subscribe, (payload) => {
+			void (async () => {
+				setQr(payload)
+				if (payload.status === 'success') {
+					const settings = await trpc.settings.get.query()
+					setCookie(settings.cookie)
+					setAccount(settings.account)
+					await loadRemoteLibrary()
+				}
+			})()
 		})
 	}, [])
 
@@ -243,7 +245,7 @@ export default function App() {
 
 	const loadRemoteLibrary = async () => {
 		try {
-			const remote = await window.bbplayer.listRemoteLibrary()
+			const remote = await trpc.bili.library.query()
 			setAccount(remote.account)
 			setFavorites(remote.favorites)
 			setCollections(remote.collections)
@@ -274,7 +276,7 @@ export default function App() {
 
 	const openFavorite = async (id: string) => {
 		try {
-			const result = await window.bbplayer.listFavorite(id)
+			const result = await trpc.bili.favorite.query({ id })
 			showRemoteVideos(result.title, result.videos)
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
@@ -283,7 +285,7 @@ export default function App() {
 
 	const openCollection = async (id: string) => {
 		try {
-			const result = await window.bbplayer.listCollection(id)
+			const result = await trpc.bili.collection.query({ id })
 			showRemoteVideos(result.title, result.videos)
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
@@ -292,7 +294,7 @@ export default function App() {
 
 	const openWatchLater = async () => {
 		try {
-			const result = await window.bbplayer.listWatchLater()
+			const result = await trpc.bili.watchLater.query()
 			showRemoteVideos(result.title, result.videos)
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
@@ -304,7 +306,7 @@ export default function App() {
 		if (!playlist) return
 		if (playlist.shareId) {
 			try {
-				await window.bbplayer.pullSharedPlaylist(id)
+				await trpc.share.pull.mutate({ playlistId: id })
 				playlist = (await trpc.library.get.query({ id })) ?? playlist
 			} catch (error) {
 				setLibraryNotice(error instanceof Error ? error.message : String(error))
@@ -357,7 +359,7 @@ export default function App() {
 	}, [lastTab, player, tab])
 
 	useEffect(() => {
-		return window.bbplayer.onCommand((command) => {
+		return listen(trpc.player.commands.subscribe, (command) => {
 			if (command === 'playpause') player.toggleRef.current()
 			if (command === 'pause') player.audioRef.current?.pause()
 			if (command === 'prev') player.skipRef.current(-1)
@@ -403,7 +405,7 @@ export default function App() {
 		setHits([])
 		setPages([])
 		setActivePlaylistId(null)
-		const matched = await window.bbplayer.matchSearch(q)
+		const matched = await trpc.player.matchSearch.query({ query: q })
 		if (matched.error) player.setError(matched.error)
 		const strategy = matched.strategy as {
 			type: string
@@ -414,7 +416,7 @@ export default function App() {
 		}
 		try {
 			if (strategy.type === 'BVID' && strategy.bvid) {
-				const video = await window.bbplayer.getVideo(strategy.bvid)
+				const video = await trpc.bili.video.query({ bvid: strategy.bvid })
 				setActivePlaylistId(null)
 				setListTitle(video.title)
 				setPages(video.pages)
@@ -428,7 +430,7 @@ export default function App() {
 				strategy.type === 'AV_PARSE_ERROR'
 			) {
 				const keyword = strategy.query || q
-				const result = await window.bbplayer.searchVideos(keyword)
+				const result = await trpc.bili.search.query({ keyword })
 				setHits(result)
 				setListTitle(`搜索：${keyword}`)
 				setTab('library')
@@ -442,7 +444,7 @@ export default function App() {
 				return
 			}
 			if (strategy.type === 'UPLOADER' && strategy.mid) {
-				const result = await window.bbplayer.listUploader(strategy.mid)
+				const result = await trpc.bili.uploader.query({ mid: strategy.mid })
 				showRemoteVideos(result.title, result.videos)
 				return
 			}
@@ -452,7 +454,7 @@ export default function App() {
 	}
 
 	const openHit = async (hit: SearchHit) => {
-		const video = await window.bbplayer.getVideo(hit.bvid)
+		const video = await trpc.bili.video.query({ bvid: hit.bvid })
 		setActivePlaylistId(null)
 		setListTitle(video.title)
 		setPages(video.pages)
@@ -473,14 +475,14 @@ export default function App() {
 			autoCache,
 			skin,
 		})
-		const accountNow = await window.bbplayer.refreshAccount()
+		const accountNow = await trpc.auth.refresh.mutate()
 		setAccount(accountNow)
 		await loadRemoteLibrary()
 		setSaved('已保存')
 	}
 
 	const exportCached = async (ids?: string[]) => {
-		const result = (await window.bbplayer.exportDownloads(ids)) as {
+		const result = (await trpc.downloads.export.mutate({ ids })) as {
 			message: string
 		}
 		setSaved(result.message)
@@ -490,7 +492,7 @@ export default function App() {
 	}
 
 	const logout = async () => {
-		await window.bbplayer.logoutBilibili()
+		await trpc.auth.logout.mutate()
 		setCookie('')
 		setAccount(null)
 		setFavorites([])
@@ -526,8 +528,8 @@ export default function App() {
 	const subscribeShared = async () => {
 		setLibraryNotice('')
 		try {
-			await window.bbplayer.previewSharedPlaylist(shareInput)
-			const result = await window.bbplayer.subscribeSharedPlaylist({
+			await trpc.share.preview.query({ input: shareInput })
+			const result = await trpc.share.subscribe.mutate({
 				input: shareInput,
 				inviteCode: shareInvite.trim() || undefined,
 			})
@@ -564,7 +566,7 @@ export default function App() {
 				return
 			}
 			if (action === 'share') {
-				const result = await window.bbplayer.enableSharing(id)
+				const result = await trpc.share.enable.mutate({ playlistId: id })
 				setLibraryNotice(
 					result.alreadyShared ? `已复制订阅链接` : '已设为共享，链接已复制',
 				)
@@ -573,7 +575,7 @@ export default function App() {
 				return
 			}
 			if (action === 'copy') {
-				await window.bbplayer.copyShareLink({
+				await trpc.share.copyLink.mutate({
 					playlistId: id,
 					kind: 'subscribe',
 				})
@@ -581,7 +583,7 @@ export default function App() {
 				return
 			}
 			if (action === 'editor') {
-				await window.bbplayer.copyShareLink({
+				await trpc.share.copyLink.mutate({
 					playlistId: id,
 					kind: 'editor',
 				})
@@ -589,14 +591,14 @@ export default function App() {
 				return
 			}
 			if (action === 'sync') {
-				await window.bbplayer.pullSharedPlaylist(id)
+				await trpc.share.pull.mutate({ playlistId: id })
 				setLibraryNotice('云端共享歌单已同步')
 				await refreshPlaylists()
 				if (activePlaylistId === id) await openPlaylist(id)
 				return
 			}
 			if (action === 'rotate') {
-				await window.bbplayer.rotateShareInvite(id)
+				await trpc.share.rotateInvite.mutate({ playlistId: id })
 				setLibraryNotice('已重置邀请码并复制协作链接')
 			}
 		} catch (error) {
@@ -1074,7 +1076,7 @@ export default function App() {
 												className='chip'
 												type='button'
 												onClick={() =>
-													void window.bbplayer.startQrLogin().catch((err) => {
+													void trpc.auth.qrStart.mutate().catch((err) => {
 														setQr({
 															status: 'error',
 															statusText:
@@ -1201,7 +1203,7 @@ export default function App() {
 										className='chip'
 										type='button'
 										onClick={async () => {
-											const result = (await window.bbplayer.importBackup()) as {
+											const result = (await trpc.backup.import.mutate()) as {
 												message: string
 											}
 											setSaved(result.message)
@@ -1214,7 +1216,7 @@ export default function App() {
 										className='chip'
 										type='button'
 										onClick={async () => {
-											const result = (await window.bbplayer.exportBackup()) as {
+											const result = (await trpc.backup.export.mutate()) as {
 												message: string
 											}
 											setSaved(result.message)
@@ -1360,7 +1362,7 @@ export default function App() {
 						className='play-icon'
 						type='button'
 						title='歌词窗口'
-						onClick={() => void window.bbplayer.toggleLyricsWindow()}
+						onClick={() => void trpc.lyrics.toggle.mutate()}
 					>
 						<Icon d={icons.lyric} />
 					</button>
@@ -1368,7 +1370,7 @@ export default function App() {
 						className='play-icon'
 						type='button'
 						title='迷你窗口'
-						onClick={() => void window.bbplayer.toggleMiniWindow()}
+						onClick={() => void trpc.mini.toggle.mutate()}
 					>
 						<Icon d={icons.music} />
 					</button>
@@ -1459,7 +1461,7 @@ export default function App() {
 						<button
 							className='icon-btn'
 							type='button'
-							onClick={() => void window.bbplayer.toggleLyricsWindow(true)}
+							onClick={() => void trpc.lyrics.toggle.mutate({ show: true })}
 							aria-label='打开歌词窗口'
 						>
 							<Icon d={icons.lyric} />
@@ -1569,9 +1571,9 @@ export default function App() {
 							type='button'
 							onClick={() => {
 								if (downloadTasks[menu.track.id] === 'completed') {
-									void window.bbplayer.removeDownload(menu.track.id)
+									void trpc.downloads.remove.mutate({ id: menu.track.id })
 								} else {
-									void window.bbplayer.cacheTrack(menu.track)
+									void trpc.downloads.start.mutate(menu.track)
 								}
 								setMenu(null)
 							}}
@@ -1598,8 +1600,8 @@ export default function App() {
 							<button
 								type='button'
 								onClick={() => {
-									void window.bbplayer
-										.removeFromPlaylist({
+									void trpc.library.removeTrack
+										.mutate({
 											playlistId: activePlaylistId,
 											trackId: menu.track.id,
 										})
@@ -1640,7 +1642,7 @@ export default function App() {
 						<button
 							type='button'
 							onClick={() => {
-								void window.bbplayer.toggleLyricsWindow(true)
+								void trpc.lyrics.toggle.mutate({ show: true })
 								setBarMenu(null)
 							}}
 						>
@@ -1649,7 +1651,7 @@ export default function App() {
 						<button
 							type='button'
 							onClick={() => {
-								void window.bbplayer.toggleMiniWindow(true)
+								void trpc.mini.toggle.mutate({ show: true })
 								setBarMenu(null)
 							}}
 						>

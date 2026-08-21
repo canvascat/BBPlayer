@@ -3,12 +3,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-	describeSearchFailure,
-	generateUniqueTrackKey,
-	matchSearchStrategies,
-	splLinesToAmll,
-} from '@bbplayer/core'
+import { generateUniqueTrackKey, splLinesToAmll } from '@bbplayer/core'
 import {
 	PlayerDatabase,
 	type LibraryTrack,
@@ -22,7 +17,6 @@ import {
 	clipboard,
 	dialog,
 	globalShortcut,
-	ipcMain,
 	Menu,
 	nativeImage,
 	session,
@@ -31,6 +25,7 @@ import {
 	type Rectangle,
 } from 'electron'
 import Store from 'electron-store'
+import { firstValueFrom, take } from 'rxjs'
 
 const { autoUpdater } = createRequire(import.meta.url)(
 	'electron-updater',
@@ -41,68 +36,34 @@ import {
 	registerAppSchemePrivileged,
 } from './app-protocol'
 import { audioProxy } from './audio-proxy'
-import { generateLoginQr, pollLoginQr, QrStatusCode } from './auth'
 import {
 	applyAuxSettings,
 	closeAuxWindow,
 	isAuxVisible,
-	sendToAux,
 	toggleAuxWindow,
 	type AuxKind,
 	type AuxWindowOptions,
 } from './aux-windows'
 import { readBackupZip, writeBackupZip } from './backup'
-import { type BbplayerAccount, validateCredentials } from './bbplayer-account'
-import {
-	fetchMe,
-	loginRequest,
-	registerRequest,
-	updateProfileRequest,
-} from './bbplayer-api'
+import { type BbplayerAccount } from './bbplayer-account'
 import {
 	clearWbiCache,
-	fetchImageDataUrl,
 	getAccount,
 	getAudioStream,
-	getCollectionVideos,
-	getCollections,
-	getComments,
-	getFavoriteFolders,
-	getFavoriteVideos,
-	getReplyComments,
-	getUploaderVideos,
-	getVideoDetails,
-	getWatchLater,
-	likeComment,
-	resolveB23,
-	searchGarbSkins,
-	searchVideos,
 	type BiliAccount,
 } from './bili'
 import { BILI_IMAGE_URL_FILTER, withBiliImageHeaders } from './bili-image'
 import { downloadManager, type CachedTrack } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
 import { fetchMatchedLyrics } from './lyrics-fetch'
-import { phoneFormModel } from './phone-form'
-import {
-	getPhoneLoginCaptcha,
-	loginWithPhoneSms,
-	openGeetestWindow,
-	sendPhoneLoginSms,
-} from './phone-login'
+import { openGeetestWindow } from './phone-login'
 import { parseShareLink } from './share-link'
-import {
-	copyShareLink,
-	enableSharing,
-	previewSharedPlaylist,
-	pullSharedChanges,
-	restoreFromCloud,
-	rotateInvite,
-	subscribeToSharedPlaylist,
-} from './shared-playlists'
+import { restoreFromCloud } from './shared-playlists'
 import { createTRPCContext } from './trpc/context'
 import { createDesktopEvents } from './trpc/events'
+import { liveState } from './trpc/live-state'
 import { appRouter } from './trpc/router'
+import { stopQrLogin } from './trpc/routers/auth'
 import { interpretUpdate, notesFromRelease } from './updater'
 
 registerAppSchemePrivileged()
@@ -124,14 +85,6 @@ interface Settings {
 		coverUrl: string
 		primary: string
 	} | null
-}
-
-interface PlayerSnapshot {
-	title: string
-	artist: string
-	playing: boolean
-	lyric: string
-	artwork: string
 }
 
 interface PlaySession {
@@ -166,34 +119,6 @@ let playerDb!: PlayerDatabase
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let isQuitting = false
-let snapshot: PlayerSnapshot = {
-	title: '',
-	artist: '',
-	playing: false,
-	lyric: '',
-	artwork: '',
-}
-let lastLyrics: unknown = null
-let qrTimer: ReturnType<typeof setInterval> | null = null
-let qrKey = ''
-
-function emitQr(payload: {
-	status: 'generating' | 'polling' | 'expired' | 'success' | 'error'
-	statusText: string
-	url?: string
-	dataUrl?: string
-}) {
-	if (!mainWindow || mainWindow.isDestroyed()) return
-	mainWindow.webContents.send('auth:qr', payload)
-}
-
-function stopQr() {
-	if (qrTimer) {
-		clearInterval(qrTimer)
-		qrTimer = null
-	}
-	qrKey = ''
-}
 
 async function refreshAccount() {
 	try {
@@ -211,35 +136,8 @@ function cookie() {
 	return store.get('cookie') ?? ''
 }
 
-function settings() {
-	return {
-		cookie: cookie(),
-		continuePlayingAfterClose: store.get('continuePlayingAfterClose') ?? true,
-		lyricsAlwaysOnTop: store.get('lyricsAlwaysOnTop') ?? true,
-		lyricsWindowLocked: store.get('lyricsWindowLocked') ?? false,
-		autoOpenLyricsWindow: store.get('autoOpenLyricsWindow') ?? false,
-		menuBarShowLyrics: store.get('menuBarShowLyrics') ?? false,
-		miniAlwaysOnTop: store.get('miniAlwaysOnTop') ?? true,
-		autoOpenMiniWindow: store.get('autoOpenMiniWindow') ?? false,
-		autoCache: store.get('autoCache') ?? true,
-		account: store.get('account') ?? null,
-		skin: store.get('skin') ?? null,
-		bbplayerAccount: store.get('bbplayerAccount') ?? null,
-	}
-}
-
 function bbplayerToken() {
 	return store.get('bbplayerToken') || null
-}
-
-function saveBbplayerSession(token: string, account: BbplayerAccount) {
-	store.set('bbplayerToken', token)
-	store.set('bbplayerAccount', account)
-}
-
-function clearBbplayerSession() {
-	store.delete('bbplayerToken')
-	store.set('bbplayerAccount', null)
 }
 
 async function finishBbplayerAuth() {
@@ -258,15 +156,7 @@ function emitShareLink(url: string) {
 	pendingShareUrl = url
 	if (!mainWindow || mainWindow.isDestroyed()) return
 	showMain()
-	const send = () => {
-		if (!mainWindow || mainWindow.isDestroyed()) return
-		mainWindow.webContents.send('share:incoming', parsed)
-	}
-	if (mainWindow.webContents.isLoadingMainFrame()) {
-		mainWindow.webContents.once('did-finish-load', send)
-		return
-	}
-	send()
+	events.shareIncoming$.next(parsed)
 }
 
 function loadRenderer(
@@ -289,8 +179,7 @@ function showMain() {
 }
 
 function sendCommand(command: string) {
-	if (!mainWindow || mainWindow.isDestroyed()) return
-	mainWindow.webContents.send('player:command', command)
+	events.playerCommands$.next(command)
 }
 
 function auxOptions(kind: AuxKind): AuxWindowOptions {
@@ -358,25 +247,27 @@ function truncate(text: string, max = 22) {
 }
 
 function refreshShell() {
-	const hasTrack = Boolean(snapshot.title)
-	const lyricOrTitle = snapshot.lyric || snapshot.title
+	const hasTrack = Boolean(liveState.snapshot.title)
+	const lyricOrTitle = liveState.snapshot.lyric || liveState.snapshot.title
 	const trayTitle = store.get('menuBarShowLyrics')
 		? truncate(lyricOrTitle || 'BB')
 		: hasTrack
-			? truncate(snapshot.title, 10)
+			? truncate(liveState.snapshot.title, 10)
 			: 'BB'
 	tray?.setTitle(trayTitle)
 	tray?.setToolTip(
-		hasTrack ? `${snapshot.title} · ${snapshot.artist}` : 'BBPlayer',
+		hasTrack
+			? `${liveState.snapshot.title} · ${liveState.snapshot.artist}`
+			: 'BBPlayer',
 	)
 	const playbackItems: Electron.MenuItemConstructorOptions[] = [
 		{
-			label: snapshot.title || '未在播放',
+			label: liveState.snapshot.title || '未在播放',
 			enabled: false,
 		},
 		{ type: 'separator' },
 		{
-			label: snapshot.playing ? '暂停' : '播放',
+			label: liveState.snapshot.playing ? '暂停' : '播放',
 			click: () => sendCommand('playpause'),
 			enabled: hasTrack,
 		},
@@ -419,7 +310,7 @@ function refreshShell() {
 		app.dock?.setMenu(
 			Menu.buildFromTemplate([
 				{
-					label: snapshot.playing ? '暂停' : '播放',
+					label: liveState.snapshot.playing ? '暂停' : '播放',
 					click: () => sendCommand('playpause'),
 					enabled: hasTrack,
 				},
@@ -451,7 +342,7 @@ function createTray() {
 }
 
 function createMenu() {
-	const hasTrack = Boolean(snapshot.title)
+	const hasTrack = Boolean(liveState.snapshot.title)
 	const template: Electron.MenuItemConstructorOptions[] = [
 		{
 			label: app.name,
@@ -524,7 +415,7 @@ function createMenu() {
 			label: '播放',
 			submenu: [
 				{
-					label: snapshot.playing ? '暂停' : '播放',
+					label: liveState.snapshot.playing ? '暂停' : '播放',
 					enabled: hasTrack,
 					click: () => sendCommand('playpause'),
 				},
@@ -768,469 +659,98 @@ async function checkUpdates(notify = false) {
 	return result
 }
 
-function registerIpc() {
-	ipcMain.on('player:state', (_e, next: PlayerSnapshot) => {
-		if (
-			snapshot.title === next.title &&
-			snapshot.artist === next.artist &&
-			snapshot.playing === next.playing &&
-			snapshot.lyric === next.lyric &&
-			snapshot.artwork === next.artwork
-		) {
-			return
-		}
-		snapshot = next
-		sendToAux('lyrics:meta', next)
-		refreshShell()
-	})
-	ipcMain.handle('player:snapshot', () => snapshot)
-	ipcMain.on('lyrics:push', (_e, payload: unknown) => {
-		lastLyrics = payload
-		sendToAux('lyrics:update', payload)
-	})
-	ipcMain.handle('lyrics:current', () => lastLyrics)
-	ipcMain.on('player:command-from-ui', (_e, command: string) => {
-		sendCommand(command)
-	})
-	ipcMain.handle('lyrics:toggle', (_e, show?: boolean) =>
-		openAux('lyrics', show),
-	)
-	ipcMain.handle('mini:toggle', (_e, show?: boolean) => openAux('mini', show))
-	ipcMain.handle('lyrics:visible', () => isAuxVisible('lyrics'))
-	ipcMain.handle('mini:visible', () => isAuxVisible('mini'))
-	ipcMain.handle('auth:me', () => store.get('account') ?? null)
-	ipcMain.handle('auth:refresh', () => refreshAccount())
-	ipcMain.handle('auth:logout', async () => {
-		stopQr()
-		store.set('cookie', '')
-		store.set('account', null)
-		clearWbiCache()
-		return true
-	})
-	ipcMain.handle('auth:qrCancel', () => {
-		stopQr()
-		return true
-	})
-	ipcMain.handle('auth:qrStart', async () => {
-		stopQr()
-		emitQr({ status: 'generating', statusText: '正在生成二维码...' })
-		try {
-			const qr = await generateLoginQr()
-			qrKey = qr.qrcodeKey
-			emitQr({
-				status: 'polling',
-				statusText: '等待扫码',
-				url: qr.url,
-				dataUrl: qr.dataUrl,
+async function resolvePlay(track: {
+	id?: string
+	bvid: string
+	cid: number
+	title: string
+	artist?: string
+	artwork?: string
+	duration?: number
+}) {
+	try {
+		const id =
+			track.id ||
+			generateUniqueTrackKey({
+				bvid: track.bvid,
+				cid: track.cid,
+				isMultiPage: true,
 			})
-			qrTimer = setInterval(() => {
-				void (async () => {
-					if (!qrKey) return
-					try {
-						const poll = await pollLoginQr(qrKey)
-						if (poll.status === QrStatusCode.WAIT) {
-							emitQr({
-								status: 'polling',
-								statusText: poll.statusText,
-								url: qr.url,
-								dataUrl: qr.dataUrl,
-							})
-							return
-						}
-						if (poll.status === QrStatusCode.SCANNED) {
-							emitQr({
-								status: 'polling',
-								statusText: poll.statusText,
-								url: qr.url,
-								dataUrl: qr.dataUrl,
-							})
-							return
-						}
-						if (poll.status === QrStatusCode.EXPIRED) {
-							stopQr()
-							emitQr({ status: 'expired', statusText: poll.statusText })
-							return
-						}
-						if (poll.status === QrStatusCode.SUCCESS) {
-							stopQr()
-							store.set('cookie', poll.cookie)
-							await refreshAccount()
-							emitQr({ status: 'success', statusText: '登录成功' })
-						}
-					} catch (error) {
-						stopQr()
-						emitQr({
-							status: 'error',
-							statusText:
-								error instanceof Error ? error.message : String(error),
-						})
-					}
-				})()
-			}, 2000)
-			return { url: qr.url, dataUrl: qr.dataUrl }
-		} catch (error) {
-			emitQr({
-				status: 'error',
-				statusText: error instanceof Error ? error.message : String(error),
-			})
-			throw error
-		}
-	})
-	ipcMain.handle('auth:phoneStart', async (_e, tel: string) => {
-		const telError = phoneFormModel.tel.validate(tel)
-		if (telError) throw new Error(telError)
-		const captcha = await getPhoneLoginCaptcha()
-		const geetest = await openGeetestWindow({
-			gt: captcha.gt,
-			challenge: captcha.challenge,
-			preload: PRELOAD,
-			parent: mainWindow,
-		})
-		return sendPhoneLoginSms({
-			tel,
-			token: captcha.token,
-			challenge: geetest.challenge,
-			validate: geetest.validate,
-			seccode: geetest.seccode,
-		})
-	})
-	ipcMain.handle(
-		'auth:phoneLogin',
-		async (_e, payload: { tel: string; code: string; captchaKey: string }) => {
-			const codeError = phoneFormModel.smsCode.validate(payload.code)
-			if (codeError) throw new Error(codeError)
-			const cookieHeader = await loginWithPhoneSms(payload)
-			store.set('cookie', cookieHeader)
-			await refreshAccount()
-			return settings()
-		},
-	)
-	ipcMain.handle('bili:library', async () => {
-		const account = store.get('account') ?? (await refreshAccount())
-		if (!account) {
-			return { account: null, favorites: [], collections: [], watchLater: 0 }
-		}
-		const [favorites, collections, watchLater] = await Promise.all([
-			getFavoriteFolders(cookie(), account.mid),
-			getCollections(cookie(), account.mid),
-			getWatchLater(cookie()).catch(() => ({
-				itemCount: 0,
-				videos: [],
-				title: '稍后再看',
-			})),
-		])
-		return {
-			account,
-			favorites,
-			collections,
-			watchLater: watchLater.itemCount,
-		}
-	})
-	ipcMain.handle('bili:favorite', (_e, id: string) =>
-		getFavoriteVideos(cookie(), id),
-	)
-	ipcMain.handle('bili:collection', (_e, id: string) =>
-		getCollectionVideos(cookie(), id),
-	)
-	ipcMain.handle('bili:toview', () => getWatchLater(cookie()))
-	ipcMain.handle('bili:uploader', (_e, mid: string) =>
-		getUploaderVideos(cookie(), mid),
-	)
-	ipcMain.handle('search:match', async (_e, query: string) => {
-		const strategy = await matchSearchStrategies(query, { resolveB23 })
-		return { strategy, error: describeSearchFailure(strategy) }
-	})
-	ipcMain.handle('bili:search', async (_e, keyword: string) => {
-		const result = await searchVideos(keyword, cookie())
-		return result.map((item) => ({
-			...item,
-			title: item.title.replace(/<[^>]+>/g, ''),
-		}))
-	})
-	ipcMain.handle('bili:video', async (_e, bvid: string) => {
-		const details = await getVideoDetails(bvid, cookie())
-		const cover = details.pic
-		return {
-			bvid: details.bvid,
-			title: details.title,
-			cover,
-			owner: details.owner,
-			pages: details.pages.map((page) => ({
-				id: generateUniqueTrackKey({
-					bvid,
-					cid: page.cid,
-					isMultiPage: details.pages.length > 1,
-				}),
-				bvid,
-				cid: page.cid,
-				title: page.part || details.title,
-				artist: details.owner.name,
-				artwork: cover,
-				duration: page.duration,
-			})),
-		}
-	})
-	ipcMain.handle(
-		'player:resolve',
-		async (
-			_e,
-			track: {
-				id?: string
-				bvid: string
-				cid: number
-				title: string
-				artist?: string
-				artwork?: string
-				duration?: number
-			},
-		) => {
-			try {
-				const id =
-					track.id ||
-					generateUniqueTrackKey({
+		await audioProxy.start()
+		const cached = downloadManager.isComplete(id)
+			? downloadManager.list().find((item) => item.id === id)
+			: undefined
+		let playUrl: string
+		if (cached) {
+			playUrl = audioProxy.setFile(downloadManager.filePath(id))
+		} else {
+			const stream = await getAudioStream(track.bvid, track.cid, cookie())
+			playUrl = audioProxy.setSource(stream.url, cookie())
+			if (store.get('autoCache') ?? true) {
+				downloadManager.enqueue({
+					track: {
+						id,
 						bvid: track.bvid,
 						cid: track.cid,
-						isMultiPage: true,
-					})
-				await audioProxy.start()
-				const cached = downloadManager.isComplete(id)
-					? downloadManager.list().find((item) => item.id === id)
-					: undefined
-				let playUrl: string
-				if (cached) {
-					playUrl = audioProxy.setFile(downloadManager.filePath(id))
-				} else {
-					const stream = await getAudioStream(track.bvid, track.cid, cookie())
-					playUrl = audioProxy.setSource(stream.url, cookie())
-					if (store.get('autoCache') ?? true) {
-						downloadManager.enqueue({
-							track: {
-								id,
-								bvid: track.bvid,
-								cid: track.cid,
-								title: track.title,
-								artist: track.artist ?? '',
-								artwork: track.artwork ?? '',
-								duration: track.duration ?? 0,
-								size: 0,
-								cachedAt: 0,
-							},
-							url: stream.url,
-							cookie: cookie(),
-						})
-					}
-				}
-				let lyrics: ReturnType<typeof splLinesToAmll> = []
-				let lyricSource: string | undefined
-				if (cached?.lyrics?.lrc) {
-					lyrics = splLinesToAmll(parseAndMergeLyrics(cached.lyrics))
-					lyricSource = 'cache'
-				} else {
-					try {
-						const raw = await fetchMatchedLyrics(
-							track.title,
-							track.artist,
-							track.duration ?? 0,
-						)
-						if (raw?.lrc) {
-							lyrics = splLinesToAmll(parseAndMergeLyrics(raw))
-							lyricSource = raw.source
-							downloadManager.saveLyrics(id, raw)
-						}
-					} catch {
-						lyrics = []
-					}
-				}
-				if (store.get('autoOpenLyricsWindow')) openAux('lyrics', true)
-				if (store.get('autoOpenMiniWindow')) openAux('mini', true)
-				return { playUrl, lyrics, cached: Boolean(cached), lyricSource }
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error)
-				if (String((error as { code?: number }).code) === '-101') {
-					throw new Error('登录状态失效，请重新登录')
-				}
-				throw new Error(message)
+						title: track.title,
+						artist: track.artist ?? '',
+						artwork: track.artwork ?? '',
+						duration: track.duration ?? 0,
+						size: 0,
+						cachedAt: 0,
+					},
+					url: stream.url,
+					cookie: cookie(),
+				})
 			}
-		},
-	)
-	ipcMain.handle('downloads:list', () => downloadManager.list())
-	ipcMain.handle('downloads:status', () => downloadManager.statusMap())
-	ipcMain.handle(
-		'downloads:start',
-		async (
-			_e,
-			track: {
-				id: string
-				bvid: string
-				cid: number
-				title: string
-				artist: string
-				artwork: string
-				duration: number
-			},
-		) => {
-			const stream = await getAudioStream(track.bvid, track.cid, cookie())
-			downloadManager.enqueue({
-				track: { ...track, size: 0, cachedAt: 0 },
-				url: stream.url,
-				cookie: cookie(),
-			})
-			return true
-		},
-	)
-	ipcMain.handle('downloads:remove', (_e, id: string) => {
-		downloadManager.remove(id)
-		return true
-	})
-	ipcMain.handle('downloads:export', (_e, ids?: string[]) =>
-		exportDownloads(ids, false),
-	)
-	ipcMain.handle('backup:export', () => exportBackup(true))
-	ipcMain.handle('backup:import', () => importBackup(true))
-	ipcMain.handle(
-		'bili:comments',
-		(_e, payload: { bvid: string; next?: number; mode?: number }) =>
-			getComments(cookie(), payload.bvid, payload.next ?? 0, payload.mode ?? 3),
-	)
-	ipcMain.handle(
-		'bili:commentReplies',
-		(_e, payload: { bvid: string; rpid: number; pn?: number }) =>
-			getReplyComments(cookie(), payload.bvid, payload.rpid, payload.pn ?? 1),
-	)
-	ipcMain.handle(
-		'bili:commentLike',
-		(_e, payload: { bvid: string; rpid: number; action: 0 | 1 }) =>
-			likeComment(cookie(), payload.bvid, payload.rpid, payload.action),
-	)
-	ipcMain.handle('bili:garbSearch', (_e, keyword: string) =>
-		searchGarbSkins(cookie(), keyword),
-	)
-	ipcMain.handle('skin:cover', (_e, url: string) => fetchImageDataUrl(url))
-	ipcMain.handle(
-		'bbplayer:login',
-		async (_e, payload: { username: string; password: string }) => {
-			const invalid = validateCredentials(payload.username, payload.password)
-			if (invalid) throw new Error(invalid)
-			const data = await loginRequest(payload.username, payload.password)
-			saveBbplayerSession(data.token, data.account)
-			const restored = await finishBbplayerAuth()
-			return { ...settings(), restoreMessage: restored.message }
-		},
-	)
-	ipcMain.handle(
-		'bbplayer:register',
-		async (
-			_e,
-			payload: {
-				username: string
-				password: string
-				name?: string
-				face?: string
-			},
-		) => {
-			const invalid = validateCredentials(payload.username, payload.password)
-			if (invalid) throw new Error(invalid)
-			const data = await registerRequest(payload)
-			saveBbplayerSession(data.token, data.account)
-			const restored = await finishBbplayerAuth()
-			return { ...settings(), restoreMessage: restored.message }
-		},
-	)
-	ipcMain.handle('bbplayer:logout', () => {
-		clearBbplayerSession()
-		return settings()
-	})
-	ipcMain.handle(
-		'bbplayer:updateProfile',
-		async (_e, payload: { name?: string; face?: string }) => {
-			const token = bbplayerToken()
-			if (!token) throw new Error('请先登录 BBPlayer 账号')
-			const data = await updateProfileRequest(token, payload)
-			store.set('bbplayerAccount', data.account)
-			return settings()
-		},
-	)
-	ipcMain.handle('bbplayer:fillFromBili', async () => {
-		const token = bbplayerToken()
-		if (!token) throw new Error('请先登录 BBPlayer 账号')
-		const bili = store.get('account')
-		if (!bili) throw new Error('请先登录 Bilibili')
-		const data = await updateProfileRequest(token, {
-			name: bili.name,
-			face: bili.face,
-		})
-		store.set('bbplayerAccount', data.account)
-		return settings()
-	})
-	ipcMain.handle('bbplayer:refresh', async () => {
-		const token = bbplayerToken()
-		if (!token) return settings()
-		try {
-			const data = await fetchMe(token)
-			store.set('bbplayerAccount', data.account)
-			return settings()
-		} catch (error) {
-			if (
-				error instanceof Error &&
-				error.message === '请先登录 BBPlayer 账号'
-			) {
-				clearBbplayerSession()
+		}
+		let lyrics: ReturnType<typeof splLinesToAmll> = []
+		let lyricSource: string | undefined
+		if (cached?.lyrics?.lrc) {
+			lyrics = splLinesToAmll(parseAndMergeLyrics(cached.lyrics))
+			lyricSource = 'cache'
+		} else {
+			try {
+				const raw = await fetchMatchedLyrics(
+					track.title,
+					track.artist,
+					track.duration ?? 0,
+				)
+				if (raw?.lrc) {
+					lyrics = splLinesToAmll(parseAndMergeLyrics(raw))
+					lyricSource = raw.source
+					downloadManager.saveLyrics(id, raw)
+				}
+			} catch {
+				lyrics = []
 			}
-			throw error
 		}
-	})
-	ipcMain.handle('bbplayer:restore', async () => {
-		try {
-			return await restoreFromCloud(playerDb, bbplayerToken())
-		} catch {
-			throw new Error('同步云端共享歌单失败')
+		if (store.get('autoOpenLyricsWindow')) openAux('lyrics', true)
+		if (store.get('autoOpenMiniWindow')) openAux('mini', true)
+		return { playUrl, lyrics, cached: Boolean(cached), lyricSource }
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error)
+		if (String((error as { code?: number }).code) === '-101') {
+			throw new Error('登录状态失效，请重新登录')
 		}
-	})
-	ipcMain.handle('share:preview', (_e, input: string) =>
-		previewSharedPlaylist(input),
-	)
-	ipcMain.handle('share:pending', () => {
-		if (!pendingShareUrl) return null
-		const parsed = parseShareLink(pendingShareUrl)
-		pendingShareUrl = null
-		return parsed.shareId ? parsed : null
-	})
-	ipcMain.handle('share:enable', (_e, playlistId: string) =>
-		enableSharing(playerDb, bbplayerToken(), playlistId),
-	)
-	ipcMain.handle(
-		'share:subscribe',
-		(_e, payload: { input: string; inviteCode?: string }) =>
-			subscribeToSharedPlaylist(
-				playerDb,
-				bbplayerToken(),
-				payload.input,
-				payload.inviteCode,
-			),
-	)
-	ipcMain.handle('share:pull', (_e, playlistId: string) =>
-		pullSharedChanges(playerDb, bbplayerToken(), playlistId),
-	)
-	ipcMain.handle(
-		'share:copyLink',
-		async (
-			_e,
-			payload: { playlistId: string; kind: 'subscribe' | 'editor' },
-		) => {
-			const result = await copyShareLink(
-				playerDb,
-				bbplayerToken(),
-				payload.playlistId,
-				payload.kind,
-			)
-			clipboard.writeText(result.url)
-			return result
-		},
-	)
-	ipcMain.handle('share:rotateInvite', async (_e, playlistId: string) => {
-		const result = await rotateInvite(playerDb, bbplayerToken(), playlistId)
-		clipboard.writeText(result.url)
-		return result
+		throw new Error(message)
+	}
+}
+
+function takePendingShare() {
+	if (!pendingShareUrl) return null
+	const parsed = parseShareLink(pendingShareUrl)
+	pendingShareUrl = null
+	return parsed.shareId ? parsed : null
+}
+
+function openGeetest(input: { gt: string; challenge: string }) {
+	return openGeetestWindow({
+		gt: input.gt,
+		challenge: input.challenge,
+		preload: PRELOAD,
+		parent: mainWindow,
+		waitForDone: () => firstValueFrom(events.geetest$.pipe(take(1))),
 	})
 }
 
@@ -1279,6 +799,16 @@ app.whenReady().then(async () => {
 							clipboard.writeText(text)
 						},
 						checkUpdate: () => checkUpdates(true),
+						openAux,
+						auxVisible: isAuxVisible,
+						showMain,
+						openGeetest,
+						exportDownloads: (ids) => exportDownloads(ids, false),
+						exportBackup: () => exportBackup(true),
+						importBackup: () => importBackup(true),
+						resolvePlay,
+						restoreShared: finishBbplayerAuth,
+						takePendingShare,
 					}),
 			}),
 	})
@@ -1312,9 +842,7 @@ app.whenReady().then(async () => {
 		records: store.get('downloads') ?? [],
 		onChange: (records, tasks) => {
 			store.set('downloads', records)
-			if (mainWindow && !mainWindow.isDestroyed()) {
-				mainWindow.webContents.send('downloads:update', { records, tasks })
-			}
+			events.downloads$.next({ records, tasks })
 		},
 	})
 	await audioProxy.start()
@@ -1329,7 +857,6 @@ app.whenReady().then(async () => {
 	autoUpdater.autoDownload = false
 	autoUpdater.autoInstallOnAppQuit = true
 	if (!app.isPackaged) autoUpdater.forceDevUpdateConfig = true
-	registerIpc()
 	createMenu()
 	createWindow()
 	createTray()
@@ -1344,7 +871,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', () => {
-	stopQr()
+	stopQrLogin()
 	store.set('lyricsWindowOpen', isAuxVisible('lyrics'))
 	store.set('miniWindowOpen', isAuxVisible('mini'))
 	isQuitting = true

@@ -22,9 +22,16 @@ export type DownloadsUpdate = {
 
 export type ShareIncoming = { shareId?: string; inviteCode?: string }
 
+export type GeetestPayload = {
+	validate: string
+	seccode: string
+	challenge: string
+}
+
 export function createDesktopEvents() {
 	return {
 		qr$: new BehaviorSubject<QrUpdate | null>(null),
+		geetest$: new Subject<GeetestPayload>(),
 		shareIncoming$: new Subject<ShareIncoming>(),
 		downloads$: new BehaviorSubject<DownloadsUpdate>({
 			records: [],

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { trpc } from './trpc'
+
 export function PhoneLogin({
 	disabled,
 	onLoggedIn,
@@ -17,7 +19,7 @@ export function PhoneLogin({
 		setBusy(true)
 		setMessage('')
 		try {
-			const result = await window.bbplayer.startPhoneLogin(tel)
+			const result = await trpc.auth.phoneStart.mutate({ tel })
 			setCaptchaKey(result.captchaKey)
 			setMessage('验证码已发送')
 		} catch (err) {
@@ -31,7 +33,7 @@ export function PhoneLogin({
 		setBusy(true)
 		setMessage('')
 		try {
-			await window.bbplayer.loginWithPhone({
+			await trpc.auth.phoneLogin.mutate({
 				tel,
 				code,
 				captchaKey,

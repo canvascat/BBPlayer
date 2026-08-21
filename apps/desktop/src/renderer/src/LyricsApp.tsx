@@ -2,6 +2,7 @@ import type { AmllLyricLine } from '@bbplayer/core'
 import { useEffect, useState } from 'react'
 
 import { currentLyricText } from './lyric-text'
+import { listen, trpc } from './trpc'
 
 interface LyricsPayload {
 	lyrics: AmllLyricLine[]
@@ -9,6 +10,10 @@ interface LyricsPayload {
 	playing: boolean
 	title: string
 	artist: string
+}
+
+function sendCommand(command: string) {
+	void trpc.player.sendCommand.mutate({ command })
 }
 
 export default function LyricsApp() {
@@ -22,11 +27,11 @@ export default function LyricsApp() {
 	const [expanded, setExpanded] = useState(false)
 
 	useEffect(() => {
-		void window.bbplayer.getCurrentLyrics().then((current) => {
+		void trpc.lyrics.current.query().then((current) => {
 			if (current) setPayload(current as LyricsPayload)
 		})
-		return window.bbplayer.onLyricsUpdate((next) => {
-			setPayload(next as LyricsPayload)
+		return listen(trpc.lyrics.updates.subscribe, (next) => {
+			if (next) setPayload(next as LyricsPayload)
 		})
 	}, [])
 
@@ -49,19 +54,19 @@ export default function LyricsApp() {
 				<div className='lyric-controls'>
 					<button
 						type='button'
-						onClick={() => window.bbplayer.sendCommand('prev')}
+						onClick={() => sendCommand('prev')}
 					>
 						上一首
 					</button>
 					<button
 						type='button'
-						onClick={() => window.bbplayer.sendCommand('playpause')}
+						onClick={() => sendCommand('playpause')}
 					>
 						{payload.playing ? '暂停' : '播放'}
 					</button>
 					<button
 						type='button'
-						onClick={() => window.bbplayer.sendCommand('next')}
+						onClick={() => sendCommand('next')}
 					>
 						下一首
 					</button>

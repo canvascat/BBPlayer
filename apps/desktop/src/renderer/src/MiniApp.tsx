@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
 
+import { listen, trpc } from './trpc'
+
 interface MiniState {
 	title: string
 	artist: string
 	playing: boolean
 	lyric: string
 	artwork: string
+}
+
+function sendCommand(command: string) {
+	void trpc.player.sendCommand.mutate({ command })
 }
 
 export default function MiniApp() {
@@ -18,10 +24,8 @@ export default function MiniApp() {
 	})
 
 	useEffect(() => {
-		void window.bbplayer.getSnapshot().then(setState)
-		return window.bbplayer.onLyricsMeta((next) => {
-			setState(next)
-		})
+		void trpc.player.snapshot.query().then(setState)
+		return listen(trpc.lyrics.meta.subscribe, setState)
 	}, [])
 
 	return (
@@ -30,7 +34,7 @@ export default function MiniApp() {
 				className='mini-cover'
 				type='button'
 				title='打开播放页'
-				onDoubleClick={() => window.bbplayer.sendCommand('open-player')}
+				onDoubleClick={() => sendCommand('open-player')}
 			>
 				{state.artwork ? (
 					<img
@@ -48,19 +52,19 @@ export default function MiniApp() {
 			<div className='mini-controls'>
 				<button
 					type='button'
-					onClick={() => window.bbplayer.sendCommand('prev')}
+					onClick={() => sendCommand('prev')}
 				>
 					上一首
 				</button>
 				<button
 					type='button'
-					onClick={() => window.bbplayer.sendCommand('playpause')}
+					onClick={() => sendCommand('playpause')}
 				>
 					{state.playing ? '暂停' : '播放'}
 				</button>
 				<button
 					type='button'
-					onClick={() => window.bbplayer.sendCommand('next')}
+					onClick={() => sendCommand('next')}
 				>
 					下一首
 				</button>
