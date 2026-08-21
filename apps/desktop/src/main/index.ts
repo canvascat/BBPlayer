@@ -160,8 +160,8 @@ const APP_ROOT = join(__dirname, '../..')
 const RENDERER_DIST = join(APP_ROOT, 'dist')
 const PRELOAD = join(__dirname, '../preload/index.cjs')
 
-let store: Store<Settings & Persisted>
-let playerDb: PlayerDatabase
+let store!: Store<Settings & Persisted>
+let playerDb!: PlayerDatabase
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -769,76 +769,6 @@ async function checkUpdates(notify = false) {
 }
 
 function registerIpc() {
-	ipcMain.handle('settings:get', () => settings())
-	ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => {
-		if (typeof patch.cookie === 'string') {
-			store.set('cookie', patch.cookie)
-			void refreshAccount()
-		}
-		if (typeof patch.continuePlayingAfterClose === 'boolean') {
-			store.set('continuePlayingAfterClose', patch.continuePlayingAfterClose)
-		}
-		if (typeof patch.lyricsAlwaysOnTop === 'boolean') {
-			store.set('lyricsAlwaysOnTop', patch.lyricsAlwaysOnTop)
-			applyAuxSettings('lyrics', { alwaysOnTop: patch.lyricsAlwaysOnTop })
-		}
-		if (typeof patch.lyricsWindowLocked === 'boolean') {
-			store.set('lyricsWindowLocked', patch.lyricsWindowLocked)
-			applyAuxSettings('lyrics', { locked: patch.lyricsWindowLocked })
-		}
-		if (typeof patch.autoOpenLyricsWindow === 'boolean') {
-			store.set('autoOpenLyricsWindow', patch.autoOpenLyricsWindow)
-		}
-		if (typeof patch.menuBarShowLyrics === 'boolean') {
-			store.set('menuBarShowLyrics', patch.menuBarShowLyrics)
-			refreshShell()
-		}
-		if (typeof patch.miniAlwaysOnTop === 'boolean') {
-			store.set('miniAlwaysOnTop', patch.miniAlwaysOnTop)
-			applyAuxSettings('mini', { alwaysOnTop: patch.miniAlwaysOnTop })
-		}
-		if (typeof patch.autoOpenMiniWindow === 'boolean') {
-			store.set('autoOpenMiniWindow', patch.autoOpenMiniWindow)
-		}
-		if (typeof patch.autoCache === 'boolean') {
-			store.set('autoCache', patch.autoCache)
-		}
-		if (patch.skin === null || (patch.skin && typeof patch.skin === 'object')) {
-			store.set('skin', patch.skin)
-		}
-		return true
-	})
-	ipcMain.handle('session:get', () => store.get('session') ?? null)
-	ipcMain.handle('session:set', (_e, session: PlaySession | null) => {
-		if (session) store.set('session', session)
-		else store.delete('session')
-		return true
-	})
-	ipcMain.handle('library:list', () => playerDb.list())
-	ipcMain.handle('library:get', (_e, id: string) => playerDb.get(id))
-	ipcMain.handle(
-		'library:create',
-		(
-			_e,
-			payload: { title: string; description?: string; tracks?: LibraryTrack[] },
-		) => playerDb.create(payload),
-	)
-	ipcMain.handle(
-		'library:rename',
-		(_e, payload: { id: string; title: string }) =>
-			playerDb.rename(payload.id, payload.title),
-	)
-	ipcMain.handle('library:delete', (_e, id: string) => playerDb.delete(id))
-	ipcMain.handle(
-		'library:addTracks',
-		(_e, payload: { playlistId: string; tracks: LibraryTrack[] }) =>
-			playerDb.addTracks(payload.playlistId, payload.tracks),
-	)
-	ipcMain.handle(
-		'library:removeTrack',
-		(_e, payload: { playlistId: string; trackId: string }) =>
-			playerDb.removeTrack(payload.playlistId, payload.trackId),
-	)
 	ipcMain.on('player:state', (_e, next: PlayerSnapshot) => {
 		if (
 			snapshot.title === next.title &&
@@ -1176,12 +1106,6 @@ function registerIpc() {
 		searchGarbSkins(cookie(), keyword),
 	)
 	ipcMain.handle('skin:cover', (_e, url: string) => fetchImageDataUrl(url))
-	ipcMain.handle('updater:check', () => checkUpdates(true))
-	ipcMain.handle('shell:open', (_e, url: string) => shell.openExternal(url))
-	ipcMain.handle('clipboard:write', (_e, text: string) => {
-		clipboard.writeText(text)
-		return true
-	})
 	ipcMain.handle(
 		'bbplayer:login',
 		async (_e, payload: { username: string; password: string }) => {
@@ -1334,7 +1258,28 @@ app.whenReady().then(async () => {
 				endpoint: '/trpc',
 				req,
 				router: appRouter,
-				createContext: () => createTRPCContext(events),
+				createContext: () =>
+					createTRPCContext({
+						events,
+						store: {
+							get: (key) => store.get(key as never),
+							set: (key, value) => {
+								store.set(key as never, value as never)
+							},
+							delete: (key) => {
+								store.delete(key as never)
+							},
+						},
+						playerDb,
+						refreshAccount,
+						applyAuxSettings,
+						refreshShell,
+						openExternal: (url) => shell.openExternal(url),
+						copyText: (text) => {
+							clipboard.writeText(text)
+						},
+						checkUpdate: () => checkUpdates(true),
+					}),
 			}),
 	})
 	store = new Store<Settings & Persisted>({

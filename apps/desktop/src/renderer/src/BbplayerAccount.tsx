@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { trpc } from './trpc'
+
 type Mode = 'login' | 'register'
 
 export function BbplayerAccount({
@@ -24,7 +26,7 @@ export function BbplayerAccount({
 	} | null>(null)
 
 	const load = async () => {
-		const settings = await window.bbplayer.getSettings()
+		const settings = await trpc.settings.get.query()
 		setAccount(settings.bbplayerAccount)
 		if (settings.bbplayerAccount) {
 			setName(settings.bbplayerAccount.name)
@@ -38,7 +40,7 @@ export function BbplayerAccount({
 	}, [])
 
 	const applySettings = (
-		settings: Awaited<ReturnType<typeof window.bbplayer.getSettings>> & {
+		settings: Awaited<ReturnType<typeof trpc.settings.get.query>> & {
 			restoreMessage?: string
 		},
 	) => {
