@@ -1,4 +1,4 @@
-import type { DesktopEvents } from './events.ts'
+import type { DesktopEvents } from './events'
 
 export type TrpcContext = { events: DesktopEvents }
 

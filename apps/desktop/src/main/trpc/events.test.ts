@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { firstValueFrom, skip } from 'rxjs'
 import { test } from 'vitest'
 
-import { createDesktopEvents } from './events.ts'
+import { createDesktopEvents } from './events'
 
 test('BehaviorSubject 后订阅能拿到当前歌词元数据', async () => {
 	const events = createDesktopEvents()
