@@ -1,8 +1,7 @@
-import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { test } from 'vitest'
+import { test, assert } from 'vitest'
 
 import {
 	headersWithoutHost,

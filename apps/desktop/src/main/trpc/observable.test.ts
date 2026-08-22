@@ -1,7 +1,5 @@
-import assert from 'node:assert/strict'
-
 import { Subject } from 'rxjs'
-import { test } from 'vitest'
+import { test, assert } from 'vitest'
 
 import { fromObservable } from './observable'
 

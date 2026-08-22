@@ -1,9 +1,8 @@
-import assert from 'node:assert/strict'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { test } from 'vitest'
+import { test, assert } from 'vitest'
 
 import { PlayerDatabase } from './database.ts'
 

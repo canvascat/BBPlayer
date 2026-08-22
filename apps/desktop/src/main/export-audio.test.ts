@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict'
 import { tmpdir } from 'node:os'
 
-import { test } from 'vitest'
+import { test, assert } from 'vitest'
 
 import { exportSummary, safeExportName, uniquePath } from './export-audio.ts'
 

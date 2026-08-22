@@ -1,10 +1,9 @@
-import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { PlayerDatabase } from '@bbplayer/db'
-import { test } from 'vitest'
+import { test, assert } from 'vitest'
 
 import { readBackupZip, writeBackupZip } from './backup.ts'
 

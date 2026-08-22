@@ -1,6 +1,4 @@
-import assert from 'node:assert/strict'
-
-import { test } from 'vitest'
+import { test, assert } from 'vitest'
 
 import { memoryStore, mockTrpcContext } from '../mock-context'
 

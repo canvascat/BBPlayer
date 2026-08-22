@@ -1,7 +1,5 @@
-import assert from 'node:assert/strict'
-
 import { firstValueFrom, skip } from 'rxjs'
-import { test } from 'vitest'
+import { test, assert } from 'vitest'
 
 import { createDesktopEvents } from './events'
 
