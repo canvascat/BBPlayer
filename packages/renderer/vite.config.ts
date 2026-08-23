@@ -8,9 +8,7 @@ const rendererRoot = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
 	resolve: {
-		alias: {
-			'@': join(rendererRoot, 'src'),
-		},
+		tsconfigPaths: true,
 	},
 	optimizeDeps: {
 		exclude: ['@bbplayer/main'],
