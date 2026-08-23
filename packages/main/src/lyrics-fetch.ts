@@ -146,7 +146,7 @@ async function fromKugou(
 		version: '8990',
 	})
 	const search = await fetch(
-		`http://mobilecdn.kugou.com/api/v3/search/song?${params}`,
+		`http://mobilecdn.kugou.com/api/v3/search/song?${params.toString()}`,
 		{
 			headers: {
 				'User-Agent': 'IPhone-8990-searchSong',
@@ -176,7 +176,7 @@ async function fromKugou(
 			hash: match.hash,
 			client: 'mobi',
 			man: 'yes',
-		})}`,
+		}).toString()}`,
 	)
 	const candidates = (await lyricSearch.json()) as {
 		candidates?: Array<{ accesskey: string; id: string }>
@@ -191,7 +191,7 @@ async function fromKugou(
 			client: 'mobi',
 			fmt: 'lrc',
 			ver: '1',
-		})}`,
+		}).toString()}`,
 	)
 	const payload = (await download.json()) as { content?: string }
 	if (!payload.content) return null
