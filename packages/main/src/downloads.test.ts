@@ -22,7 +22,7 @@ test('歌词匹配优先时长接近的结果', () => {
 		],
 		180,
 	)
-	assert.equal(picked.title, 'b')
+	assert.equal(picked?.title, 'b')
 })
 
 test('QQ 歌词 HTML 实体解码', () => {

@@ -20,7 +20,6 @@ import {
 	session,
 	shell,
 	Tray,
-	type Rectangle,
 } from 'electron'
 import Store from 'electron-store'
 import { firstValueFrom, take } from 'rxjs'
@@ -44,21 +43,16 @@ import {
 	type AuxWindowOptions,
 } from './aux-windows'
 import { readBackupZip, writeBackupZip } from './backup'
-import { type BbplayerAccount } from './bbplayer-account'
-import {
-	clearWbiCache,
-	getAccount,
-	getAudioStream,
-	type BiliAccount,
-} from './bili'
+import { clearWbiCache, getAccount, getAudioStream } from './bili'
 import { BILI_IMAGE_URL_FILTER, withBiliImageHeaders } from './bili-image'
-import { PlayerDatabase, type LibraryTrack, type LocalPlaylist } from './db'
-import { downloadManager, type CachedTrack } from './downloads'
+import { PlayerDatabase } from './db'
+import { downloadManager } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
 import { fetchMatchedLyrics } from './lyrics-fetch'
 import { openGeetestWindow } from './phone-login'
 import { parseShareLink } from './share-link'
 import { restoreFromCloud } from './shared-playlists'
+import { type AppStore } from './store'
 import { createTRPCContext } from './trpc/context'
 import { createDesktopEvents } from './trpc/events'
 import { liveState } from './trpc/live-state'
@@ -70,51 +64,13 @@ registerAppSchemePrivileged()
 
 const events = createDesktopEvents()
 
-interface Settings {
-	cookie: string
-	continuePlayingAfterClose: boolean
-	lyricsAlwaysOnTop: boolean
-	lyricsWindowLocked: boolean
-	autoOpenLyricsWindow: boolean
-	menuBarShowLyrics: boolean
-	miniAlwaysOnTop: boolean
-	autoOpenMiniWindow: boolean
-	autoCache: boolean
-	skin: {
-		name: string
-		coverUrl: string
-		primary: string
-	} | null
-}
-
-interface PlaySession {
-	queue: LibraryTrack[]
-	index: number
-	positionMs: number
-	repeatMode: 0 | 1 | 2
-	shuffle: boolean
-	playbackRate: number
-}
-
-interface Persisted {
-	session?: PlaySession
-	playlists: LocalPlaylist[]
-	windowBounds: Partial<Record<AuxKind, Rectangle>>
-	lyricsWindowOpen: boolean
-	miniWindowOpen: boolean
-	account: BiliAccount | null
-	downloads: CachedTrack[]
-	bbplayerToken?: string
-	bbplayerAccount?: BbplayerAccount | null
-}
-
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PRELOAD = join(__dirname, 'preload.cjs')
 const RENDERER_DIST = app.isPackaged
 	? join(process.resourcesPath, 'renderer')
 	: join(__dirname, '../../renderer/dist')
 
-let store!: Store<Settings & Persisted>
+let store!: Store<AppStore>
 let playerDb!: PlayerDatabase
 
 let mainWindow: BrowserWindow | null = null
@@ -778,15 +734,7 @@ app.whenReady().then(async () => {
 				createContext: () =>
 					createTRPCContext({
 						events,
-						store: {
-							get: (key) => store.get(key as never),
-							set: (key, value) => {
-								store.set(key as never, value as never)
-							},
-							delete: (key) => {
-								store.delete(key as never)
-							},
-						},
+						store,
 						playerDb,
 						refreshAccount,
 						applyAuxSettings,
@@ -809,7 +757,7 @@ app.whenReady().then(async () => {
 					}),
 			}),
 	})
-	store = new Store<Settings & Persisted>({
+	store = new Store<AppStore>({
 		defaults: {
 			cookie: '',
 			continuePlayingAfterClose: true,
@@ -825,6 +773,7 @@ app.whenReady().then(async () => {
 			lyricsWindowOpen: false,
 			miniWindowOpen: false,
 			account: null,
+			skin: null,
 			downloads: [],
 		},
 	})

@@ -9,12 +9,9 @@ import {
 	rotateInvite,
 	subscribeToSharedPlaylist,
 } from '../../shared-playlists'
+import { tokenFrom } from '../context'
 import { fromObservable } from '../observable'
 import { publicProcedure, router } from '../trpc'
-
-function tokenFrom(store: { get: (key: string) => unknown }) {
-	return (store.get('bbplayerToken') as string | undefined) || null
-}
 
 function db(ctx: { playerDb: unknown }) {
 	return ctx.playerDb as PlayerDatabase

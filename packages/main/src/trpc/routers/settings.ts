@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { TrpcStore } from '../context'
 import { publicProcedure, router } from '../trpc'
 
 const skinSchema = z.object({
@@ -21,24 +22,17 @@ const settingsPatchSchema = z.object({
 	skin: z.union([z.null(), skinSchema]).optional(),
 })
 
-function readSettings(store: { get: (key: string) => unknown }) {
+export function readSettings(store: Pick<TrpcStore, 'get'>) {
 	return {
-		cookie: (store.get('cookie') as string | undefined) ?? '',
-		continuePlayingAfterClose:
-			(store.get('continuePlayingAfterClose') as boolean | undefined) ?? true,
-		lyricsAlwaysOnTop:
-			(store.get('lyricsAlwaysOnTop') as boolean | undefined) ?? true,
-		lyricsWindowLocked:
-			(store.get('lyricsWindowLocked') as boolean | undefined) ?? false,
-		autoOpenLyricsWindow:
-			(store.get('autoOpenLyricsWindow') as boolean | undefined) ?? false,
-		menuBarShowLyrics:
-			(store.get('menuBarShowLyrics') as boolean | undefined) ?? false,
-		miniAlwaysOnTop:
-			(store.get('miniAlwaysOnTop') as boolean | undefined) ?? true,
-		autoOpenMiniWindow:
-			(store.get('autoOpenMiniWindow') as boolean | undefined) ?? false,
-		autoCache: (store.get('autoCache') as boolean | undefined) ?? true,
+		cookie: store.get('cookie') ?? '',
+		continuePlayingAfterClose: store.get('continuePlayingAfterClose') ?? true,
+		lyricsAlwaysOnTop: store.get('lyricsAlwaysOnTop') ?? true,
+		lyricsWindowLocked: store.get('lyricsWindowLocked') ?? false,
+		autoOpenLyricsWindow: store.get('autoOpenLyricsWindow') ?? false,
+		menuBarShowLyrics: store.get('menuBarShowLyrics') ?? false,
+		miniAlwaysOnTop: store.get('miniAlwaysOnTop') ?? true,
+		autoOpenMiniWindow: store.get('autoOpenMiniWindow') ?? false,
+		autoCache: store.get('autoCache') ?? true,
 		account: store.get('account') ?? null,
 		skin: store.get('skin') ?? null,
 		bbplayerAccount: store.get('bbplayerAccount') ?? null,

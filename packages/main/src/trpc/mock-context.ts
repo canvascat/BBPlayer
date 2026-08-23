@@ -1,14 +1,16 @@
-import type { TrpcContext } from './context'
+import type { AppStore } from '../store'
+
+import type { TrpcContext, TrpcStore } from './context'
 import { createDesktopEvents } from './events'
 
-export function memoryStore(initial: Record<string, unknown> = {}) {
-	const data = { ...initial }
+export function memoryStore(initial: Partial<AppStore> = {}): TrpcStore {
+	const data: Partial<AppStore> = { ...initial }
 	return {
-		get: (key: string) => data[key],
-		set: (key: string, value: unknown) => {
+		get: (key) => data[key] as AppStore[typeof key],
+		set: (key, value) => {
 			data[key] = value
 		},
-		delete: (key: string) => {
+		delete: (key) => {
 			delete data[key]
 		},
 	}

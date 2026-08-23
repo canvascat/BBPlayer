@@ -4,7 +4,11 @@ import { z } from 'zod'
 import { generateLoginQr, pollLoginQr, QrStatusCode } from '../../auth'
 import { clearWbiCache } from '../../bili'
 import { phoneFormModel } from '../../phone-form'
-import { getPhoneLoginCaptcha, loginWithPhoneSms } from '../../phone-login'
+import {
+	getPhoneLoginCaptcha,
+	loginWithPhoneSms,
+	sendPhoneLoginSms,
+} from '../../phone-login'
 import { cookieFrom } from '../context'
 import type { QrUpdate } from '../events'
 import { fromObservable } from '../observable'

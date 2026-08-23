@@ -26,7 +26,7 @@ export const biliRouter = router({
 			return { account: null, favorites: [], collections: [], watchLater: 0 }
 		}
 		const cookie = cookieFrom(ctx.store)
-		const mid = (account as { mid: number }).mid
+		const mid = account.mid
 		const [favorites, collections, watchLater] = await Promise.all([
 			getFavoriteFolders(cookie, mid),
 			getCollections(cookie, mid),

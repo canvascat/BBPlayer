@@ -27,7 +27,10 @@ function encWbi(
 	const mixinKey = getMixinKey(imgKey + subKey)
 	const currTime = Math.round(Date.now() / 1000)
 	const chrFilter = /[!'()*]/g
-	const assigned = { ...params, wts: String(currTime) }
+	const assigned: Record<string, string> = {
+		...params,
+		wts: String(currTime),
+	}
 	const query = Object.keys(assigned)
 		.sort()
 		.map((key) => {

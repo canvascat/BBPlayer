@@ -1,4 +1,5 @@
 import type { LibraryTrack, LocalPlaylist, PlaylistSummary } from '../db'
+import type { AppStore } from '../store'
 import type { UpdateCheck } from '../updater'
 
 import type { DesktopEvents, PlayerSnapshot } from './events'
@@ -20,9 +21,9 @@ export type GeetestResult = {
 }
 
 export type TrpcStore = {
-	get: (key: string) => unknown
-	set: (key: string, value: unknown) => void
-	delete: (key: string) => void
+	get: <K extends keyof AppStore>(key: K) => AppStore[K]
+	set: <K extends keyof AppStore>(key: K, value: AppStore[K]) => void
+	delete: (key: keyof AppStore) => void
 }
 
 export type TrpcPlayerDb = {
@@ -80,8 +81,12 @@ export function createTRPCContext(ctx: TrpcContext): TrpcContext {
 	return ctx
 }
 
-export function cookieFrom(store: TrpcStore) {
-	return (store.get('cookie') as string | undefined) ?? ''
+export function cookieFrom(store: Pick<TrpcStore, 'get'>) {
+	return store.get('cookie') ?? ''
+}
+
+export function tokenFrom(store: Pick<TrpcStore, 'get'>) {
+	return store.get('bbplayerToken') || null
 }
 
 export function sameSnapshot(a: PlayerSnapshot, b: PlayerSnapshot) {

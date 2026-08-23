@@ -57,11 +57,10 @@ export interface RawLine {
  * SPL 解析错误类
  */
 export class SplParseError extends Error {
-	constructor(
-		public line: number,
-		message: string,
-	) {
+	line: number
+	constructor(line: number, message: string) {
 		super(`第 ${line} 行解析错误: ${message}`)
+		this.line = line
 		this.name = 'SplParseError'
 	}
 }
