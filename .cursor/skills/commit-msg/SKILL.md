@@ -47,11 +47,13 @@ type 与默认 gitmoji：
 
 本仓库常用 scope：
 
-| scope     | 落点            |
-| --------- | --------------- |
-| `desktop` | `apps/desktop`  |
-| `docs`    | `apps/docs`     |
-| `core`    | `packages/core` |
+| scope      | 落点                |
+| ---------- | ------------------- |
+| `main`     | `packages/main`     |
+| `renderer` | `packages/renderer` |
+| `common`   | `packages/common`   |
+| `docs`     | `apps/docs`         |
+| `core`     | `packages/core`     |
 
 根配置、锁文件、或跨多处且无主落点 → 省略 scope。
 
@@ -93,8 +95,8 @@ EOF
 ## 示例
 
 ```
-:sparkles: feat(desktop): 窗口改为加载 app:// 并固定 Vite HMR 主机
-:bug: fix(desktop): 转发 Vite 时去掉 app:// Origin，避免模块 502
+:sparkles: feat(main): 窗口改为加载 app:// 并固定 Vite HMR 主机
+:bug: fix(main): 转发 Vite 时去掉 app:// Origin，避免模块 502
 :recycle: refactor(core): 将歌词解析收进 core 并移除 @bbplayer/splash
 :memo: docs: 技术方案改为歌单库落在主进程
 :wrench: chore: 移除未使用的 GitHub 模板、CI 与本地 MCP 配置

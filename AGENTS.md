@@ -54,9 +54,13 @@ pnpm type-check                # TypeScript type checking
 
 ### /apps
 
-- desktop - macOS 桌面客户端（Electron + React + Vite+）
 - docs - 文档网站
 
 ### /packages
 
+- common — 主进程与渲染进程共享的协议常量（无 Node / Electron / React）
+- main — Electron 主进程、preload、tRPC；`pnpm desktop` 由此编排启动
+- renderer — React 渲染进程（Vite）
 - core — 搜索策略、BV/AV、歌词解析与行转换
+
+根目录 `vp dev` 只会启动 renderer。桌面端请用 `pnpm desktop`。

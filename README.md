@@ -20,12 +20,15 @@ pnpm desktop
 
 ## 项目结构
 
-- **[apps/desktop](./apps/desktop)**: macOS 桌面客户端（Electron + React + Vite+）
 - **[apps/docs](./apps/docs)**: 项目文档站点
-- **[packages/](./packages)**: 共享库
-  - **[@bbplayer/core](./packages/core)**: 搜索策略、BV/AV、歌词解析与转换
+- **[packages/main](./packages/main)**: Electron 主进程与打包
+- **[packages/renderer](./packages/renderer)**: 渲染进程（React + Vite）
+- **[packages/common](./packages/common)**: 主进程与渲染进程共享常量
+- **[packages/core](./packages/core)**: 搜索策略、BV/AV、歌词解析与转换
 
 桌面端播放界面歌词使用 [AMLL](https://amll.dev/)，按 **AGPL-3.0** 分发。
+
+`pnpm desktop` 会编排 renderer 的 Vite、main/preload 的 `vp pack --watch`，以及 Electron。不要用根目录的 `vp dev` 启动桌面端。
 
 ## 捐赠支持
 
