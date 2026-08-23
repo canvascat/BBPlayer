@@ -1,24 +1,22 @@
+import { spawnSync } from 'node:child_process'
 import { rmSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
 import react from '@vitejs/plugin-react'
-import electron from 'vite-plugin-electron'
 import { defineConfig, type Plugin } from 'vite-plus'
 
-import pkg from './package.json' with { type: 'json' }
+import { alias, desktopRoot, external } from './vite.shared.ts'
 
-const root = dirname(fileURLToPath(import.meta.url))
-const core = join(root, '../../packages/core/src/index.ts')
-const isProduction = process.env.NODE_ENV === 'production'
-const sourcemap = !isProduction || Boolean(process.env.VSCODE_DEBUG)
-const alias = {
-	'@': join(root, 'src/renderer/src'),
-	'@bbplayer/core': core,
+const packShared = {
+	platform: 'node' as const,
+	dts: false,
+	sourcemap: true,
+	failOnWarn: false,
+	deps: {
+		neverBundle: external,
+		alwaysBundle: ['@bbplayer/core'],
+	},
 }
-const external = Object.keys(pkg.dependencies).filter(
-	(name) => !name.startsWith('@bbplayer/'),
-)
 
 function cleanElectronDist(): Plugin {
 	return {
@@ -28,85 +26,75 @@ function cleanElectronDist(): Plugin {
 				['dev', 'build'].includes(arg),
 			)
 			if (isDevOrBuild && config.mode !== 'test') {
-				rmSync(join(root, 'dist-electron'), { recursive: true, force: true })
+				rmSync(join(desktopRoot, 'dist-electron'), {
+					recursive: true,
+					force: true,
+				})
+			}
+		},
+	}
+}
+
+function packElectronOnBuild(): Plugin {
+	return {
+		name: 'pack-electron-on-build',
+		apply: 'build',
+		async closeBundle() {
+			if (process.env.VITEST || process.env.BBPLAYER_PACKING_ELECTRON) {
+				return
+			}
+			process.env.BBPLAYER_PACKING_ELECTRON = '1'
+			const result = spawnSync('vp', ['pack'], {
+				cwd: desktopRoot,
+				stdio: 'inherit',
+				env: process.env,
+			})
+			if (result.status) {
+				throw new Error(`vp pack exited with ${result.status}`)
 			}
 		},
 	}
 }
 
 export default defineConfig({
-	root: join(root, 'src/renderer'),
+	root: join(desktopRoot, 'src/renderer'),
 	resolve: { alias },
 	server: {
 		fs: {
-			allow: [join(root, '../..')],
+			allow: [join(desktopRoot, '../..')],
 		},
 		hmr: {
 			protocol: 'ws',
 			host: '127.0.0.1',
 		},
 	},
-	plugins: [
-		cleanElectronDist(),
-		react(),
-		electron([
-			{
-				entry: join(root, 'src/main/index.ts'),
-				onstart(args) {
-					if (process.env.VSCODE_DEBUG) {
-						console.log('[startup] Electron App')
-					} else {
-						args.startup()
-					}
-				},
-				vite: {
-					resolve: { alias },
-					build: {
-						sourcemap,
-						minify: isProduction,
-						outDir: join(root, 'dist-electron/main'),
-						rolldownOptions: {
-							external,
-							platform: 'node',
-						},
-					},
-				},
-			},
-			{
-				onstart(args) {
-					args.reload()
-				},
-				vite: {
-					build: {
-						sourcemap: sourcemap ? 'inline' : undefined,
-						minify: isProduction,
-						outDir: join(root, 'dist-electron/preload'),
-						rolldownOptions: {
-							external,
-							input: join(root, 'src/preload/index.ts'),
-							output: {
-								format: 'cjs',
-								codeSplitting: false,
-								entryFileNames: 'index.cjs',
-								chunkFileNames: '[name].cjs',
-								assetFileNames: '[name].[ext]',
-							},
-						},
-					},
-				},
-			},
-		]),
-	],
+	plugins: [cleanElectronDist(), react(), packElectronOnBuild()],
 	build: {
-		outDir: join(root, 'dist'),
+		outDir: join(desktopRoot, 'dist'),
 		emptyOutDir: true,
 		rolldownOptions: {
 			input: {
-				index: join(root, 'src/renderer/index.html'),
-				lyrics: join(root, 'src/renderer/lyrics.html'),
-				mini: join(root, 'src/renderer/mini.html'),
+				index: join(desktopRoot, 'src/renderer/index.html'),
+				lyrics: join(desktopRoot, 'src/renderer/lyrics.html'),
+				mini: join(desktopRoot, 'src/renderer/mini.html'),
 			},
 		},
 	},
 	clearScreen: false,
+	pack: [
+		{
+			...packShared,
+			entry: { index: join(desktopRoot, 'src/main/index.ts') },
+			outDir: join(desktopRoot, 'dist-electron/main'),
+			format: ['esm'],
+			clean: true,
+		},
+		{
+			...packShared,
+			entry: { index: join(desktopRoot, 'src/preload/index.ts') },
+			outDir: join(desktopRoot, 'dist-electron/preload'),
+			format: ['cjs'],
+			clean: false,
+		},
+	],
 })

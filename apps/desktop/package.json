@@ -6,10 +6,10 @@
 	"license": "AGPL-3.0-only",
 	"author": "Roitium",
 	"type": "module",
-	"main": "dist-electron/main/index.js",
+	"main": "dist-electron/main/index.mjs",
 	"scripts": {
 		"build": "vp build",
-		"dev": "vp dev",
+		"dev": "node ./scripts/dev.ts",
 		"pack:mac": "vp build && electron-builder --mac --publish never",
 		"preview": "vp preview",
 		"release:mac": "vp build && electron-builder --mac --publish always",
@@ -40,7 +40,6 @@
 		"react-dom": "19.2.3",
 		"typescript": "~6.0.3",
 		"vite": "npm:@voidzero-dev/vite-plus-core@0.2.9",
-		"vite-plugin-electron": "0.29.0",
 		"vite-plus": "0.2.9"
 	},
 	"debug": {

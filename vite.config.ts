@@ -100,7 +100,12 @@ export default defineConfig({
 				},
 			},
 			{
-				files: ['**/vite.config.ts', '**/*.config.ts', '**/*.config.mts'],
+				files: [
+					'**/vite.config.ts',
+					'**/*.config.ts',
+					'**/*.config.mts',
+					'apps/desktop/scripts/**',
+				],
 				rules: {
 					'no-console': 'allow',
 				},

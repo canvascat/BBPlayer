@@ -93,9 +93,6 @@ importers:
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@0.2.9
         version: '@voidzero-dev/vite-plus-core@0.2.9(@types/node@25.9.5)(esbuild@0.27.7)(typescript@6.0.3)'
-      vite-plugin-electron:
-        specifier: 0.29.0
-        version: 0.29.0
       vite-plus:
         specifier: 0.2.9
         version: 0.2.9(@types/node@25.9.5)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@25.9.5)(esbuild@0.27.7)(typescript@6.0.3))(esbuild@0.27.7)(typescript@6.0.3)
@@ -3197,14 +3194,6 @@ packages:
 
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
-
-  vite-plugin-electron@0.29.0:
-    resolution: {integrity: sha512-HP0DI9Shg41hzt55IKYVnbrChWXHX95QtsEQfM+szQBpWjVhVGMlqRjVco6ebfQjWNr+Ga+PeoBjMIl8zMaufw==}
-    peerDependencies:
-      vite-plugin-electron-renderer: '*'
-    peerDependenciesMeta:
-      vite-plugin-electron-renderer:
-        optional: true
 
   vite-plus@0.2.9:
     resolution: {integrity: sha512-8uRNqAxh9no3AU4Lep8BEYhkim07+3NO+mhuxTWiN0k30syGT/2+ue/DtWYhtzQ7yi2f2WKpjOhoI4/QkWWbUg==}
@@ -6490,8 +6479,6 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
-
-  vite-plugin-electron@0.29.0: {}
 
   vite-plus@0.2.9(@types/node@25.2.3)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@25.2.3)(esbuild@0.27.7)(typescript@6.0.3))(esbuild@0.27.7)(typescript@6.0.3):
     dependencies:
