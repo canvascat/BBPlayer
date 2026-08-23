@@ -36,7 +36,7 @@ release. Add a tool name to select part of the graph. For example, run
 
 ```bash
 pnpm install                   # Only pnpm — npm/yarn breaks workspace resolution
-pnpm desktop                   # 启动桌面端（也可用 vp dev）
+pnpm desktop                   # 启动桌面端（编排 Vite + pack + Electron）
 vp check                       # 格式化检查 + oxlint
 vp lint                        # 仅 lint
 vp fmt --write .               # 格式化

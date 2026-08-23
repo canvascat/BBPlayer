@@ -1,6 +1,6 @@
 # BBPlayer 桌面端
 
-macOS 客户端。构建使用 [Vite+](https://viteplus.dev/) 与 `vite-plugin-electron`。播放界面歌词使用 [AMLL](https://amll.dev/)（AGPL-3.0），因此 **本应用按 AGPL-3.0 分发**。歌词文件仍使用 SPL，经 `@bbplayer/core` 解析后再转成 AMLL 行模型。
+macOS 客户端。构建使用 [Vite+](https://viteplus.dev/)：渲染进程走 `vp build` / `vp dev`，主进程与 preload 走 `vp pack`。播放界面歌词使用 [AMLL](https://amll.dev/)（AGPL-3.0），因此 **本应用按 AGPL-3.0 分发**。歌词文件仍使用 SPL，经 `@bbplayer/core` 解析后再转成 AMLL 行模型。
 
 ## 开发
 
@@ -8,8 +8,10 @@ macOS 客户端。构建使用 [Vite+](https://viteplus.dev/) 与 `vite-plugin-e
 
 ```bash
 pnpm install
-pnpm --filter @bbplayer/desktop dev
+pnpm desktop
 ```
+
+`pnpm desktop` 会编排渲染进程 Vite、主进程/preload 的 `vp pack --watch`，以及 Electron。不要用根目录的 `vp dev` 启动桌面端，那只会起渲染进程。
 
 打包 macOS 安装包（会生成 `.dmg` / `.zip`，zip 供 electron-updater 使用）：
 
