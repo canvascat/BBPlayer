@@ -13,15 +13,10 @@ export default defineConfig({
 			'promise',
 		],
 		categories: {
-			correctness: 'error',
 			suspicious: 'error',
-			pedantic: 'allow',
 			perf: 'error',
-			style: 'allow',
-			restriction: 'allow',
 		},
 		env: {
-			builtin: true,
 			es2022: true,
 			browser: true,
 			node: true,
@@ -43,7 +38,6 @@ export default defineConfig({
 		],
 		options: {
 			typeAware: true,
-			typeCheck: false,
 		},
 		rules: {
 			'react/react-in-jsx-scope': 'off',
@@ -114,17 +108,10 @@ export default defineConfig({
 	},
 	fmt: {
 		printWidth: 80,
-		tabWidth: 2,
 		useTabs: true,
 		semi: false,
 		singleQuote: true,
 		jsxSingleQuote: true,
-		quoteProps: 'as-needed',
-		trailingComma: 'all',
-		bracketSpacing: true,
-		bracketSameLine: false,
-		arrowParens: 'always',
-		endOfLine: 'lf',
 		singleAttributePerLine: true,
 		ignorePatterns: [
 			'**/dm.d.ts',
@@ -135,7 +122,6 @@ export default defineConfig({
 			'**/dist-electron/**',
 			'**/release/**',
 		],
-		sortPackageJson: true,
 		sortImports: {
 			groups: [
 				['side_effect'],
