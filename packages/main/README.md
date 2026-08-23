@@ -16,13 +16,13 @@ pnpm desktop
 打包 macOS 安装包（会生成 `.dmg` / `.zip`，zip 供 electron-updater 使用）：
 
 ```bash
-pnpm --filter @bbplayer/desktop pack:mac
+pnpm --filter @bbplayer/main pack:mac
 ```
 
 发版时把安装包推到 GitHub Release（需 `GH_TOKEN`）：
 
 ```bash
-pnpm --filter @bbplayer/desktop release:mac
+pnpm --filter @bbplayer/main release:mac
 ```
 
 ## 当前能力

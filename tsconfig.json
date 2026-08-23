@@ -2,8 +2,10 @@
 	"files": [],
 	"references": [
 		{ "path": "./apps/docs/tsconfig.json" },
-		{ "path": "./apps/desktop/tsconfig.json" },
-		{ "path": "./packages/core/tsconfig.json" }
+		{ "path": "./packages/core/tsconfig.json" },
+		{ "path": "./packages/common/tsconfig.json" },
+		{ "path": "./packages/main/tsconfig.json" },
+		{ "path": "./packages/renderer/tsconfig.json" }
 	],
 	"compilerOptions": {
 		"skipLibCheck": true,

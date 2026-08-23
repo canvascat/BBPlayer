@@ -1,10 +1,12 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { test, assert } from 'vitest'
 
-const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..')
+const mainSrc = join(dirname(fileURLToPath(import.meta.url)), '../..')
+const rendererSrc = join(mainSrc, '../../renderer/src')
+const srcRoots = [mainSrc, rendererSrc]
 
 function walkFiles(dir: string, acc: string[] = []): string[] {
 	for (const name of readdirSync(dir)) {
@@ -17,7 +19,7 @@ function walkFiles(dir: string, acc: string[] = []): string[] {
 }
 
 test('应用层不再使用 ipcMain / ipcRenderer / webContents.send', () => {
-	const files = walkFiles(srcRoot)
+	const files = srcRoots.flatMap((root) => walkFiles(root))
 	const hits: string[] = []
 	for (const file of files) {
 		if (file.includes('/trpc/routers/no-ipc.test.ts')) continue
@@ -28,7 +30,7 @@ test('应用层不再使用 ipcMain / ipcRenderer / webContents.send', () => {
 			/\bwebContents\.send\b/.test(text) ||
 			/\bsendToAux\b/.test(text)
 		) {
-			hits.push(file.replace(`${srcRoot}/`, ''))
+			hits.push(relative(join(mainSrc, '../..'), file))
 		}
 	}
 	assert.deepEqual(hits, [])

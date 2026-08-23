@@ -1,0 +1,33 @@
+{
+	"name": "@bbplayer/renderer",
+	"version": "0.1.0",
+	"private": true,
+	"description": "BBPlayer 渲染进程",
+	"license": "AGPL-3.0-only",
+	"author": "Roitium",
+	"type": "module",
+	"scripts": {
+		"build": "vp build",
+		"dev": "vp dev",
+		"preview": "vp preview",
+		"check": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@applemusic-like-lyrics/core": "0.5.2",
+		"@applemusic-like-lyrics/react": "0.5.2",
+		"@bbplayer/common": "workspace:*",
+		"@bbplayer/core": "workspace:*",
+		"@bbplayer/main": "workspace:*",
+		"@trpc/client": "^11.18.0",
+		"react": "19.2.3",
+		"react-dom": "19.2.3"
+	},
+	"devDependencies": {
+		"@types/react": "19.2.3",
+		"@types/react-dom": "19.2.3",
+		"@vitejs/plugin-react": "5.1.4",
+		"typescript": "~6.0.3",
+		"vite": "npm:@voidzero-dev/vite-plus-core@0.2.9",
+		"vite-plus": "0.2.9"
+	}
+}

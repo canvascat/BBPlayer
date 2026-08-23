@@ -3,8 +3,10 @@ productName: BBPlayer
 directories:
   output: release
 files:
-  - dist-electron
   - dist
+extraResources:
+  - from: ../renderer/dist
+    to: renderer
 mac:
   category: public.app-category.music
   darkModeSupport: true

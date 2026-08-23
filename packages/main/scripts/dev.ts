@@ -5,12 +5,13 @@
  */
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { parseViteLocalUrl } from '../src/main/vite-local-url.ts'
+import { parseViteLocalUrl } from '../src/vite-local-url.ts'
 
-const desktopRoot = dirname(fileURLToPath(new URL('.', import.meta.url)))
+const mainRoot = dirname(fileURLToPath(new URL('.', import.meta.url)))
+const rendererRoot = join(mainRoot, '../renderer')
 const DEBOUNCE_MS = 400
 const WEB_READY_TIMEOUT_MS = 60_000
 const useProcessGroups = process.platform !== 'win32'
@@ -25,7 +26,7 @@ let restartingElectron = false
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 function log(message: string): void {
-	console.log(`[desktop:dev] ${message}`)
+	console.log(`[main:dev] ${message}`)
 }
 
 function envWithoutFspy(
@@ -50,7 +51,7 @@ function spawnChild(
 		...options,
 	})
 	child.on('error', (error) => {
-		console.error(`[desktop:dev] failed to spawn ${command}:`, error)
+		console.error(`[main:dev] failed to spawn ${command}:`, error)
 		void cleanup(1)
 	})
 	return child
@@ -122,7 +123,7 @@ function startWebAndWaitForUrl(): Promise<string> {
 
 	return new Promise((resolve, reject) => {
 		const child = spawn('vp', ['dev'], {
-			cwd: desktopRoot,
+			cwd: rendererRoot,
 			env: process.env,
 			detached: useProcessGroups,
 			stdio: ['inherit', 'pipe', 'pipe'],
@@ -199,7 +200,7 @@ async function restartElectron(): Promise<void> {
 		if (shuttingDown) return
 
 		electronChild = spawnChild(electronBin, ['.'], {
-			cwd: desktopRoot,
+			cwd: mainRoot,
 			env: {
 				...envWithoutFspy(),
 				NODE_ENV: process.env.NODE_ENV ?? 'development',
@@ -261,7 +262,7 @@ async function main(): Promise<void> {
 		'vp',
 		['pack', '--watch', '--on-success', 'node ./scripts/signal-rebuild.ts'],
 		{
-			cwd: desktopRoot,
+			cwd: mainRoot,
 			env: {
 				...process.env,
 				BBPLAYER_DESKTOP_DEV_PID: String(process.pid),
@@ -276,6 +277,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-	console.error('[desktop:dev]', error)
+	console.error('[main:dev]', error)
 	void cleanup(1)
 })

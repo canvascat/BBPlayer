@@ -1,11 +1,10 @@
+import type { AppRouter } from '@bbplayer/main/router'
 import {
 	createTRPCClient,
 	httpBatchLink,
 	httpSubscriptionLink,
 	splitLink,
 } from '@trpc/client'
-
-import type { AppRouter } from '../../main/trpc/router'
 
 export const trpc = createTRPCClient<AppRouter>({
 	links: [

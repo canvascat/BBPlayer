@@ -1,4 +1,4 @@
-import type { DesktopApi } from '../../preload/index'
+import type { DesktopApi } from '@bbplayer/main/preload'
 
 /// <reference types="vite/client" />
 

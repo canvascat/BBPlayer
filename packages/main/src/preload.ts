@@ -1,7 +1,8 @@
+import { TRPC_URL } from '@bbplayer/common'
 import { contextBridge } from 'electron'
 
 const api = {
-	trpcUrl: 'app://localhost/trpc',
+	trpcUrl: TRPC_URL,
 }
 
 contextBridge.exposeInMainWorld('bbplayer', api)

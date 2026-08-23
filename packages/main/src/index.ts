@@ -109,9 +109,10 @@ interface Persisted {
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const APP_ROOT = join(__dirname, '../..')
-const RENDERER_DIST = join(APP_ROOT, 'dist')
-const PRELOAD = join(__dirname, '../preload/index.cjs')
+const PRELOAD = join(__dirname, 'preload.cjs')
+const RENDERER_DIST = app.isPackaged
+	? join(process.resourcesPath, 'renderer')
+	: join(__dirname, '../../renderer/dist')
 
 let store!: Store<Settings & Persisted>
 let playerDb!: PlayerDatabase

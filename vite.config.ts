@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite-plus'
 
 export default defineConfig({
-	defaultPackage: './apps/desktop',
+	defaultPackage: './packages/renderer',
 	lint: {
 		plugins: [
 			'react',
@@ -104,7 +104,7 @@ export default defineConfig({
 					'**/vite.config.ts',
 					'**/*.config.ts',
 					'**/*.config.mts',
-					'apps/desktop/scripts/**',
+					'packages/main/scripts/**',
 				],
 				rules: {
 					'no-console': 'allow',
@@ -153,7 +153,7 @@ export default defineConfig({
 	},
 	test: {
 		environment: 'node',
-		include: ['apps/desktop/src/**/*.test.ts', 'packages/**/*.test.ts'],
+		include: ['packages/**/*.test.ts'],
 		exclude: [
 			'**/node_modules/**',
 			'**/dist/**',

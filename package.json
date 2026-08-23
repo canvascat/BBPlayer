@@ -7,7 +7,7 @@
 	],
 	"scripts": {
 		"check": "vp check",
-		"desktop": "pnpm --filter @bbplayer/desktop dev",
+		"desktop": "pnpm --filter @bbplayer/main dev",
 		"format": "vp fmt --write .",
 		"lint": "vp lint",
 		"lint:fix": "vp lint --fix",

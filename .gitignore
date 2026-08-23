@@ -27,9 +27,7 @@ yarn-error.*
 .vite-hooks/_
 
 # Electron
-apps/desktop/out/
-apps/desktop/dist-electron/
-apps/desktop/release/
+packages/main/release/
 
 temp-builds
 .yarn/install-state.gz

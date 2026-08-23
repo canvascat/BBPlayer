@@ -1,0 +1,17 @@
+{
+	"name": "@bbplayer/common",
+	"version": "0.1.0",
+	"private": true,
+	"description": "BBPlayer 主进程与渲染进程共享常量",
+	"license": "AGPL-3.0-only",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"check": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"typescript": "~6.0.3"
+	}
+}

@@ -3,19 +3,20 @@ import { createRequire } from 'node:module'
 import { isAbsolute, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+import {
+	APP_ORIGIN,
+	APP_SCHEME,
+	TRPC_PATH,
+	rendererUrl,
+	type RendererPage,
+} from '@bbplayer/common'
+
+export { APP_ORIGIN, APP_SCHEME, rendererUrl, type RendererPage }
+
 const electronRequire = createRequire(import.meta.url)
 
 function electron() {
 	return electronRequire('electron') as typeof import('electron')
-}
-
-export const APP_SCHEME = 'app'
-export const APP_ORIGIN = 'app://localhost'
-
-export type RendererPage = 'index.html' | 'lyrics.html' | 'mini.html'
-
-export function rendererUrl(page: RendererPage) {
-	return page === 'index.html' ? `${APP_ORIGIN}/` : `${APP_ORIGIN}/${page}`
 }
 
 const FORBIDDEN_FORWARD_HEADERS = new Set([
@@ -92,7 +93,7 @@ export function resolveAppRequest(
 	} catch {
 		return { type: 'error', status: 404 }
 	}
-	if (url.pathname === '/trpc' || url.pathname.startsWith('/trpc/')) {
+	if (url.pathname === TRPC_PATH || url.pathname.startsWith(`${TRPC_PATH}/`)) {
 		return { type: 'trpc' }
 	}
 	const upper = method.toUpperCase()
