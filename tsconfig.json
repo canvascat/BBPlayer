@@ -3,7 +3,7 @@
 	"references": [
 		{ "path": "./apps/docs/tsconfig.json" },
 		{ "path": "./apps/desktop/tsconfig.json" },
-		{ "path": "./packages/splash/tsconfig.json" }
+		{ "path": "./packages/core/tsconfig.json" }
 	],
 	"compilerOptions": {
 		"skipLibCheck": true,

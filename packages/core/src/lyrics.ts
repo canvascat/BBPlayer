@@ -1,4 +1,4 @@
-import type { LyricLine as SplLyricLine } from '@bbplayer/splash'
+import type { LyricLine as SplLyricLine } from './splash'
 
 export interface AmllLyricWord {
 	word: string

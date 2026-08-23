@@ -1,6 +1,6 @@
 # BBPlayer 桌面端
 
-macOS 客户端。构建使用 [Vite+](https://viteplus.dev/) 与 `vite-plugin-electron`。播放界面歌词使用 [AMLL](https://amll.dev/)（AGPL-3.0），因此 **本应用按 AGPL-3.0 分发**。歌词文件仍使用 SPL，经 `@bbplayer/splash` 解析后再转成 AMLL 行模型。
+macOS 客户端。构建使用 [Vite+](https://viteplus.dev/) 与 `vite-plugin-electron`。播放界面歌词使用 [AMLL](https://amll.dev/)（AGPL-3.0），因此 **本应用按 AGPL-3.0 分发**。歌词文件仍使用 SPL，经 `@bbplayer/core` 解析后再转成 AMLL 行模型。
 
 ## 开发
 

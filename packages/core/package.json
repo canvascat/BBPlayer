@@ -10,8 +10,5 @@
 	},
 	"scripts": {
 		"test": "vp test"
-	},
-	"dependencies": {
-		"@bbplayer/splash": "workspace:*"
 	}
 }

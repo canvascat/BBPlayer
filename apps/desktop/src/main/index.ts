@@ -3,8 +3,11 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { generateUniqueTrackKey, splLinesToAmll } from '@bbplayer/core'
-import { parseAndMergeLyrics } from '@bbplayer/splash'
+import {
+	generateUniqueTrackKey,
+	parseAndMergeLyrics,
+	splLinesToAmll,
+} from '@bbplayer/core'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import {
 	app,

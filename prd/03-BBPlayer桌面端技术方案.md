@@ -61,7 +61,6 @@ flowchart TB
     subgraph shared["复用与抽取的 packages"]
         core["@bbplayer/core"]
         bili["@bbplayer/bilibili"]
-        splash["@bbplayer/splash 已有"]
         backup["@bbplayer/backup"]
         playerapi["@bbplayer/player-api"]
         sharedpl["@bbplayer/shared-playlist"]
@@ -129,7 +128,7 @@ flowchart TB
 
 | 包 / 目录                                 | 用法                                             |
 | ----------------------------------------- | ------------------------------------------------ |
-| `@bbplayer/splash`                        | SPL/LRC 解析、多轨合并、网易云逐字转换           |
+| `@bbplayer/core`                          | 搜索策略、BV/AV、SPL/LRC 解析、网易云逐字转换    |
 | `@bbplayer/eslint-plugin`、根 oxlint/tsgo | 桌面包纳入同一套 lint                            |
 | `apps/backend`                            | 登录、共享歌单、`GET /update.json`               |
 | `apps/docs` 中 SPL 与业务规则说明         | 产品行为参照；安装指南需补 Mac                   |
@@ -147,7 +146,7 @@ flowchart TB
 | `lib/api/bbplayer/client.ts` + `lib/facades/sharedPlaylist.ts` + `PlaylistSyncWorker` | `@bbplayer/shared-playlist`                           | JWT 注入；去掉 toast                                  |
 | `lib/facades/{playlist,bilibili,syncBilibiliPlaylist,syncExternalPlaylist}.ts`        | `@bbplayer/core` 或 `@bbplayer/bilibili` 的 facade 层 | toast → `Reporter` 端口                               |
 | `lib/backup/*`                                                                        | `@bbplayer/backup`                                    | FS 端口化；`orpheus` 段改为 `PlayerBackupPort`        |
-| `lib/services/lyricService.ts` 的匹配逻辑                                             | `@bbplayer/lyrics`（薄封装 splash）                   | 存储与 overlay 端口化                                 |
+| `lib/services/lyricService.ts` 的匹配逻辑                                             | `@bbplayer/core`（歌词解析已在 core）                 | 存储与 overlay 端口化                                 |
 | `lib/player/PlayerSideEffects.ts` 的 `getPlayerErrorInfo`                             | `@bbplayer/player-api`                                | 错误码语义与 Android 文案对齐                         |
 | `packages/orpheus/src/ExpoOrpheusModule.ts` 中的类型与方法名                          | `@bbplayer/player-api`                                | **只搬契约，不搬原生**                                |
 
@@ -283,7 +282,6 @@ manifest.json  {
 apps/mobile ──┐
               ├── @bbplayer/core
 apps/desktop ─┤   @bbplayer/bilibili
-              │   @bbplayer/splash
               │   @bbplayer/backup
               │   @bbplayer/player-api     （mobile 的实现类包一层 Orpheus）
               └── @bbplayer/shared-playlist
@@ -430,7 +428,7 @@ IPC 只暴露领域命令，例如 `playlist.list`、`player.play`、`auth.setCo
 ### 阶段 C — 库与账号
 
 - 本地歌单 CRUD、同步收藏夹、Cookie/扫码登录。
-- 歌词匹配（splash + 网易云/QQ/酷狗）+ 歌词窗。
+- 歌词匹配（core 解析 + 网易云/QQ/酷狗）+ 歌词窗。
 - 下载缓存、已下载页。
 
 **完成标准**：登录后看到收藏夹并同步成本地歌单；无网可播已缓存。
@@ -481,17 +479,17 @@ IPC 只暴露领域命令，例如 `playlist.list`、`player.play`、`auth.setCo
 
 ## 13. 与产品文档的对应
 
-| PRD 模块                   | 技术方案落点                             |
-| -------------------------- | ---------------------------------------- |
-| 侧栏 / 红灯不停播 / 菜单栏 | Electron 壳，阶段 A                      |
-| 智能搜索                   | `@bbplayer/core` matchSearchStrategies   |
-| 播放器/队列/倍速/定时      | PlayerPort                               |
-| 歌词窗 / 菜单栏句          | splash + 独立窗口；非 Orpheus overlay    |
-| 音乐库与同步               | 主进程歌单库 + bilibili facades          |
-| 共享                       | `@bbplayer/shared-playlist` + 现 backend |
-| 备份互通                   | `@bbplayer/backup` 保持 v1               |
-| 更新                       | update.json 增 macos                     |
-| 不出现词幕/未知来源        | 桌面设置不实现这些 IPC                   |
+| PRD 模块                   | 技术方案落点                                 |
+| -------------------------- | -------------------------------------------- |
+| 侧栏 / 红灯不停播 / 菜单栏 | Electron 壳，阶段 A                          |
+| 智能搜索                   | `@bbplayer/core` matchSearchStrategies       |
+| 播放器/队列/倍速/定时      | PlayerPort                                   |
+| 歌词窗 / 菜单栏句          | core 歌词解析 + 独立窗口；非 Orpheus overlay |
+| 音乐库与同步               | 主进程歌单库 + bilibili facades              |
+| 共享                       | `@bbplayer/shared-playlist` + 现 backend     |
+| 备份互通                   | `@bbplayer/backup` 保持 v1                   |
+| 更新                       | update.json 增 macos                         |
+| 不出现词幕/未知来源        | 桌面设置不实现这些 IPC                       |
 
 ---
 

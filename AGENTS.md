@@ -59,5 +59,4 @@ pnpm type-check                # TypeScript type checking
 
 ### /packages
 
-- core — 搜索策略、BV/AV、歌词行转换
-- splash — 歌词转换与解析库
+- core — 搜索策略、BV/AV、歌词解析与行转换

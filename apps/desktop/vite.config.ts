@@ -10,13 +10,11 @@ import pkg from './package.json' with { type: 'json' }
 
 const root = dirname(fileURLToPath(import.meta.url))
 const core = join(root, '../../packages/core/src/index.ts')
-const splash = join(root, '../../packages/splash/src/index.ts')
 const isProduction = process.env.NODE_ENV === 'production'
 const sourcemap = !isProduction || Boolean(process.env.VSCODE_DEBUG)
 const alias = {
 	'@': join(root, 'src/renderer/src'),
 	'@bbplayer/core': core,
-	'@bbplayer/splash': splash,
 }
 const external = Object.keys(pkg.dependencies).filter(
 	(name) => !name.startsWith('@bbplayer/'),

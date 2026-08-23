@@ -35,9 +35,6 @@ importers:
       '@bbplayer/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@bbplayer/splash':
-        specifier: workspace:*
-        version: link:../../packages/splash
       '@trpc/client':
         specifier: ^11.18.0
         version: 11.18.0(@trpc/server@11.18.0(typescript@6.0.3))(typescript@6.0.3)
@@ -115,13 +112,7 @@ importers:
         specifier: ^3.5.34
         version: 3.5.34(typescript@6.0.3)
 
-  packages/core:
-    dependencies:
-      '@bbplayer/splash':
-        specifier: workspace:*
-        version: link:../splash
-
-  packages/splash: {}
+  packages/core: {}
 
 packages:
 

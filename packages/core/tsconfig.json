@@ -1,15 +1,15 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"module": "CommonJS",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
 		"strict": true,
 		"isolatedModules": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"exactOptionalPropertyTypes": false,
 		"forceConsistentCasingInFileNames": true,
-		"outDir": "./dist",
-		"rootDir": "./src",
+		"noEmit": true,
 		"types": ["node"]
 	},
 	"include": ["src/**/*"]
