@@ -21,21 +21,6 @@ export default defineConfig({
 			browser: true,
 			node: true,
 		},
-		ignorePatterns: [
-			'dist/*',
-			'**/dm.d.ts',
-			'**/dm.js',
-			'**/dist/**',
-			'**/build/**',
-			'**/node_modules/**',
-			'**/dist-electron/**',
-			'**/release/**',
-			'**/*.config.mjs',
-			'**/*.js',
-			'**/worker-configuration.d.ts',
-			'**/package-lock.json',
-			'**/pnpm-lock.yaml',
-		],
 		options: {
 			typeAware: true,
 		},
@@ -113,15 +98,6 @@ export default defineConfig({
 		singleQuote: true,
 		jsxSingleQuote: true,
 		singleAttributePerLine: true,
-		ignorePatterns: [
-			'**/dm.d.ts',
-			'**/dm.js',
-			'**/worker-configuration.d.ts',
-			'dist/**',
-			'**/dist/**',
-			'**/dist-electron/**',
-			'**/release/**',
-		],
 		sortImports: {
 			groups: [
 				['side_effect'],
