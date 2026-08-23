@@ -1,6 +1,6 @@
-import type { PlayerDatabase } from '@bbplayer/db'
 import { z } from 'zod'
 
+import type { PlayerDatabase } from '../../db'
 import {
 	copyShareLink,
 	enableSharing,

@@ -35,9 +35,6 @@ importers:
       '@bbplayer/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@bbplayer/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@bbplayer/splash':
         specifier: workspace:*
         version: link:../../packages/splash
@@ -53,6 +50,9 @@ importers:
       electron-updater:
         specifier: 6.6.2
         version: 6.6.2
+      fractional-indexing:
+        specifier: 4.0.0
+        version: 4.0.0
       jszip:
         specifier: 3.10.1
         version: 3.10.1
@@ -120,12 +120,6 @@ importers:
       '@bbplayer/splash':
         specifier: workspace:*
         version: link:../splash
-
-  packages/db:
-    dependencies:
-      fractional-indexing:
-        specifier: 4.0.0
-        version: 4.0.0
 
   packages/splash: {}
 

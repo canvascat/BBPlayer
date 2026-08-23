@@ -1,7 +1,6 @@
-import type { SharePullData, ShareRole, ShareUploadTrack } from '@bbplayer/db'
-
 import { mapAuthError } from './bbplayer-account.ts'
 import type { BbplayerAccount } from './bbplayer-account.ts'
+import type { SharePullData, ShareRole, ShareUploadTrack } from './db'
 
 export const BBPLAYER_API_BASE = 'https://be.bbplayer.roitium.com'
 

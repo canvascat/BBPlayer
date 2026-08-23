@@ -4,11 +4,6 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { generateUniqueTrackKey, splLinesToAmll } from '@bbplayer/core'
-import {
-	PlayerDatabase,
-	type LibraryTrack,
-	type LocalPlaylist,
-} from '@bbplayer/db'
 import { parseAndMergeLyrics } from '@bbplayer/splash'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import {
@@ -54,6 +49,7 @@ import {
 	type BiliAccount,
 } from './bili'
 import { BILI_IMAGE_URL_FILTER, withBiliImageHeaders } from './bili-image'
+import { PlayerDatabase, type LibraryTrack, type LocalPlaylist } from './db'
 import { downloadManager, type CachedTrack } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
 import { fetchMatchedLyrics } from './lyrics-fetch'

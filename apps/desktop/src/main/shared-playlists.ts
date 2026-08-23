@@ -1,5 +1,3 @@
-import type { PlayerDatabase } from '@bbplayer/db'
-
 import {
 	createSharedPlaylist,
 	getEditorInvite,
@@ -9,6 +7,7 @@ import {
 	rotateEditorInvite,
 	subscribeCloudPlaylist,
 } from './bbplayer-api.ts'
+import type { PlayerDatabase } from './db'
 import { parseShareLink, subscribeUrl } from './share-link.ts'
 
 function requireToken(token: string | null | undefined) {

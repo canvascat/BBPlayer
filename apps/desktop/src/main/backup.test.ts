@@ -2,10 +2,10 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { PlayerDatabase } from '@bbplayer/db'
 import { test, assert } from 'vitest'
 
 import { readBackupZip, writeBackupZip } from './backup.ts'
+import { PlayerDatabase } from './db'
 
 test('备份 zip 含 database.db 与 manifest.json', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'bbplayer-backup-test-'))

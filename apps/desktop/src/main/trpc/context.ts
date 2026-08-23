@@ -1,5 +1,4 @@
-import type { LibraryTrack, LocalPlaylist, PlaylistSummary } from '@bbplayer/db'
-
+import type { LibraryTrack, LocalPlaylist, PlaylistSummary } from '../db'
 import type { UpdateCheck } from '../updater'
 
 import type { DesktopEvents, PlayerSnapshot } from './events'

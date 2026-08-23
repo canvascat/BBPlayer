@@ -2,8 +2,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { PlayerDatabase, type LocalPlaylist } from '@bbplayer/db'
 import JSZip from 'jszip'
+
+import { PlayerDatabase, type LocalPlaylist } from './db'
 
 function assertBackupVersion(raw: string) {
 	const parsed = JSON.parse(raw) as { version?: number }

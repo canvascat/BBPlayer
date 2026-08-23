@@ -261,7 +261,7 @@ export class PlayerDatabase {
                 share_id, share_role, last_share_sync_at
          FROM playlists WHERE id = ?`,
 			)
-			.get(id) as PlaylistRow | undefined
+			.get(id) as unknown as PlaylistRow | undefined
 		if (!row) return null
 		const tracks = this.db
 			.prepare(
@@ -317,7 +317,7 @@ export class PlayerDatabase {
          FROM playlists
          ORDER BY updated_at DESC, id DESC`,
 			)
-			.all() as PlaylistRow[]
+			.all() as unknown as PlaylistRow[]
 		return rows.map((row) => ({
 			id: String(row.id),
 			title: row.title,
@@ -499,7 +499,7 @@ export class PlayerDatabase {
 				`SELECT title, description, cover_url, share_id, share_role, last_share_sync_at
          FROM playlists WHERE id = ?`,
 			)
-			.get(numericId) as PlaylistRow
+			.get(numericId) as unknown as PlaylistRow
 		this.db
 			.prepare(
 				`UPDATE playlists
