@@ -10,8 +10,8 @@ Merge\ * | Revert\ * | fixup!* | squash!*)
 	;;
 esac
 
-if ! printf '%s' "$subject" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip)(\([a-zA-Z0-9/_-]+\))?(!)?: .+'; then
-	echo "提交说明需符合 Conventional Commits，且描述使用简体中文，例如："
-	echo "  feat(desktop): 用 Vite+ 替换 electron-vite"
+if ! printf '%s' "$subject" | grep -Eq '^:[a-z0-9_+-]+: (feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip)(\([a-zA-Z0-9/_-]+\))?(!)?: .+'; then
+	echo "提交说明需以 gitmoji 开头，后接 Conventional Commits，描述用简体中文，例如："
+	echo "  :sparkles: feat(desktop): 用 Vite+ 替换 electron-vite"
 	exit 1
 fi
