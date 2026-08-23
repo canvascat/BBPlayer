@@ -52,7 +52,7 @@ flowchart TB
         ipc["IPC 网关"]
         player["PlayerPort 实现：mpv 或等价音频后端"]
         proxy["B 站音频本地代理 注入 Cookie"]
-        sql["better-sqlite3 + Drizzle"]
+        sql["node:sqlite 歌单库"]
         fs["歌词文件 / 缓存 / 备份 ZIP"]
         tray["菜单栏 / 程序坞 / 媒体键 / 正在播放"]
         updater["更新检查与安装"]
@@ -60,7 +60,6 @@ flowchart TB
 
     subgraph shared["复用与抽取的 packages"]
         core["@bbplayer/core"]
-        dbpkg["@bbplayer/db"]
         bili["@bbplayer/bilibili"]
         splash["@bbplayer/splash 已有"]
         backup["@bbplayer/backup"]
@@ -78,7 +77,6 @@ flowchart TB
     ipc --> sql
     ipc --> fs
     player --> proxy
-    sql --> dbpkg
     ipc --> bili
     ipc --> sharedpl
     bili --> worker
@@ -129,13 +127,13 @@ flowchart TB
 
 ### 4.1 原样依赖
 
-| 包 / 目录                                 | 用法                                   |
-| ----------------------------------------- | -------------------------------------- |
-| `@bbplayer/splash`                        | SPL/LRC 解析、多轨合并、网易云逐字转换 |
-| `@bbplayer/eslint-plugin`、根 oxlint/tsgo | 桌面包纳入同一套 lint                  |
-| `apps/backend`                            | 登录、共享歌单、`GET /update.json`     |
-| `apps/docs` 中 SPL 与业务规则说明         | 产品行为参照；安装指南需补 Mac         |
-| mobile `drizzle/*.sql`                    | 迁入 `@bbplayer/db` 后两端共用迁移链   |
+| 包 / 目录                                 | 用法                                             |
+| ----------------------------------------- | ------------------------------------------------ |
+| `@bbplayer/splash`                        | SPL/LRC 解析、多轨合并、网易云逐字转换           |
+| `@bbplayer/eslint-plugin`、根 oxlint/tsgo | 桌面包纳入同一套 lint                            |
+| `apps/backend`                            | 登录、共享歌单、`GET /update.json`               |
+| `apps/docs` 中 SPL 与业务规则说明         | 产品行为参照；安装指南需补 Mac                   |
+| mobile `drizzle/*.sql`                    | 桌面 schema 在主进程 `src/main/db`；不抽成共享包 |
 
 ### 4.2 抽出后再复用（从 `apps/mobile/src` 搬）
 
@@ -143,8 +141,8 @@ flowchart TB
 | ------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
 | `types/core/*`、`lib/services/genKey.ts`、`lib/errors/*`（去掉 UI 展示类）            | `@bbplayer/core`                                      | 无 React                                              |
 | `utils/search.ts` 的 `matchSearchStrategies`                                          | `@bbplayer/core`                                      | **不要**带 `navigateWithSearchStrategy` / expo-router |
-| `lib/db/schema.ts` + `drizzle/`                                                       | `@bbplayer/db`                                        | 连接器可插拔：expo-sqlite vs better-sqlite3           |
-| `lib/services/{playlist,track,artist}Service.ts`                                      | `@bbplayer/db`                                        | 构造时注入 `db`                                       |
+| `lib/db/schema.ts` + `drizzle/`                                                       | `apps/desktop/src/main/db`                            | 桌面用 `node:sqlite`，不与 mobile 共用包              |
+| `lib/services/{playlist,track,artist}Service.ts`                                      | `apps/desktop/src/main/db`                            | `PlayerDatabase` 直接跑在主进程                       |
 | `lib/api/bilibili/*`、网易云/QQ/酷狗 API                                              | `@bbplayer/bilibili`                                  | Cookie/WBI 改为 `AuthProvider`，去掉 `useAppStore`    |
 | `lib/api/bbplayer/client.ts` + `lib/facades/sharedPlaylist.ts` + `PlaylistSyncWorker` | `@bbplayer/shared-playlist`                           | JWT 注入；去掉 toast                                  |
 | `lib/facades/{playlist,bilibili,syncBilibiliPlaylist,syncExternalPlaylist}.ts`        | `@bbplayer/core` 或 `@bbplayer/bilibili` 的 facade 层 | toast → `Reporter` 端口                               |
@@ -242,11 +240,12 @@ export interface PlayerPort {
 
 Mac 实现不提供：`showDesktopLyrics`（改窗口）、`statusBarLyricsProvider`、`checkOverlayPermission`。这些方法在桌面绑定里直接标为不支持，UI 按 PRD 走窗口与菜单栏。
 
-### 5.2 `@bbplayer/db`
+### 5.2 桌面歌单库（主进程 `src/main/db`）
 
-- 导出当前 `schema.ts` 与全部 `drizzle/00xx_*.sql`。
-- `openDatabase(adapter)`：mobile 继续 expo-sqlite；desktop 用 `drizzle-orm/better-sqlite3`。
+- 不单独成 `@bbplayer/db`：歌单库只被 Electron 主进程使用，继续拆包没有必要。
+- `PlayerDatabase`、`schema.ts` 与类型落在 `apps/desktop/src/main/db`，用 Node 内置 `node:sqlite`。
 - 文件名桌面用 `~/Library/Application Support/BBPlayer/db.db`，与备份里的 `database.db` 逻辑相同，导入时仍 `VACUUM`/替换后重启连接。
+- mobile 若以后要共用，再评估抽取；第一期不为此保留 workspace 包。
 
 ### 5.3 `@bbplayer/bilibili`
 
@@ -283,13 +282,14 @@ manifest.json  {
 ```
 apps/mobile ──┐
               ├── @bbplayer/core
-apps/desktop ─┤   @bbplayer/db
-              │   @bbplayer/bilibili
+apps/desktop ─┤   @bbplayer/bilibili
               │   @bbplayer/splash
               │   @bbplayer/backup
               │   @bbplayer/player-api     （mobile 的实现类包一层 Orpheus）
               └── @bbplayer/shared-playlist
 ```
+
+桌面歌单库在 `apps/desktop/src/main/db`，不进入共享包。
 
 `apps/mobile` 与 `apps/desktop` **互不 import**。
 
@@ -310,7 +310,7 @@ apps/desktop/
       MpvPlayer.ts             # PlayerPort
       BilibiliMediaProxy.ts    # 127.0.0.1 带 Cookie 拉流
       DownloadStore.ts
-    db.ts
+    db/                        # PlayerDatabase、schema、类型
     tray.ts
     nowPlaying.ts              # Media Session / Now Playing
     updater.ts
@@ -421,7 +421,7 @@ IPC 只暴露领域命令，例如 `playlist.list`、`player.play`、`auth.setCo
 
 ### 阶段 B — 抽核与搜播
 
-- 落地 `@bbplayer/core`、`@bbplayer/bilibili`、`@bbplayer/db`。
+- 落地 `@bbplayer/core`、`@bbplayer/bilibili`；歌单库放主进程 `src/main/db`。
 - 游客：搜索 BV/关键词、打开分 P、点播走 B 站代理。
 - SQLite 写入 tracks/playlists。
 
@@ -446,7 +446,7 @@ IPC 只暴露领域命令，例如 `playlist.list`、`player.play`、`auth.setCo
 
 ### 阶段 E — mobile 切到共享包（可并行靠后）
 
-- `apps/mobile` 改为依赖 `@bbplayer/db` 等，删重复 `lib/`。
+- `apps/mobile` 改为依赖 `@bbplayer/core` 等共享包，删重复 `lib/`；歌单库仍可各端自持。
 - Orpheus 上套一层 `PlayerPort`。
 - 此阶段不阻塞桌面发布。
 
@@ -457,7 +457,7 @@ IPC 只暴露领域命令，例如 `playlist.list`、`player.play`、`auth.setCo
 | 层                                          | 做法                                                               |
 | ------------------------------------------- | ------------------------------------------------------------------ |
 | `@bbplayer/core` 搜索策略、genKey、错误映射 | Node 单测，用例对齐现有中文文案                                    |
-| `@bbplayer/db`                              | 对 schema 跑迁移；用临时 sqlite 测 playlistService                 |
+| 主进程 `src/main/db`                        | 对 schema 跑迁移；用临时 sqlite 测 `PlayerDatabase`                |
 | `@bbplayer/backup`                          | 夹具：一份真实结构的 v1 zip（可脱敏）在 Node 里 round-trip         |
 | 播放                                        | 主进程集成测：mock 代理返回本地 m4a；断言队列/循环/下载状态        |
 | UI                                          | 不测 RN；桌面用组件测或 Playwright 控 Electron                     |
@@ -487,7 +487,7 @@ IPC 只暴露领域命令，例如 `playlist.list`、`player.play`、`auth.setCo
 | 智能搜索                   | `@bbplayer/core` matchSearchStrategies   |
 | 播放器/队列/倍速/定时      | PlayerPort                               |
 | 歌词窗 / 菜单栏句          | splash + 独立窗口；非 Orpheus overlay    |
-| 音乐库与同步               | `@bbplayer/db` + bilibili facades        |
+| 音乐库与同步               | 主进程歌单库 + bilibili facades          |
 | 共享                       | `@bbplayer/shared-playlist` + 现 backend |
 | 备份互通                   | `@bbplayer/backup` 保持 v1               |
 | 更新                       | update.json 增 macos                     |
