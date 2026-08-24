@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Play, Tv2, AlertCircle, Music2, ExternalLink } from 'lucide-vue-next'
+import { Play, Tv2, AlertCircle, Music2, ExternalLink } from '@lucide/vue'
 import { ref, onMounted, computed } from 'vue'
 
 const id = ref('')

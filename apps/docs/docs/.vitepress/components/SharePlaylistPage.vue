@@ -8,7 +8,7 @@ import {
 	Music2,
 	Users,
 	Share2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref, onMounted, computed } from 'vue'
 
 // ── State ──────────────────────────────────────────────────────────────────
