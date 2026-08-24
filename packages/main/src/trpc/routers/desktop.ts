@@ -5,7 +5,7 @@ import { publicProcedure, router } from '../trpc'
 
 export const desktopRouter = router({
 	openExternal: publicProcedure
-		.input(z.object({ url: z.string().url() }))
+		.input(z.object({ url: z.url() }))
 		.mutation(async ({ ctx, input }) => {
 			const { protocol } = new URL(input.url)
 			if (protocol !== 'http:' && protocol !== 'https:') {
