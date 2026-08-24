@@ -19,49 +19,12 @@ function electron() {
 	return electronRequire('electron') as typeof import('electron')
 }
 
-const FORBIDDEN_FORWARD_HEADERS = new Set([
-	'accept-charset',
-	'accept-encoding',
-	'access-control-request-headers',
-	'access-control-request-method',
-	'connection',
-	'content-length',
-	'cookie',
-	'cookie2',
-	'date',
-	'dnt',
-	'expect',
-	'host',
-	'keep-alive',
-	'origin',
-	'referer',
-	'te',
-	'trailer',
-	'transfer-encoding',
-	'upgrade',
-	'via',
-])
-
-export function headersWithoutHost(headers: Headers) {
-	const next = new Headers()
-	for (const [key, value] of headers.entries()) {
-		const lower = key.toLowerCase()
-		if (FORBIDDEN_FORWARD_HEADERS.has(lower) || lower.startsWith('sec-')) {
-			continue
-		}
-		next.append(key, value)
-	}
-	return next
-}
-
 export type AppRequestEnv = {
-	viteDevServerUrl?: string
 	rendererDist: string
 }
 
 export type AppRequestRoute =
 	| { type: 'trpc' }
-	| { type: 'forward'; url: string }
 	| { type: 'file'; absPath: string }
 	| { type: 'error'; status: 404 | 405 }
 
@@ -100,12 +63,6 @@ export function resolveAppRequest(
 	if (upper !== 'GET' && upper !== 'HEAD') {
 		return { type: 'error', status: 405 }
 	}
-	if (env.viteDevServerUrl) {
-		return {
-			type: 'forward',
-			url: new URL(url.pathname + url.search, env.viteDevServerUrl).href,
-		}
-	}
 	const absPath = resolveRendererFile(url.pathname, env.rendererDist)
 	if (!absPath) return { type: 'error', status: 404 }
 	return { type: 'file', absPath }
@@ -126,57 +83,32 @@ export function registerAppSchemePrivileged() {
 	])
 }
 
-export type AppAssetFetch = (
-	input: string,
-	init?: RequestInit & { bypassCustomProtocolHandlers?: boolean },
-) => Promise<Response>
-
 export function installAppProtocolHandler({
 	handleTrpc,
 	rendererDist,
-	viteDevServerUrl,
 	handle: handleScheme = (scheme, listener) =>
 		electron().protocol.handle(scheme, listener),
-	fetch: fetchAsset = (input, init = {}) => {
-		if (/^https?:/i.test(input)) {
-			const { bypassCustomProtocolHandlers: _ignored, ...rest } = init
-			return globalThis.fetch(input, rest)
-		}
-		return electron().net.fetch(input, init)
-	},
+	fetch: fetchAsset = (input) => electron().net.fetch(input),
 	isFile = (absPath) => existsSync(absPath) && statSync(absPath).isFile(),
 }: {
 	handleTrpc: (request: Request) => Response | Promise<Response>
 	rendererDist: string
-	viteDevServerUrl?: string
 	handle?: (
 		scheme: string,
 		listener: (request: Request) => Response | Promise<Response>,
 	) => void
-	fetch?: AppAssetFetch
+	fetch?: (input: string) => Promise<Response>
 	isFile?: (absPath: string) => boolean
 }) {
 	handleScheme(APP_SCHEME, async (request) => {
 		const route = resolveAppRequest(request.url, request.method, {
 			rendererDist,
-			viteDevServerUrl,
 		})
 		switch (route.type) {
 			case 'trpc':
 				return handleTrpc(request)
 			case 'error':
 				return new Response(null, { status: route.status })
-			case 'forward':
-				try {
-					return await fetchAsset(route.url, {
-						method: request.method,
-						headers: headersWithoutHost(request.headers),
-						bypassCustomProtocolHandlers: true,
-					})
-				} catch (error) {
-					console.error('[app-protocol] 转发 Vite 失败', route.url, error)
-					return new Response(null, { status: 502 })
-				}
 			case 'file':
 				if (!isFile(route.absPath)) {
 					return new Response(null, { status: 404 })

@@ -120,6 +120,12 @@ function loadRenderer(
 	win: BrowserWindow,
 	page: 'index.html' | 'lyrics.html' | 'mini.html',
 ) {
+	const vite = process.env.VITE_DEV_SERVER_URL?.trim()
+	if (vite) {
+		const base = vite.endsWith('/') ? vite : `${vite}/`
+		void win.loadURL(page === 'index.html' ? base : `${base}${page}`)
+		return
+	}
 	void win.loadURL(rendererUrl(page))
 }
 
@@ -725,7 +731,6 @@ app.on('open-url', (event, url) => {
 app.whenReady().then(async () => {
 	installAppProtocolHandler({
 		rendererDist: RENDERER_DIST,
-		viteDevServerUrl: process.env.VITE_DEV_SERVER_URL,
 		handleTrpc: (req) =>
 			fetchRequestHandler({
 				endpoint: '/trpc',

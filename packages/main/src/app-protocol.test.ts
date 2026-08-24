@@ -4,7 +4,6 @@ import { pathToFileURL } from 'node:url'
 import { test, assert } from 'vitest'
 
 import {
-	headersWithoutHost,
 	installAppProtocolHandler,
 	rendererUrl,
 	resolveAppRequest,
@@ -12,38 +11,11 @@ import {
 } from './app-protocol.ts'
 
 const dist = resolve('/tmp/bbplayer-renderer-dist')
-const vite = 'http://127.0.0.1:5173/'
 
 test('三个窗口 URL 都在 app://localhost', () => {
 	assert.equal(rendererUrl('index.html'), 'app://localhost/')
 	assert.equal(rendererUrl('lyrics.html'), 'app://localhost/lyrics.html')
 	assert.equal(rendererUrl('mini.html'), 'app://localhost/mini.html')
-})
-
-test('去掉 Host，保留其它头', () => {
-	const next = headersWithoutHost(
-		new Headers({ Host: 'localhost', Accept: 'text/html' }),
-	)
-	assert.equal(next.has('host'), false)
-	assert.equal(next.get('accept'), 'text/html')
-})
-
-test('转发头去掉 Origin Referer 与 sec-fetch，避免 net.fetch 抛错', () => {
-	const next = headersWithoutHost(
-		new Headers({
-			Host: 'localhost',
-			Origin: 'app://localhost',
-			Referer: 'app://localhost/',
-			'Sec-Fetch-Mode': 'cors',
-			'Sec-Fetch-Dest': 'script',
-			Accept: '*/*',
-		}),
-	)
-	assert.equal(next.has('origin'), false)
-	assert.equal(next.has('referer'), false)
-	assert.equal(next.has('sec-fetch-mode'), false)
-	assert.equal(next.has('sec-fetch-dest'), false)
-	assert.equal(next.get('accept'), '*/*')
 })
 
 test('/trpc 与 /trpc/* 走 tRPC，含 POST', () => {
@@ -54,41 +26,15 @@ test('/trpc 与 /trpc/* 走 tRPC，含 POST', () => {
 	assert.deepEqual(
 		resolveAppRequest('app://localhost/trpc/settings.get?batch=1', 'GET', {
 			rendererDist: dist,
-			viteDevServerUrl: vite,
 		}),
 		{ type: 'trpc' },
 	)
 })
 
-test('开发转发 pathname 与 search 到 Vite，不进文件', () => {
-	assert.deepEqual(
-		resolveAppRequest('app://localhost/', 'GET', {
-			rendererDist: dist,
-			viteDevServerUrl: vite,
-		}),
-		{ type: 'forward', url: 'http://127.0.0.1:5173/' },
-	)
-	assert.deepEqual(
-		resolveAppRequest('app://localhost/lyrics.html', 'GET', {
-			rendererDist: dist,
-			viteDevServerUrl: vite,
-		}),
-		{ type: 'forward', url: 'http://127.0.0.1:5173/lyrics.html' },
-	)
-	assert.deepEqual(
-		resolveAppRequest('app://localhost/@vite/client?v=1', 'GET', {
-			rendererDist: dist,
-			viteDevServerUrl: vite,
-		}),
-		{ type: 'forward', url: 'http://127.0.0.1:5173/@vite/client?v=1' },
-	)
-})
-
-test('开发非 GET/HEAD 的静态路径 405', () => {
+test('非 GET/HEAD 的静态路径 405', () => {
 	assert.deepEqual(
 		resolveAppRequest('app://localhost/src/main.tsx', 'POST', {
 			rendererDist: dist,
-			viteDevServerUrl: vite,
 		}),
 		{ type: 'error', status: 405 },
 	)
@@ -160,50 +106,6 @@ async function dispatch(
 	return listener(request)
 }
 
-test('开发转发 fetch 目标为 Vite，且不含 Host', async () => {
-	const calls: { url: string; init?: RequestInit }[] = []
-	const res = await dispatch(
-		{
-			handleTrpc: async () => new Response('trpc'),
-			rendererDist: dist,
-			viteDevServerUrl: vite,
-			fetch: async (url, init) => {
-				calls.push({ url, init })
-				return new Response('vite')
-			},
-		},
-		new Request('app://localhost/@vite/client?v=1', {
-			headers: { Host: 'localhost', Accept: '*/*' },
-		}),
-	)
-	assert.equal(await res.text(), 'vite')
-	assert.equal(calls.length, 1)
-	assert.equal(calls[0]?.url, 'http://127.0.0.1:5173/@vite/client?v=1')
-	const headers = new Headers(calls[0]?.init?.headers)
-	assert.equal(headers.has('host'), false)
-	assert.equal(headers.get('accept'), '*/*')
-	assert.equal(
-		(calls[0]?.init as { bypassCustomProtocolHandlers?: boolean })
-			?.bypassCustomProtocolHandlers,
-		true,
-	)
-})
-
-test('开发转发失败返回 502', async () => {
-	const res = await dispatch(
-		{
-			handleTrpc: async () => new Response('trpc'),
-			rendererDist: dist,
-			viteDevServerUrl: vite,
-			fetch: async () => {
-				throw new Error('vite down')
-			},
-		},
-		new Request('app://localhost/'),
-	)
-	assert.equal(res.status, 502)
-})
-
 test('生产存在的文件走 file URL，缺失 404', async () => {
 	const index = resolve(dist, 'index.html')
 	const fetched: string[] = []
@@ -239,8 +141,7 @@ test('POST /trpc 仍进 handleTrpc', async () => {
 		{
 			handleTrpc: async () => new Response('trpc-ok'),
 			rendererDist: dist,
-			viteDevServerUrl: vite,
-			fetch: async () => new Response('should-not-forward'),
+			fetch: async () => new Response('should-not-serve'),
 		},
 		new Request('app://localhost/trpc/auth.qrStart?batch=1', {
 			method: 'POST',

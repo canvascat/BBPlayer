@@ -17,10 +17,6 @@ export default defineConfig({
 		fs: {
 			allow: [join(rendererRoot, '../..')],
 		},
-		hmr: {
-			protocol: 'ws',
-			host: '127.0.0.1',
-		},
 	},
 	plugins: [react()],
 	build: {
