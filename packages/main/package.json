@@ -8,8 +8,12 @@
 	"type": "module",
 	"main": "dist/main.mjs",
 	"exports": {
-		"./router": "./src/trpc/router.ts",
-		"./preload": "./src/preload.ts"
+		"./router": {
+			"types": "./src/trpc/router.ts"
+		},
+		"./preload": {
+			"types": "./src/preload.ts"
+		}
 	},
 	"scripts": {
 		"build": "pnpm --filter @bbplayer/renderer build && vp pack --mode=production",
