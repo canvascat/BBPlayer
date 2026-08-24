@@ -1,6 +1,7 @@
 import { test, assert } from 'vitest'
 
 import {
+	formatClock,
 	neighborIndex,
 	nextRepeatMode,
 	RepeatMode,
@@ -26,4 +27,10 @@ test('随机顺序以当前曲为起点', () => {
 	const order = shuffleOrder(5, 2)
 	assert.equal(order[0], 2)
 	assert.equal(new Set(order).size, 5)
+})
+
+test('播放页时钟不补齐分钟位数', () => {
+	assert.equal(formatClock(10_000), '0:10')
+	assert.equal(formatClock(330_000), '5:30')
+	assert.equal(formatClock(-1), '0:00')
 })

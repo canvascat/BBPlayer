@@ -1,10 +1,10 @@
 import '@applemusic-like-lyrics/core/style.css'
 
-import { LyricPlayer } from '@applemusic-like-lyrics/react'
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 
 import { BbplayerAccount } from './BbplayerAccount'
 import { CommentsPanel } from './CommentsPanel'
+import { NowPlaying } from './NowPlaying'
 import { PhoneLogin } from './PhoneLogin'
 import { formatMs, repeatLabel, type TrackItem } from './playback'
 import { SkinPicker, type SkinTheme } from './SkinPicker'
@@ -359,6 +359,12 @@ export default function App() {
 	}, [lastTab, player, tab])
 
 	useEffect(() => {
+		if (tab === 'player' && !current) {
+			setTab(lastTab === 'player' ? 'home' : lastTab)
+		}
+	}, [current, lastTab, tab])
+
+	useEffect(() => {
 		return listen(trpc.player.commands.subscribe, (command) => {
 			if (command === 'playpause') player.toggleRef.current()
 			if (command === 'pause') player.audioRef.current?.pause()
@@ -621,7 +627,7 @@ export default function App() {
 
 	return (
 		<div
-			className='app'
+			className={`app${tab === 'player' ? ' player-open' : ''}`}
 			style={{
 				['--cover-image' as string]: coverImage,
 				...(skin?.primary
@@ -1447,61 +1453,16 @@ export default function App() {
 				</aside>
 			)}
 			{tab === 'player' && current && (
-				<section className='player-overlay'>
-					<div className='player-bg' />
-					<div className='player-top'>
-						<button
-							className={`icon-btn ${showComments ? 'on' : ''}`}
-							type='button'
-							onClick={() => setShowComments((value) => !value)}
-							aria-label='评论'
-						>
-							<Icon d={icons.comment} />
-						</button>
-						<button
-							className='icon-btn'
-							type='button'
-							onClick={() => void trpc.lyrics.toggle.mutate({ show: true })}
-							aria-label='打开歌词窗口'
-						>
-							<Icon d={icons.lyric} />
-						</button>
-						<button
-							className='icon-btn'
-							type='button'
-							onClick={() => setTab(lastTab === 'player' ? 'home' : lastTab)}
-							aria-label='收起播放页'
-						>
-							<Icon d={icons.down} />
-						</button>
-					</div>
-					<div className='player-main'>
-						<div>
-							<img
-								className='player-cover'
-								src={current.artwork}
-								alt=''
-							/>
-							<div className='player-meta'>
-								<h1>{current.title}</h1>
-								<p className='muted'>{current.artist}</p>
-								<p className='muted'>{player.status}</p>
-							</div>
-						</div>
-						<div className='lyrics-wrap'>
-							{player.lyrics.length > 0 ? (
-								<LyricPlayer
-									lyricLines={player.lyrics}
-									currentTime={Math.round(player.currentTime)}
-									playing={player.playing}
-									style={{ height: '100%', width: '100%' }}
-								/>
-							) : (
-								<p className='muted'>暂无歌词</p>
-							)}
-						</div>
-					</div>
-				</section>
+				<NowPlaying
+					track={current}
+					player={player}
+					commentsOpen={showComments}
+					queueOpen={showQueue}
+					onClose={() => setTab(lastTab === 'player' ? 'home' : lastTab)}
+					onToggleComments={() => setShowComments((value) => !value)}
+					onToggleQueue={() => setShowQueue((value) => !value)}
+					onSleep={cycleSleep}
+				/>
 			)}
 			{tab === 'player' && current && showComments && (
 				<CommentsPanel
