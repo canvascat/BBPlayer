@@ -40,6 +40,7 @@ export default defineConfig({
 			],
 			'no-console': ['error', { allow: ['error', 'warn'] }],
 			'react-hooks/exhaustive-deps': 'allow',
+			'react/exhaustive-effect-dependencies': 'allow',
 			'typescript/no-explicit-any': 'allow',
 			'typescript/no-misused-promises': ['error', { checksVoidReturn: false }],
 			'typescript/no-unsafe-type-assertion': 'allow',
