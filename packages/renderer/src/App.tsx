@@ -632,8 +632,8 @@ export default function App() {
 				['--cover-image' as string]: coverImage,
 				...(skin?.primary
 					? {
-							['--primary' as string]: skin.primary,
-							['--primary-hex' as string]: `rgb(${skin.primary})`,
+							['--app-primary' as string]: skin.primary,
+							['--app-primary-hex' as string]: `rgb(${skin.primary})`,
 						}
 					: {}),
 			}}
