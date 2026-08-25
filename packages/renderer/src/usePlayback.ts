@@ -312,19 +312,6 @@ export function usePlayback() {
 	}, [current, lyricLine, playing])
 
 	useEffect(() => {
-		const handle = window.setTimeout(() => {
-			void trpc.lyrics.push.mutate({
-				lyrics,
-				currentTime,
-				playing,
-				title: current?.title ?? '',
-				artist: current?.artist ?? '',
-			})
-		}, 180)
-		return () => window.clearTimeout(handle)
-	}, [current, currentTime, lyrics, playing])
-
-	useEffect(() => {
 		if (!('mediaSession' in navigator)) return
 		if (!current) {
 			navigator.mediaSession.metadata = null

@@ -9,7 +9,6 @@ import {
 	ShuffleIcon,
 	SkipBackIcon,
 	SkipForwardIcon,
-	MicVocalIcon,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -24,7 +23,6 @@ import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 
 import { formatClock, formatMs, repeatLabel, type TrackItem } from './playback'
-import { trpc } from './trpc'
 import type { usePlayback } from './usePlayback'
 
 type Playback = ReturnType<typeof usePlayback>
@@ -103,11 +101,6 @@ export function NowPlaying({
 									</DropdownMenuItem>
 									<DropdownMenuItem onClick={onToggleComments}>
 										{commentsOpen ? '关闭评论' : '评论'}
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => void trpc.mini.toggle.mutate({ show: true })}
-									>
-										迷你窗口
 									</DropdownMenuItem>
 								</DropdownMenuGroup>
 							</DropdownMenuContent>
@@ -210,17 +203,6 @@ export function NowPlaying({
 				</div>
 			</div>
 			<div className='now-playing-dock'>
-				<Button
-					className='rounded-full text-white/80 hover:bg-white/10 hover:text-white'
-					type='button'
-					variant='ghost'
-					size='icon'
-					title='歌词窗口'
-					aria-label='歌词窗口'
-					onClick={() => void trpc.lyrics.toggle.mutate()}
-				>
-					<MicVocalIcon />
-				</Button>
 				<Button
 					className={cn(
 						'rounded-full text-white/80 hover:bg-white/10 hover:text-white',

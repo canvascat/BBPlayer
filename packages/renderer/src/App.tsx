@@ -4,7 +4,6 @@ import {
 	HouseIcon,
 	LibraryIcon,
 	ListMusicIcon,
-	MicVocalIcon,
 	PauseIcon,
 	PlayIcon,
 	RepeatIcon,
@@ -156,9 +155,6 @@ export default function App() {
 	const [cookie, setCookie] = useState('')
 	const [continuePlayingAfterClose, setContinuePlayingAfterClose] =
 		useState(true)
-	const [lyricsAlwaysOnTop, setLyricsAlwaysOnTop] = useState(true)
-	const [lyricsWindowLocked, setLyricsWindowLocked] = useState(false)
-	const [autoOpenLyricsWindow, setAutoOpenLyricsWindow] = useState(false)
 	const [menuBarShowLyrics, setMenuBarShowLyrics] = useState(false)
 	const [saved, setSaved] = useState('')
 	const [showQueue, setShowQueue] = useState(false)
@@ -179,8 +175,6 @@ export default function App() {
 	const [shareInvite, setShareInvite] = useState('')
 	const [libraryNotice, setLibraryNotice] = useState('')
 	const [pickPlaylistFor, setPickPlaylistFor] = useState<TrackItem | null>(null)
-	const [miniAlwaysOnTop, setMiniAlwaysOnTop] = useState(true)
-	const [autoOpenMiniWindow, setAutoOpenMiniWindow] = useState(false)
 	const [autoCache, setAutoCache] = useState(true)
 	const [skin, setSkin] = useState<SkinTheme | null>(null)
 	const [showComments, setShowComments] = useState(false)
@@ -237,12 +231,7 @@ export default function App() {
 		void trpc.settings.get.query().then((settings) => {
 			setCookie(settings.cookie)
 			setContinuePlayingAfterClose(settings.continuePlayingAfterClose)
-			setLyricsAlwaysOnTop(settings.lyricsAlwaysOnTop)
-			setLyricsWindowLocked(settings.lyricsWindowLocked)
-			setAutoOpenLyricsWindow(settings.autoOpenLyricsWindow)
 			setMenuBarShowLyrics(settings.menuBarShowLyrics)
-			setMiniAlwaysOnTop(settings.miniAlwaysOnTop)
-			setAutoOpenMiniWindow(settings.autoOpenMiniWindow)
 			setAutoCache(settings.autoCache ?? true)
 			setSkin(settings.skin ?? null)
 			setAccount(settings.account)
@@ -523,12 +512,7 @@ export default function App() {
 		await trpc.settings.set.mutate({
 			cookie,
 			continuePlayingAfterClose,
-			lyricsAlwaysOnTop,
-			lyricsWindowLocked,
-			autoOpenLyricsWindow,
 			menuBarShowLyrics,
-			miniAlwaysOnTop,
-			autoOpenMiniWindow,
 			autoCache,
 			skin,
 		})
@@ -1343,40 +1327,10 @@ export default function App() {
 											onCheckedChange={setContinuePlayingAfterClose}
 										/>
 										<SettingSwitch
-											id='auto-open-lyrics'
-											label='播放时打开歌词窗口'
-											checked={autoOpenLyricsWindow}
-											onCheckedChange={setAutoOpenLyricsWindow}
-										/>
-										<SettingSwitch
-											id='lyrics-top'
-											label='歌词窗口置顶'
-											checked={lyricsAlwaysOnTop}
-											onCheckedChange={setLyricsAlwaysOnTop}
-										/>
-										<SettingSwitch
-											id='lyrics-lock'
-											label='歌词窗口锁定'
-											checked={lyricsWindowLocked}
-											onCheckedChange={setLyricsWindowLocked}
-										/>
-										<SettingSwitch
 											id='menubar-lyrics'
 											label='菜单栏显示歌词'
 											checked={menuBarShowLyrics}
 											onCheckedChange={setMenuBarShowLyrics}
-										/>
-										<SettingSwitch
-											id='auto-open-mini'
-											label='播放时打开迷你窗口'
-											checked={autoOpenMiniWindow}
-											onCheckedChange={setAutoOpenMiniWindow}
-										/>
-										<SettingSwitch
-											id='mini-top'
-											label='迷你窗口置顶'
-											checked={miniAlwaysOnTop}
-											onCheckedChange={setMiniAlwaysOnTop}
 										/>
 										<SettingSwitch
 											id='auto-cache'
@@ -1452,160 +1406,120 @@ export default function App() {
 						)}
 					</main>
 				</div>
-				<ContextMenu>
-					<ContextMenuTrigger
-						className='bar'
-						render={<footer />}
+				<footer className='bar'>
+					<Slider
+						className='absolute top-[-8px] right-0 left-0'
+						min={0}
+						max={player.duration || 1}
+						value={player.currentTime}
+						onValueChange={(value) => {
+							const next = Array.isArray(value) ? value[0] : value
+							player.seek(Math.round(Number(next)))
+						}}
+					/>
+					<Button
+						className='now h-auto justify-start gap-3 px-0 hover:bg-transparent'
+						variant='ghost'
+						type='button'
+						onClick={openPlayer}
 					>
-						<Slider
-							className='absolute top-[-8px] right-0 left-0'
-							min={0}
-							max={player.duration || 1}
-							value={player.currentTime}
-							onValueChange={(value) => {
-								const next = Array.isArray(value) ? value[0] : value
-								player.seek(Math.round(Number(next)))
-							}}
-						/>
+						{current?.artwork ? (
+							<img
+								src={current.artwork}
+								alt=''
+								className='size-14 rounded-lg object-cover'
+							/>
+						) : (
+							<div className='bg-muted size-14 rounded-lg' />
+						)}
+						<div className='min-w-0 text-left'>
+							<div className='truncate font-medium'>
+								{current?.title ?? '未在播放'}
+							</div>
+							<div className='text-muted-foreground truncate text-sm'>
+								{player.lyricLine || current?.artist || '从搜索开始'}
+							</div>
+						</div>
+					</Button>
+					<div className='controls'>
 						<Button
-							className='now h-auto justify-start gap-3 px-0 hover:bg-transparent'
+							className={cn(player.shuffle && 'bg-muted')}
 							variant='ghost'
+							size='icon'
 							type='button'
-							onClick={openPlayer}
+							title='随机'
+							onClick={player.toggleShuffle}
 						>
-							{current?.artwork ? (
-								<img
-									src={current.artwork}
-									alt=''
-									className='size-14 rounded-lg object-cover'
-								/>
-							) : (
-								<div className='bg-muted size-14 rounded-lg' />
-							)}
-							<div className='min-w-0 text-left'>
-								<div className='truncate font-medium'>
-									{current?.title ?? '未在播放'}
-								</div>
-								<div className='text-muted-foreground truncate text-sm'>
-									{player.lyricLine || current?.artist || '从搜索开始'}
-								</div>
-							</div>
+							<ShuffleIcon />
 						</Button>
-						<div className='controls'>
-							<Button
-								className={cn(player.shuffle && 'bg-muted')}
-								variant='ghost'
-								size='icon'
-								type='button'
-								title='随机'
-								onClick={player.toggleShuffle}
-							>
-								<ShuffleIcon />
-							</Button>
-							<Button
-								variant='ghost'
-								size='icon'
-								type='button'
-								onClick={() => player.skip(-1)}
-							>
-								<SkipBackIcon />
-							</Button>
-							<Button
-								size='icon-lg'
-								type='button'
-								onClick={player.toggle}
-							>
-								{player.playing ? <PauseIcon /> : <PlayIcon />}
-							</Button>
-							<Button
-								variant='ghost'
-								size='icon'
-								type='button'
-								onClick={() => player.skip(1)}
-							>
-								<SkipForwardIcon />
-							</Button>
-							<Button
-								className={cn(player.repeatMode && 'bg-muted')}
-								variant='ghost'
-								size='icon'
-								type='button'
-								title={repeatLabel(player.repeatMode)}
-								onClick={player.cycleRepeat}
-							>
-								<RepeatIcon />
-							</Button>
+						<Button
+							variant='ghost'
+							size='icon'
+							type='button'
+							onClick={() => player.skip(-1)}
+						>
+							<SkipBackIcon />
+						</Button>
+						<Button
+							size='icon-lg'
+							type='button'
+							onClick={player.toggle}
+						>
+							{player.playing ? <PauseIcon /> : <PlayIcon />}
+						</Button>
+						<Button
+							variant='ghost'
+							size='icon'
+							type='button'
+							onClick={() => player.skip(1)}
+						>
+							<SkipForwardIcon />
+						</Button>
+						<Button
+							className={cn(player.repeatMode && 'bg-muted')}
+							variant='ghost'
+							size='icon'
+							type='button'
+							title={repeatLabel(player.repeatMode)}
+							onClick={player.cycleRepeat}
+						>
+							<RepeatIcon />
+						</Button>
+					</div>
+					<div className='bar-right'>
+						<Button
+							variant='ghost'
+							size='sm'
+							type='button'
+							onClick={cycleSleep}
+						>
+							{player.sleepLeft > 0
+								? `定时 ${formatMs(player.sleepLeft)}`
+								: '定时'}
+						</Button>
+						<Button
+							variant='ghost'
+							size='sm'
+							type='button'
+							onClick={player.cycleSpeed}
+						>
+							{player.playbackRate}x
+						</Button>
+						<Button
+							variant='ghost'
+							size='icon'
+							type='button'
+							title='队列'
+							onClick={() => setShowQueue((value) => !value)}
+						>
+							<ListMusicIcon />
+						</Button>
+						<div className='time'>
+							<b>{formatMs(player.currentTime)}</b> /{' '}
+							{formatMs(player.duration)}
 						</div>
-						<div className='bar-right'>
-							<Button
-								variant='ghost'
-								size='sm'
-								type='button'
-								onClick={cycleSleep}
-							>
-								{player.sleepLeft > 0
-									? `定时 ${formatMs(player.sleepLeft)}`
-									: '定时'}
-							</Button>
-							<Button
-								variant='ghost'
-								size='sm'
-								type='button'
-								onClick={player.cycleSpeed}
-							>
-								{player.playbackRate}x
-							</Button>
-							<Button
-								variant='ghost'
-								size='icon'
-								type='button'
-								title='歌词窗口'
-								onClick={() => void trpc.lyrics.toggle.mutate()}
-							>
-								<MicVocalIcon />
-							</Button>
-							<Button
-								variant='ghost'
-								size='icon'
-								type='button'
-								title='迷你窗口'
-								onClick={() => void trpc.mini.toggle.mutate()}
-							>
-								<MusicIcon />
-							</Button>
-							<Button
-								variant='ghost'
-								size='icon'
-								type='button'
-								title='队列'
-								onClick={() => setShowQueue((value) => !value)}
-							>
-								<ListMusicIcon />
-							</Button>
-							<div className='time'>
-								<b>{formatMs(player.currentTime)}</b> /{' '}
-								{formatMs(player.duration)}
-							</div>
-						</div>
-					</ContextMenuTrigger>
-					<ContextMenuContent>
-						<ContextMenuGroup>
-							<ContextMenuItem onClick={() => setShowQueue(true)}>
-								打开队列
-							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => void trpc.lyrics.toggle.mutate({ show: true })}
-							>
-								打开歌词窗口
-							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => void trpc.mini.toggle.mutate({ show: true })}
-							>
-								打开迷你窗口
-							</ContextMenuItem>
-						</ContextMenuGroup>
-					</ContextMenuContent>
-				</ContextMenu>
+					</div>
+				</footer>
 				{showQueue && (
 					<aside className='queue-panel'>
 						<div className='flex items-center justify-between gap-2'>

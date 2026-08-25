@@ -3,8 +3,8 @@ export const APP_ORIGIN = `${APP_SCHEME}://localhost`
 export const TRPC_PATH = '/trpc'
 export const TRPC_URL = `${APP_ORIGIN}${TRPC_PATH}`
 
-export type RendererPage = 'index.html' | 'lyrics.html' | 'mini.html'
+export type RendererPage = 'index.html'
 
-export function rendererUrl(page: RendererPage) {
-	return page === 'index.html' ? `${APP_ORIGIN}/` : `${APP_ORIGIN}/${page}`
+export function rendererUrl(_page: RendererPage) {
+	return `${APP_ORIGIN}/`
 }

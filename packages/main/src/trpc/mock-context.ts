@@ -34,7 +34,6 @@ export function mockTrpcContext(
 			removeTrack: () => undefined,
 		},
 		refreshAccount: async () => null,
-		applyAuxSettings: () => undefined,
 		refreshShell: () => undefined,
 		openExternal: async () => undefined,
 		copyText: () => undefined,
@@ -43,8 +42,6 @@ export function mockTrpcContext(
 			currentVersion: '0.1.0',
 			message: '已是最新版本',
 		}),
-		openAux: () => false,
-		auxVisible: () => false,
 		showMain: () => undefined,
 		openGeetest: async () => ({
 			validate: '',

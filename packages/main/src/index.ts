@@ -34,14 +34,6 @@ import {
 	rendererUrl,
 } from './app-protocol'
 import { audioProxy } from './audio-proxy'
-import {
-	applyAuxSettings,
-	closeAuxWindow,
-	isAuxVisible,
-	toggleAuxWindow,
-	type AuxKind,
-	type AuxWindowOptions,
-} from './aux-windows'
 import { readBackupZip, writeBackupZip } from './backup'
 import { clearWbiCache, getAccount, getAudioStream } from './bili'
 import { BILI_IMAGE_URL_FILTER, withBiliImageHeaders } from './bili-image'
@@ -116,17 +108,14 @@ function emitShareLink(url: string) {
 	events.shareIncoming$.next(parsed)
 }
 
-function loadRenderer(
-	win: BrowserWindow,
-	page: 'index.html' | 'lyrics.html' | 'mini.html',
-) {
+function loadRenderer(win: BrowserWindow) {
 	const vite = process.env.VITE_DEV_SERVER_URL?.trim()
 	if (vite) {
 		const base = vite.endsWith('/') ? vite : `${vite}/`
-		void win.loadURL(page === 'index.html' ? base : `${base}${page}`)
+		void win.loadURL(base)
 		return
 	}
-	void win.loadURL(rendererUrl(page))
+	void win.loadURL(rendererUrl('index.html'))
 }
 
 function showMain() {
@@ -137,39 +126,6 @@ function showMain() {
 
 function sendCommand(command: string) {
 	events.playerCommands$.next(command)
-}
-
-function auxOptions(kind: AuxKind): AuxWindowOptions {
-	return {
-		preload: PRELOAD,
-		alwaysOnTop:
-			kind === 'mini'
-				? (store.get('miniAlwaysOnTop') ?? true)
-				: (store.get('lyricsAlwaysOnTop') ?? true),
-		locked: kind === 'lyrics' ? store.get('lyricsWindowLocked') : false,
-		bounds: store.get('windowBounds')?.[kind],
-		load: (win) =>
-			loadRenderer(win, kind === 'lyrics' ? 'lyrics.html' : 'mini.html'),
-		onBounds: (target, bounds) => {
-			store.set('windowBounds', {
-				...store.get('windowBounds'),
-				[target]: bounds,
-			})
-		},
-		onClosed: (target) => {
-			if (isQuitting) return
-			store.set(
-				target === 'lyrics' ? 'lyricsWindowOpen' : 'miniWindowOpen',
-				false,
-			)
-		},
-	}
-}
-
-function openAux(kind: AuxKind, show?: boolean) {
-	const visible = toggleAuxWindow(kind, auxOptions(kind), show)
-	store.set(kind === 'lyrics' ? 'lyricsWindowOpen' : 'miniWindowOpen', visible)
-	return visible
 }
 
 function createWindow() {
@@ -194,7 +150,7 @@ function createWindow() {
 			mainWindow?.hide()
 		}
 	})
-	loadRenderer(mainWindow, 'index.html')
+	loadRenderer(mainWindow)
 }
 
 function truncate(text: string, max = 22) {
@@ -239,16 +195,6 @@ function refreshShell() {
 			enabled: hasTrack,
 		},
 		{ type: 'separator' },
-		{
-			label: '打开歌词窗口',
-			accelerator: 'Alt+Command+L',
-			click: () => openAux('lyrics'),
-		},
-		{
-			label: '打开迷你窗口',
-			accelerator: 'Alt+Command+M',
-			click: () => openAux('mini'),
-		},
 		{
 			label: '显示主窗口',
 			click: () => showMain(),
@@ -437,16 +383,6 @@ function createMenu() {
 						showMain()
 						sendCommand('open-player')
 					},
-				},
-				{
-					label: '打开歌词窗口',
-					accelerator: 'Alt+Command+L',
-					click: () => openAux('lyrics'),
-				},
-				{
-					label: '打开迷你窗口',
-					accelerator: 'Alt+Command+M',
-					click: () => openAux('mini'),
 				},
 				{ role: 'minimize' },
 			],
@@ -682,8 +618,6 @@ async function resolvePlay(track: {
 				lyrics = []
 			}
 		}
-		if (store.get('autoOpenLyricsWindow')) openAux('lyrics', true)
-		if (store.get('autoOpenMiniWindow')) openAux('mini', true)
 		return { playUrl, lyrics, cached: Boolean(cached), lyricSource }
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error)
@@ -742,15 +676,12 @@ app.whenReady().then(async () => {
 						store,
 						playerDb,
 						refreshAccount,
-						applyAuxSettings,
 						refreshShell,
 						openExternal: (url) => shell.openExternal(url),
 						copyText: (text) => {
 							clipboard.writeText(text)
 						},
 						checkUpdate: () => checkUpdates(true),
-						openAux,
-						auxVisible: isAuxVisible,
 						showMain,
 						openGeetest,
 						exportDownloads: (ids) => exportDownloads(ids, false),
@@ -766,17 +697,9 @@ app.whenReady().then(async () => {
 		defaults: {
 			cookie: '',
 			continuePlayingAfterClose: true,
-			lyricsAlwaysOnTop: true,
-			lyricsWindowLocked: false,
-			autoOpenLyricsWindow: false,
 			menuBarShowLyrics: false,
-			miniAlwaysOnTop: true,
-			autoOpenMiniWindow: false,
 			autoCache: true,
 			playlists: [],
-			windowBounds: {},
-			lyricsWindowOpen: false,
-			miniWindowOpen: false,
 			account: null,
 			skin: null,
 			downloads: [],
@@ -813,8 +736,6 @@ app.whenReady().then(async () => {
 	createTray()
 	registerShortcuts()
 	void refreshAccount()
-	if (store.get('lyricsWindowOpen')) openAux('lyrics', true)
-	if (store.get('miniWindowOpen')) openAux('mini', true)
 	if (pendingShareUrl) emitShareLink(pendingShareUrl)
 	const argvShare = process.argv.find((item) => item.startsWith('bbplayer://'))
 	if (argvShare) emitShareLink(argvShare)
@@ -823,11 +744,8 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
 	stopQrLogin()
-	store.set('lyricsWindowOpen', isAuxVisible('lyrics'))
-	store.set('miniWindowOpen', isAuxVisible('mini'))
 	isQuitting = true
 	globalShortcut.unregisterAll()
-	closeAuxWindow()
 	playerDb?.close()
 })
 

@@ -12,10 +12,8 @@ import {
 
 const dist = resolve('/tmp/bbplayer-renderer-dist')
 
-test('三个窗口 URL 都在 app://localhost', () => {
+test('主窗口 URL 在 app://localhost', () => {
 	assert.equal(rendererUrl('index.html'), 'app://localhost/')
-	assert.equal(rendererUrl('lyrics.html'), 'app://localhost/lyrics.html')
-	assert.equal(rendererUrl('mini.html'), 'app://localhost/mini.html')
 })
 
 test('/trpc 与 /trpc/* 走 tRPC，含 POST', () => {
@@ -47,12 +45,6 @@ test('生产 / 映射 dist/index.html，其它路径落在 dist 内', () => {
 			type: 'file',
 			absPath: resolve(dist, 'index.html'),
 		},
-	)
-	assert.deepEqual(
-		resolveAppRequest('app://localhost/mini.html', 'GET', {
-			rendererDist: dist,
-		}),
-		{ type: 'file', absPath: resolve(dist, 'mini.html') },
 	)
 	assert.deepEqual(
 		resolveAppRequest('app://localhost/assets/x.js', 'HEAD', {

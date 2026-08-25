@@ -8,5 +8,4 @@ export const liveState = {
 		lyric: '',
 		artwork: '',
 	} as PlayerSnapshot,
-	lastLyrics: null as unknown,
 }

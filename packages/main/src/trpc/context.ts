@@ -49,16 +49,10 @@ export type TrpcContext = {
 		name: string
 		face: string
 	} | null>
-	applyAuxSettings: (
-		kind: 'lyrics' | 'mini',
-		patch: { alwaysOnTop?: boolean; locked?: boolean },
-	) => void
 	refreshShell: () => void
 	openExternal: (url: string) => void | Promise<void>
 	copyText: (text: string) => void
 	checkUpdate: () => Promise<UpdateCheck>
-	openAux: (kind: 'lyrics' | 'mini', show?: boolean) => boolean
-	auxVisible: (kind: 'lyrics' | 'mini') => boolean
 	showMain: () => void
 	openGeetest: (input: {
 		gt: string

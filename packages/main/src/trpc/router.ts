@@ -4,7 +4,6 @@ import { biliRouter } from './routers/bili'
 import { desktopRouter } from './routers/desktop'
 import { backupRouter, downloadsRouter } from './routers/downloads'
 import { libraryRouter } from './routers/library'
-import { lyricsRouter, miniRouter } from './routers/lyrics'
 import { playerRouter } from './routers/player'
 import { sessionRouter } from './routers/session'
 import { settingsRouter } from './routers/settings'
@@ -20,8 +19,6 @@ export const appRouter = router({
 	library: libraryRouter,
 	desktop: desktopRouter,
 	player: playerRouter,
-	lyrics: lyricsRouter,
-	mini: miniRouter,
 	auth: authRouter,
 	bili: biliRouter,
 	downloads: downloadsRouter,

@@ -44,7 +44,6 @@ export function createDesktopEvents() {
 			lyric: '',
 			artwork: '',
 		}),
-		lyrics$: new BehaviorSubject<unknown>(null),
 		playerCommands$: new Subject<string>(),
 	}
 }

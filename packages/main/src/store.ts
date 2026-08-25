@@ -1,6 +1,3 @@
-import type { Rectangle } from 'electron'
-
-import type { AuxKind } from './aux-windows'
 import type { BbplayerAccount } from './bbplayer-account'
 import type { BiliAccount } from './bili'
 import type { LibraryTrack, LocalPlaylist } from './db'
@@ -15,12 +12,7 @@ export type SkinTheme = {
 export type Settings = {
 	cookie: string
 	continuePlayingAfterClose: boolean
-	lyricsAlwaysOnTop: boolean
-	lyricsWindowLocked: boolean
-	autoOpenLyricsWindow: boolean
 	menuBarShowLyrics: boolean
-	miniAlwaysOnTop: boolean
-	autoOpenMiniWindow: boolean
 	autoCache: boolean
 	skin: SkinTheme | null
 }
@@ -37,9 +29,6 @@ export type PlaySession = {
 export type Persisted = {
 	session?: PlaySession
 	playlists: LocalPlaylist[]
-	windowBounds: Partial<Record<AuxKind, Rectangle>>
-	lyricsWindowOpen: boolean
-	miniWindowOpen: boolean
 	account: BiliAccount | null
 	downloads: CachedTrack[]
 	bbplayerToken?: string
