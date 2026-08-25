@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
-import { trpc } from './trpc'
+import { trpcClient } from './trpc'
 
 export interface CommentItem {
 	rpid: number
@@ -116,7 +116,7 @@ export function CommentsPanel({
 		setLoading(true)
 		setError('')
 		try {
-			const page = await trpc.bili.comments.query({
+			const page = await trpcClient.bili.comments.query({
 				bvid,
 				next: reset ? 0 : next,
 				mode,
@@ -142,7 +142,7 @@ export function CommentsPanel({
 	const like = async (item: CommentItem) => {
 		try {
 			const action = item.action ? 0 : 1
-			await trpc.bili.commentLike.mutate({
+			await trpcClient.bili.commentLike.mutate({
 				bvid,
 				rpid: item.rpid,
 				action,
@@ -166,7 +166,7 @@ export function CommentsPanel({
 	const replies = async (item: CommentItem) => {
 		if (item.replies.length) return
 		try {
-			const list = (await trpc.bili.commentReplies.query({
+			const list = (await trpcClient.bili.commentReplies.query({
 				bvid,
 				rpid: item.rpid,
 			})) as CommentItem[]

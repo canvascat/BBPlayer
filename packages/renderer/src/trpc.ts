@@ -1,12 +1,16 @@
 import type { AppRouter } from '@bbplayer/main/router'
+import { QueryClient } from '@tanstack/react-query'
 import {
 	createTRPCClient,
 	httpBatchLink,
 	httpSubscriptionLink,
 	splitLink,
 } from '@trpc/client'
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
 
-export const trpc = createTRPCClient<AppRouter>({
+export const queryClient = new QueryClient()
+
+export const trpcClient = createTRPCClient<AppRouter>({
 	links: [
 		splitLink({
 			condition: (op) => op.type === 'subscription',
@@ -18,6 +22,11 @@ export const trpc = createTRPCClient<AppRouter>({
 			}),
 		}),
 	],
+})
+
+export const trpc = createTRPCOptionsProxy<AppRouter>({
+	client: trpcClient,
+	queryClient,
 })
 
 export function listen<T>(

@@ -10,7 +10,7 @@ import {
 	type RepeatMode as RepeatModeValue,
 	type TrackItem,
 } from './playback'
-import { trpc } from './trpc'
+import { trpcClient } from './trpc'
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
@@ -86,7 +86,7 @@ export function usePlayback() {
 			setIndex(start)
 			setStatus('正在获取音频…')
 			try {
-				const resolved = await trpc.player.resolve.mutate(track)
+				const resolved = await trpcClient.player.resolve.mutate(track)
 				const audio = audioRef.current
 				if (!audio) return
 				audio.src = resolved.playUrl
@@ -273,7 +273,7 @@ export function usePlayback() {
 	}, [sleepUntil])
 
 	useEffect(() => {
-		void trpc.session.get.query().then((session) => {
+		void trpcClient.session.get.query().then((session) => {
 			if (!session?.queue?.length) return
 			setQueue(session.queue)
 			setIndex(session.index)
@@ -287,7 +287,7 @@ export function usePlayback() {
 
 	useEffect(() => {
 		const handle = window.setTimeout(() => {
-			void trpc.session.set.mutate({
+			void trpcClient.session.set.mutate({
 				queue,
 				index,
 				positionMs: currentTime,
@@ -302,7 +302,7 @@ export function usePlayback() {
 	const lyricLine = currentLyricText(lyrics, currentTime)
 
 	useEffect(() => {
-		void trpc.player.reportState.mutate({
+		void trpcClient.player.reportState.mutate({
 			title: current?.title ?? '',
 			artist: current?.artist ?? '',
 			playing,

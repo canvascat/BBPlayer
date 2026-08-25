@@ -6,7 +6,7 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
-import { trpc } from './trpc'
+import { trpcClient } from './trpc'
 
 type Mode = 'login' | 'register'
 
@@ -32,7 +32,7 @@ export function BbplayerAccount({
 	} | null>(null)
 
 	const load = async () => {
-		const settings = await trpc.settings.get.query()
+		const settings = await trpcClient.settings.get.query()
 		setAccount(settings.bbplayerAccount)
 		if (settings.bbplayerAccount) {
 			setName(settings.bbplayerAccount.name)
@@ -46,7 +46,7 @@ export function BbplayerAccount({
 	}, [])
 
 	const applySettings = (
-		settings: Awaited<ReturnType<typeof trpc.settings.get.query>> & {
+		settings: Awaited<ReturnType<typeof trpcClient.settings.get.query>> & {
 			restoreMessage?: string
 		},
 	) => {
@@ -66,13 +66,13 @@ export function BbplayerAccount({
 		try {
 			const settings =
 				mode === 'register'
-					? await trpc.account.register.mutate({
+					? await trpcClient.account.register.mutate({
 							username,
 							password,
 							name: name.trim() || undefined,
 							face: face.trim() || undefined,
 						})
-					: await trpc.account.login.mutate({ username, password })
+					: await trpcClient.account.login.mutate({ username, password })
 			setPassword('')
 			applySettings(settings)
 		} catch (error) {
@@ -106,7 +106,7 @@ export function BbplayerAccount({
 						type='button'
 						variant='outline'
 						onClick={() => {
-							void trpc.account.logout.mutate().then((settings) => {
+							void trpcClient.account.logout.mutate().then((settings) => {
 								setAccount(settings.bbplayerAccount)
 								setMessage('')
 							})
@@ -132,7 +132,7 @@ export function BbplayerAccount({
 						disabled={busy}
 						onClick={() => {
 							setBusy(true)
-							void trpc.account.updateProfile
+							void trpcClient.account.updateProfile
 								.mutate({ name, face: face || undefined })
 								.then(applySettings)
 								.catch((error) =>
@@ -151,7 +151,7 @@ export function BbplayerAccount({
 						disabled={busy || !biliLoggedIn}
 						onClick={() => {
 							setBusy(true)
-							void trpc.account.fillFromBili
+							void trpcClient.account.fillFromBili
 								.mutate()
 								.then(applySettings)
 								.catch((error) =>
@@ -170,7 +170,7 @@ export function BbplayerAccount({
 						disabled={busy}
 						onClick={() => {
 							setBusy(true)
-							void trpc.account.restore
+							void trpcClient.account.restore
 								.mutate()
 								.then((result) => {
 									setMessage(result.message)

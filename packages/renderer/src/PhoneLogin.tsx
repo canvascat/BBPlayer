@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 
-import { trpc } from './trpc'
+import { trpcClient } from './trpc'
 
 export function PhoneLogin({
 	disabled,
@@ -23,7 +23,7 @@ export function PhoneLogin({
 		setBusy(true)
 		setMessage('')
 		try {
-			const result = await trpc.auth.phoneStart.mutate({ tel })
+			const result = await trpcClient.auth.phoneStart.mutate({ tel })
 			setCaptchaKey(result.captchaKey)
 			setMessage('验证码已发送')
 		} catch (err) {
@@ -37,7 +37,7 @@ export function PhoneLogin({
 		setBusy(true)
 		setMessage('')
 		try {
-			await trpc.auth.phoneLogin.mutate({
+			await trpcClient.auth.phoneLogin.mutate({
 				tel,
 				code,
 				captchaKey,

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 
-import { trpc } from './trpc'
+import { trpcClient } from './trpc'
 
 export interface SkinTheme {
 	name: string
@@ -65,7 +65,7 @@ export function SkinPicker({
 		setBusy(true)
 		setMessage('')
 		try {
-			const result = await trpc.bili.garbSearch.query({ keyword: q })
+			const result = await trpcClient.bili.garbSearch.query({ keyword: q })
 			setList(result.list)
 			if (!result.list.length) setMessage('没有找到装扮')
 		} catch (err) {
@@ -80,7 +80,9 @@ export function SkinPicker({
 		try {
 			let primary = '232, 92, 108'
 			if (item.coverUrl) {
-				const dataUrl = await trpc.bili.skinCover.query({ url: item.coverUrl })
+				const dataUrl = await trpcClient.bili.skinCover.query({
+					url: item.coverUrl,
+				})
 				primary = await samplePrimary(dataUrl)
 			}
 			onChange({ name: item.name, coverUrl: item.coverUrl, primary })

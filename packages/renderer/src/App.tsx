@@ -64,7 +64,7 @@ import { NowPlaying } from './NowPlaying'
 import { PhoneLogin } from './PhoneLogin'
 import { formatMs, repeatLabel, type TrackItem } from './playback'
 import { SkinPicker, type SkinTheme } from './SkinPicker'
-import { listen, trpc } from './trpc'
+import { listen, trpcClient } from './trpc'
 import { usePlayback } from './usePlayback'
 
 type Tab = 'home' | 'library' | 'settings' | 'player'
@@ -228,7 +228,7 @@ export default function App() {
 			: 'none'
 
 	useEffect(() => {
-		void trpc.settings.get.query().then((settings) => {
+		void trpcClient.settings.get.query().then((settings) => {
 			setCookie(settings.cookie)
 			setContinuePlayingAfterClose(settings.continuePlayingAfterClose)
 			setMenuBarShowLyrics(settings.menuBarShowLyrics)
@@ -238,9 +238,9 @@ export default function App() {
 		})
 		void refreshPlaylists()
 		void loadRemoteLibrary()
-		void trpc.downloads.list.query().then(setDownloads)
-		void trpc.downloads.status.query().then(setDownloadTasks)
-		void trpc.share.pending.query().then((payload) => {
+		void trpcClient.downloads.list.query().then(setDownloads)
+		void trpcClient.downloads.status.query().then(setDownloadTasks)
+		void trpcClient.share.pending.query().then((payload) => {
 			if (!payload?.shareId) return
 			setShareInput(payload.shareId)
 			if (payload.inviteCode) setShareInvite(payload.inviteCode)
@@ -249,7 +249,7 @@ export default function App() {
 	}, [])
 
 	useEffect(() => {
-		return listen(trpc.share.incoming.subscribe, (payload) => {
+		return listen(trpcClient.share.incoming.subscribe, (payload) => {
 			if (!payload.shareId) return
 			setShareInput(payload.shareId)
 			if (payload.inviteCode) setShareInvite(payload.inviteCode)
@@ -258,7 +258,7 @@ export default function App() {
 	}, [])
 
 	useEffect(() => {
-		return listen(trpc.downloads.updates.subscribe, (payload) => {
+		return listen(trpcClient.downloads.updates.subscribe, (payload) => {
 			setDownloads(payload.records as TrackItem[])
 			setDownloadTasks(payload.tasks)
 			if (listTitle === '已下载') setPages(payload.records as TrackItem[])
@@ -266,11 +266,11 @@ export default function App() {
 	}, [listTitle])
 
 	useEffect(() => {
-		return listen(trpc.auth.qrUpdates.subscribe, (payload) => {
+		return listen(trpcClient.auth.qrUpdates.subscribe, (payload) => {
 			void (async () => {
 				setQr(payload)
 				if (payload.status === 'success') {
-					const settings = await trpc.settings.get.query()
+					const settings = await trpcClient.settings.get.query()
 					setCookie(settings.cookie)
 					setAccount(settings.account)
 					await loadRemoteLibrary()
@@ -280,12 +280,12 @@ export default function App() {
 	}, [])
 
 	const refreshPlaylists = async () => {
-		setPlaylists(await trpc.library.list.query())
+		setPlaylists(await trpcClient.library.list.query())
 	}
 
 	const loadRemoteLibrary = async () => {
 		try {
-			const remote = await trpc.bili.library.query()
+			const remote = await trpcClient.bili.library.query()
 			setAccount(remote.account)
 			setFavorites(remote.favorites)
 			setCollections(remote.collections)
@@ -316,7 +316,7 @@ export default function App() {
 
 	const openFavorite = async (id: string) => {
 		try {
-			const result = await trpc.bili.favorite.query({ id })
+			const result = await trpcClient.bili.favorite.query({ id })
 			showRemoteVideos(result.title, result.videos)
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
@@ -325,7 +325,7 @@ export default function App() {
 
 	const openCollection = async (id: string) => {
 		try {
-			const result = await trpc.bili.collection.query({ id })
+			const result = await trpcClient.bili.collection.query({ id })
 			showRemoteVideos(result.title, result.videos)
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
@@ -334,7 +334,7 @@ export default function App() {
 
 	const openWatchLater = async () => {
 		try {
-			const result = await trpc.bili.watchLater.query()
+			const result = await trpcClient.bili.watchLater.query()
 			showRemoteVideos(result.title, result.videos)
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
@@ -342,12 +342,12 @@ export default function App() {
 	}
 
 	const openPlaylist = async (id: string) => {
-		let playlist = await trpc.library.get.query({ id })
+		let playlist = await trpcClient.library.get.query({ id })
 		if (!playlist) return
 		if (playlist.shareId) {
 			try {
-				await trpc.share.pull.mutate({ playlistId: id })
-				playlist = (await trpc.library.get.query({ id })) ?? playlist
+				await trpcClient.share.pull.mutate({ playlistId: id })
+				playlist = (await trpcClient.library.get.query({ id })) ?? playlist
 			} catch (error) {
 				setLibraryNotice(error instanceof Error ? error.message : String(error))
 			}
@@ -405,7 +405,7 @@ export default function App() {
 	}, [current, lastTab, tab])
 
 	useEffect(() => {
-		return listen(trpc.player.commands.subscribe, (command) => {
+		return listen(trpcClient.player.commands.subscribe, (command) => {
 			if (command === 'playpause') player.toggleRef.current()
 			if (command === 'pause') player.audioRef.current?.pause()
 			if (command === 'prev') player.skipRef.current(-1)
@@ -451,7 +451,7 @@ export default function App() {
 		setHits([])
 		setPages([])
 		setActivePlaylistId(null)
-		const matched = await trpc.player.matchSearch.query({ query: q })
+		const matched = await trpcClient.player.matchSearch.query({ query: q })
 		if (matched.error) player.setError(matched.error)
 		const strategy = matched.strategy as {
 			type: string
@@ -462,7 +462,7 @@ export default function App() {
 		}
 		try {
 			if (strategy.type === 'BVID' && strategy.bvid) {
-				const video = await trpc.bili.video.query({ bvid: strategy.bvid })
+				const video = await trpcClient.bili.video.query({ bvid: strategy.bvid })
 				setActivePlaylistId(null)
 				setListTitle(video.title)
 				setPages(video.pages)
@@ -476,7 +476,7 @@ export default function App() {
 				strategy.type === 'AV_PARSE_ERROR'
 			) {
 				const keyword = strategy.query || q
-				const result = await trpc.bili.search.query({ keyword })
+				const result = await trpcClient.bili.search.query({ keyword })
 				setHits(result)
 				setListTitle(`搜索：${keyword}`)
 				setTab('library')
@@ -490,7 +490,9 @@ export default function App() {
 				return
 			}
 			if (strategy.type === 'UPLOADER' && strategy.mid) {
-				const result = await trpc.bili.uploader.query({ mid: strategy.mid })
+				const result = await trpcClient.bili.uploader.query({
+					mid: strategy.mid,
+				})
 				showRemoteVideos(result.title, result.videos)
 				return
 			}
@@ -500,7 +502,7 @@ export default function App() {
 	}
 
 	const openHit = async (hit: SearchHit) => {
-		const video = await trpc.bili.video.query({ bvid: hit.bvid })
+		const video = await trpcClient.bili.video.query({ bvid: hit.bvid })
 		setActivePlaylistId(null)
 		setListTitle(video.title)
 		setPages(video.pages)
@@ -509,21 +511,21 @@ export default function App() {
 	}
 
 	const saveSettings = async () => {
-		await trpc.settings.set.mutate({
+		await trpcClient.settings.set.mutate({
 			cookie,
 			continuePlayingAfterClose,
 			menuBarShowLyrics,
 			autoCache,
 			skin,
 		})
-		const accountNow = await trpc.auth.refresh.mutate()
+		const accountNow = await trpcClient.auth.refresh.mutate()
 		setAccount(accountNow)
 		await loadRemoteLibrary()
 		setSaved('已保存')
 	}
 
 	const exportCached = async (ids?: string[]) => {
-		const result = (await trpc.downloads.export.mutate({ ids })) as {
+		const result = (await trpcClient.downloads.export.mutate({ ids })) as {
 			message: string
 		}
 		setSaved(result.message)
@@ -533,7 +535,7 @@ export default function App() {
 	}
 
 	const logout = async () => {
-		await trpc.auth.logout.mutate()
+		await trpcClient.auth.logout.mutate()
 		setCookie('')
 		setAccount(null)
 		setFavorites([])
@@ -553,14 +555,14 @@ export default function App() {
 			return
 		}
 		player.setError('')
-		const playlist = await trpc.library.create.mutate({ title, tracks })
+		const playlist = await trpcClient.library.create.mutate({ title, tracks })
 		setCreateTitle('')
 		await refreshPlaylists()
 		await openPlaylist(playlist.id)
 	}
 
 	const addTrackToPlaylist = async (playlistId: string, track: TrackItem) => {
-		await trpc.library.addTracks.mutate({ playlistId, tracks: [track] })
+		await trpcClient.library.addTracks.mutate({ playlistId, tracks: [track] })
 		setPickPlaylistFor(null)
 		await refreshPlaylists()
 		if (activePlaylistId === playlistId) await openPlaylist(playlistId)
@@ -569,8 +571,8 @@ export default function App() {
 	const subscribeShared = async () => {
 		setLibraryNotice('')
 		try {
-			await trpc.share.preview.query({ input: shareInput })
-			const result = await trpc.share.subscribe.mutate({
+			await trpcClient.share.preview.query({ input: shareInput })
+			const result = await trpcClient.share.subscribe.mutate({
 				input: shareInput,
 				inviteCode: shareInvite.trim() || undefined,
 			})
@@ -596,7 +598,7 @@ export default function App() {
 		try {
 			if (action === 'delete') {
 				if (!window.confirm(`删除「${playlist?.title ?? ''}」？`)) return
-				await trpc.library.delete.mutate({ id })
+				await trpcClient.library.delete.mutate({ id })
 				await refreshPlaylists()
 				if (activePlaylistId === id) {
 					setActivePlaylistId(null)
@@ -606,16 +608,16 @@ export default function App() {
 				return
 			}
 			if (action === 'share') {
-				const result = await trpc.share.enable.mutate({ playlistId: id })
+				const result = await trpcClient.share.enable.mutate({ playlistId: id })
 				setLibraryNotice(
 					result.alreadyShared ? `已复制订阅链接` : '已设为共享，链接已复制',
 				)
-				await trpc.desktop.copyText.mutate({ text: result.subscribeUrl })
+				await trpcClient.desktop.copyText.mutate({ text: result.subscribeUrl })
 				await refreshPlaylists()
 				return
 			}
 			if (action === 'copy') {
-				await trpc.share.copyLink.mutate({
+				await trpcClient.share.copyLink.mutate({
 					playlistId: id,
 					kind: 'subscribe',
 				})
@@ -623,7 +625,7 @@ export default function App() {
 				return
 			}
 			if (action === 'editor') {
-				await trpc.share.copyLink.mutate({
+				await trpcClient.share.copyLink.mutate({
 					playlistId: id,
 					kind: 'editor',
 				})
@@ -631,14 +633,14 @@ export default function App() {
 				return
 			}
 			if (action === 'sync') {
-				await trpc.share.pull.mutate({ playlistId: id })
+				await trpcClient.share.pull.mutate({ playlistId: id })
 				setLibraryNotice('云端共享歌单已同步')
 				await refreshPlaylists()
 				if (activePlaylistId === id) await openPlaylist(id)
 				return
 			}
 			if (action === 'rotate') {
-				await trpc.share.rotateInvite.mutate({ playlistId: id })
+				await trpcClient.share.rotateInvite.mutate({ playlistId: id })
 				setLibraryNotice('已重置邀请码并复制协作链接')
 			}
 		} catch (error) {
@@ -1144,11 +1146,11 @@ export default function App() {
 														<ContextMenuItem
 															onClick={() => {
 																if (downloadTasks[page.id] === 'completed') {
-																	void trpc.downloads.remove.mutate({
+																	void trpcClient.downloads.remove.mutate({
 																		id: page.id,
 																	})
 																} else {
-																	void trpc.downloads.start.mutate(page)
+																	void trpcClient.downloads.start.mutate(page)
 																}
 															}}
 														>
@@ -1169,7 +1171,7 @@ export default function App() {
 														{activePlaylistId && (
 															<ContextMenuItem
 																onClick={() => {
-																	void trpc.library.removeTrack
+																	void trpcClient.library.removeTrack
 																		.mutate({
 																			playlistId: activePlaylistId,
 																			trackId: page.id,
@@ -1270,15 +1272,17 @@ export default function App() {
 														type='button'
 														variant='secondary'
 														onClick={() =>
-															void trpc.auth.qrStart.mutate().catch((err) => {
-																setQr({
-																	status: 'error',
-																	statusText:
-																		err instanceof Error
-																			? err.message
-																			: String(err),
+															void trpcClient.auth.qrStart
+																.mutate()
+																.catch((err) => {
+																	setQr({
+																		status: 'error',
+																		statusText:
+																			err instanceof Error
+																				? err.message
+																				: String(err),
+																	})
 																})
-															})
 														}
 													>
 														{qr?.status === 'expired' || qr?.status === 'error'
@@ -1290,7 +1294,7 @@ export default function App() {
 															type='button'
 															variant='outline'
 															onClick={() =>
-																void trpc.desktop.openExternal.mutate({
+																void trpcClient.desktop.openExternal.mutate({
 																	url: qr.url!,
 																})
 															}
@@ -1304,10 +1308,12 @@ export default function App() {
 										<PhoneLogin
 											disabled={Boolean(account)}
 											onLoggedIn={() => {
-												void trpc.settings.get.query().then((settings) => {
-													setCookie(settings.cookie)
-													setAccount(settings.account)
-												})
+												void trpcClient.settings.get
+													.query()
+													.then((settings) => {
+														setCookie(settings.cookie)
+														setAccount(settings.account)
+													})
 												void loadRemoteLibrary()
 											}}
 										/>
@@ -1351,7 +1357,7 @@ export default function App() {
 												variant='outline'
 												onClick={async () => {
 													const result =
-														(await trpc.backup.import.mutate()) as {
+														(await trpcClient.backup.import.mutate()) as {
 															message: string
 														}
 													setSaved(result.message)
@@ -1365,7 +1371,7 @@ export default function App() {
 												variant='outline'
 												onClick={async () => {
 													const result =
-														(await trpc.backup.export.mutate()) as {
+														(await trpcClient.backup.export.mutate()) as {
 															message: string
 														}
 													setSaved(result.message)
@@ -1377,7 +1383,8 @@ export default function App() {
 												type='button'
 												variant='outline'
 												onClick={async () => {
-													const result = await trpc.desktop.checkUpdate.mutate()
+													const result =
+														await trpcClient.desktop.checkUpdate.mutate()
 													setSaved(result.message)
 												}}
 											>
@@ -1388,7 +1395,7 @@ export default function App() {
 											value={skin}
 											onChange={(next) => {
 												setSkin(next)
-												void trpc.settings.set.mutate({ skin: next })
+												void trpcClient.settings.set.mutate({ skin: next })
 											}}
 										/>
 									</CardContent>
