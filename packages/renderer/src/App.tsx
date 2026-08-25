@@ -1,6 +1,63 @@
 import '@applemusic-like-lyrics/core/style.css'
 
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import {
+	HouseIcon,
+	LibraryIcon,
+	ListMusicIcon,
+	MicVocalIcon,
+	PauseIcon,
+	PlayIcon,
+	RepeatIcon,
+	SearchIcon,
+	SettingsIcon,
+	ShuffleIcon,
+	SkipBackIcon,
+	SkipForwardIcon,
+	MusicIcon,
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+
+import { SettingSwitch } from '@/components/setting-switch'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuGroup,
+	ContextMenuItem,
+	ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog'
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle,
+} from '@/components/ui/empty'
+import { Field, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+} from '@/components/ui/input-group'
+import { Slider } from '@/components/ui/slider'
+import { Textarea } from '@/components/ui/textarea'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 import { BbplayerAccount } from './BbplayerAccount'
 import { CommentsPanel } from './CommentsPanel'
@@ -41,45 +98,50 @@ function greeting() {
 function stripHtml(input: string) {
 	return input.replace(/<[^>]+>/g, '')
 }
+const coverButtonClass =
+	'h-auto min-w-0 flex-col items-stretch gap-2 p-0 whitespace-normal'
 
-function Icon({ d, size = 18 }: { d: string; size?: number }) {
-	return (
-		<svg
-			width={size}
-			height={size}
-			viewBox='0 0 24 24'
-			fill='none'
-			aria-hidden
-		>
-			<path
-				d={d}
-				stroke='currentColor'
-				strokeWidth='1.8'
-				strokeLinecap='round'
-				strokeLinejoin='round'
+function CoverFace({ src, fallback }: { src?: string; fallback?: string }) {
+	if (src) {
+		return (
+			<img
+				src={src}
+				alt=''
+				className='aspect-square w-full rounded-xl object-cover'
 			/>
-		</svg>
+		)
+	}
+	return (
+		<div className='bg-muted text-muted-foreground flex aspect-square w-full items-center justify-center rounded-xl text-2xl'>
+			{fallback}
+		</div>
 	)
 }
 
-const icons = {
-	home: 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z',
-	library: 'M4 5h7v14H4zM13 5h7v6h-7zM13 13h7v6h-7z',
-	settings:
-		'M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zM19.4 15a7.8 7.8 0 0 0 .1-1.5 7.8 7.8 0 0 0-.1-1.5l1.8-1.4-1.7-3-2.1.7a7.4 7.4 0 0 0-2.6-1.5L13.4 3h-2.8L10.2 5.3A7.4 7.4 0 0 0 7.6 6.8L5.5 6.1 3.8 9.1 5.6 10.5a7.8 7.8 0 0 0-.1 1.5 7.8 7.8 0 0 0 .1 1.5L3.8 14.9l1.7 3 2.1-.7a7.4 7.4 0 0 0 2.6 1.5l.4 2.3h2.8l.4-2.3a7.4 7.4 0 0 0 2.6-1.5l2.1.7 1.7-3z',
-	search: 'm20 20-3.5-3.5M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z',
-	play: 'M8 6.5v11l10-5.5z',
-	pause: 'M8 6h3v12H8zM13 6h3v12h-3z',
-	prev: 'M6 6v12M18 6 10 12l8 6z',
-	next: 'M18 6v12M6 6l8 6-8 6z',
-	down: 'm6 9 6 6 6-6',
-	music:
-		'M9 18V6l10-2v12M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm10-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
-	shuffle: 'M4 7h4l10 10h4M18 7h4M4 17h4l3-3',
-	repeat: 'M17 3v4h4M7 21v-4H3M19 7a8 8 0 0 0-14 2M5 17a8 8 0 0 0 14-2',
-	queue: 'M5 6h14M5 12h14M5 18h9',
-	lyric: 'M9 18V6l10-2v12',
-	comment: 'M5 5h14v10H8l-3 3z',
+function CoverMeta({
+	title,
+	subtitle,
+	active,
+}: {
+	title: string
+	subtitle: string
+	active?: boolean
+}) {
+	return (
+		<>
+			<span
+				className={cn(
+					'line-clamp-2 text-left text-sm',
+					active && 'text-primary',
+				)}
+			>
+				{title}
+			</span>
+			<span className='text-muted-foreground line-clamp-1 text-left text-xs'>
+				{subtitle}
+			</span>
+		</>
+	)
 }
 
 export default function App() {
@@ -99,12 +161,6 @@ export default function App() {
 	const [autoOpenLyricsWindow, setAutoOpenLyricsWindow] = useState(false)
 	const [menuBarShowLyrics, setMenuBarShowLyrics] = useState(false)
 	const [saved, setSaved] = useState('')
-	const [menu, setMenu] = useState<{
-		x: number
-		y: number
-		track: TrackItem
-	} | null>(null)
-	const [barMenu, setBarMenu] = useState<{ x: number; y: number } | null>(null)
 	const [showQueue, setShowQueue] = useState(false)
 	const [playlists, setPlaylists] = useState<
 		Array<{
@@ -122,11 +178,6 @@ export default function App() {
 	const [shareInput, setShareInput] = useState('')
 	const [shareInvite, setShareInvite] = useState('')
 	const [libraryNotice, setLibraryNotice] = useState('')
-	const [playlistMenu, setPlaylistMenu] = useState<{
-		id: string
-		x: number
-		y: number
-	} | null>(null)
 	const [pickPlaylistFor, setPickPlaylistFor] = useState<TrackItem | null>(null)
 	const [miniAlwaysOnTop, setMiniAlwaysOnTop] = useState(true)
 	const [autoOpenMiniWindow, setAutoOpenMiniWindow] = useState(false)
@@ -558,7 +609,6 @@ export default function App() {
 		action: 'share' | 'copy' | 'editor' | 'sync' | 'rotate' | 'delete',
 	) => {
 		const playlist = playlists.find((item) => item.id === id)
-		setPlaylistMenu(null)
 		try {
 			if (action === 'delete') {
 				if (!window.confirm(`删除「${playlist?.title ?? ''}」？`)) return
@@ -620,1121 +670,1073 @@ export default function App() {
 		player.startSleep(next)
 	}
 
-	const onRowMenu = (event: MouseEvent, track: TrackItem) => {
-		event.preventDefault()
-		setMenu({ x: event.clientX, y: event.clientY, track })
-	}
-
 	return (
-		<div
-			className={`app${tab === 'player' ? ' player-open' : ''}`}
-			style={{
-				['--cover-image' as string]: coverImage,
-				...(skin?.primary
-					? {
-							['--app-primary' as string]: skin.primary,
-							['--app-primary-hex' as string]: `rgb(${skin.primary})`,
-						}
-					: {}),
-			}}
-		>
-			<header className='header'>
-				<div className='brand'>
-					<span className='brand-mark'>
-						<Icon
-							d={icons.music}
-							size={16}
-						/>
-					</span>
-					BBPlayer
-				</div>
-				<label className='search-wrap'>
-					<Icon
-						d={icons.search}
-						size={16}
-					/>
-					<input
-						ref={searchRef}
-						placeholder='搜索关键词 / b23.tv / av / bv'
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === 'Enter') void submitSearch()
-						}}
-					/>
-				</label>
-				<button
-					className='icon-btn'
-					type='button'
-					onClick={() => setTab('settings')}
-					aria-label='设置'
-				>
-					<Icon d={icons.settings} />
-				</button>
-			</header>
-			<div className='body'>
-				<aside className='sidebar'>
-					<div className='nav-label'>在线音乐</div>
-					<button
-						className={`nav-btn ${tab === 'home' ? 'active' : ''}`}
-						onClick={() => setTab('home')}
-						type='button'
-					>
-						<Icon d={icons.home} />
-						主页
-					</button>
-					<button
-						className={`nav-btn ${tab === 'library' ? 'active' : ''}`}
-						onClick={() => setTab('library')}
-						type='button'
-					>
-						<Icon d={icons.library} />
-						音乐库
-					</button>
-					<div className='nav-label'>其他</div>
-					<button
-						className={`nav-btn ${tab === 'settings' ? 'active' : ''}`}
-						onClick={() => setTab('settings')}
-						type='button'
-					>
-						<Icon d={icons.settings} />
-						设置
-					</button>
-					{current && (
-						<button
-							className={`nav-btn ${tab === 'player' ? 'active' : ''}`}
-							onClick={openPlayer}
-							type='button'
-						>
-							<Icon d={icons.music} />
-							正在播放
-						</button>
-					)}
-				</aside>
-				<main className='content'>
-					{tab === 'home' && (
-						<>
-							<h1 className='page-title'>
-								{account ? `${greeting()}，${account.name}` : greeting()}
-							</h1>
-							<p className='greeting'>
-								空格播放，左右切歌，Shift+方向键快进快退，⌘L 聚焦搜索
-							</p>
-							<div className='hero'>
-								<div className='card'>
-									<div className='section-title'>快速开始</div>
-									<p className='muted'>粘贴完整链接，或直接输入作品标题。</p>
-									<div className='chips'>
-										<button
-											className='chip'
-											type='button'
-											onClick={() => void submitSearch('洛天依')}
-										>
-											洛天依
-										</button>
-										<button
-											className='chip'
-											type='button'
-											onClick={() =>
-												void submitSearch('Never Gonna Give You Up')
-											}
-										>
-											Never Gonna Give You Up
-										</button>
-									</div>
-								</div>
-								<div className='card hero-play'>
-									{current ? (
-										<>
-											<img
-												src={current.artwork}
-												alt=''
-											/>
-											<div>
-												<div className='muted'>
-													队列 {player.queue.length} 首
-												</div>
-												<div className='title'>{current.title}</div>
-												<div className='muted'>{current.artist}</div>
-												<div className='chips'>
-													<button
-														className='chip'
-														type='button'
-														onClick={player.toggle}
-													>
-														{player.playing ? '暂停' : '继续播放'}
-													</button>
-													<button
-														className='chip'
-														type='button'
-														onClick={openPlayer}
-													>
-														打开播放页
-													</button>
-												</div>
-											</div>
-										</>
-									) : (
-										<div>
-											<div className='section-title'>尚未播放</div>
-											<p className='muted'>
-												{player.queue.length
-													? '上次队列还在，按空格或播放即可续播。'
-													: '搜索后点进分 P，封面会铺到整个窗口背景。'}
-											</p>
-										</div>
-									)}
-								</div>
-							</div>
-							{player.error && <p className='error'>{player.error}</p>}
-						</>
-					)}
-					{tab === 'library' && (
-						<>
-							<h1 className='page-title'>音乐库</h1>
-							<p className='muted'>
-								{listTitle || '本地歌单、收藏夹和合集会显示在这里。'}
-							</p>
-							{libraryNotice && <p className='muted'>{libraryNotice}</p>}
-							<div className='create-row'>
-								<input
-									value={shareInput}
-									placeholder='粘贴共享链接或歌单 ID'
-									onChange={(e) => setShareInput(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === 'Enter') void subscribeShared()
-									}}
-								/>
-								<input
-									value={shareInvite}
-									placeholder='邀请码（可选）'
-									onChange={(e) => setShareInvite(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === 'Enter') void subscribeShared()
-									}}
-								/>
-								<button
-									className='chip'
-									type='button'
-									onClick={() => void subscribeShared()}
-								>
-									订阅共享歌单
-								</button>
-							</div>
-							{account && (
-								<>
-									<div className='section-title'>B 站</div>
-									<div className='cover-grid'>
-										<button
-											className='cover-card'
-											type='button'
-											onClick={() => void openWatchLater()}
-										>
-											<div className='cover-fallback'>稍</div>
-											<div className='name'>稍后再看</div>
-											<div className='sub'>{watchLaterCount} 首</div>
-										</button>
-										{favorites.map((folder) => (
-											<button
-												className='cover-card'
-												key={`fav-${folder.id}`}
-												type='button'
-												onClick={() => void openFavorite(folder.id)}
-											>
-												{folder.coverUrl ? (
-													<img
-														src={folder.coverUrl}
-														alt=''
-													/>
-												) : (
-													<div className='cover-fallback'>藏</div>
-												)}
-												<div className='name'>{folder.title}</div>
-												<div className='sub'>{folder.itemCount} 首</div>
-											</button>
-										))}
-										{collections.map((folder) => (
-											<button
-												className='cover-card'
-												key={`col-${folder.id}`}
-												type='button'
-												onClick={() => void openCollection(folder.id)}
-											>
-												{folder.coverUrl ? (
-													<img
-														src={folder.coverUrl}
-														alt=''
-													/>
-												) : (
-													<div className='cover-fallback'>集</div>
-												)}
-												<div className='name'>{folder.title}</div>
-												<div className='sub'>{folder.itemCount} 首</div>
-											</button>
-										))}
-									</div>
-								</>
-							)}
-							<div className='section-title'>本地歌单</div>
-							<div className='cover-grid'>
-								<button
-									className='cover-card'
-									type='button'
-									onClick={() => {
-										setActivePlaylistId(null)
-										setHits([])
-										setPages(downloads)
-										setListTitle('已下载')
-										setDownloadQuery('')
-										setTab('library')
-									}}
-								>
-									<div className='cover-fallback'>下</div>
-									<div className='name'>已下载</div>
-									<div className='sub'>{downloads.length} 首</div>
-								</button>
-							</div>
-							<div className='create-row'>
-								<input
-									value={createTitle}
-									placeholder='新播放列表标题'
-									onChange={(e) => setCreateTitle(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === 'Enter') void createLocalPlaylist()
-									}}
-								/>
-								<button
-									className='chip'
-									type='button'
-									onClick={() => void createLocalPlaylist()}
-								>
-									创建播放列表
-								</button>
-							</div>
-							{playlists.length > 0 && (
-								<div className='cover-grid'>
-									{playlists.map((playlist) => (
-										<button
-											className={`cover-card ${activePlaylistId === playlist.id ? 'active' : ''}`}
-											key={playlist.id}
-											type='button'
-											onClick={() => void openPlaylist(playlist.id)}
-											onContextMenu={(event) => {
-												event.preventDefault()
-												setPlaylistMenu({
-													id: playlist.id,
-													x: event.clientX,
-													y: event.clientY,
-												})
-											}}
-										>
-											{playlist.coverUrl ? (
-												<img
-													src={playlist.coverUrl}
-													alt=''
-												/>
-											) : (
-												<div className='cover-fallback'>
-													{playlist.title.slice(0, 1)}
-												</div>
-											)}
-											<div className='name'>{playlist.title}</div>
-											<div className='sub'>
-												{playlist.shareRole
-													? `${shareRoleLabel(playlist.shareRole)} · ${playlist.itemCount} 首`
-													: `${playlist.itemCount} 首`}
-											</div>
-										</button>
-									))}
-								</div>
-							)}
-							{listTitle === '已下载' && (
-								<div className='create-row'>
-									<input
-										value={downloadQuery}
-										placeholder='搜索已下载歌曲'
-										onChange={(e) => setDownloadQuery(e.target.value)}
-									/>
-									<button
-										className='chip'
-										type='button'
-										onClick={() => void exportCached()}
-									>
-										导出
-									</button>
-								</div>
-							)}
-							{hits.length > 0 && (
-								<div className='cover-grid'>
-									{hits.map((hit) => (
-										<button
-											className='cover-card'
-											key={hit.bvid}
-											type='button'
-											onClick={() => void openHit(hit)}
-										>
-											<img
-												src={hit.pic}
-												alt=''
-											/>
-											<div className='name'>{stripHtml(hit.title)}</div>
-											<div className='sub'>
-												{hit.author} · {hit.duration}
-											</div>
-										</button>
-									))}
-								</div>
-							)}
-							{visiblePages.length > 0 && (
-								<div className='list'>
-									{visiblePages.map((page, i) => (
-										<button
-											className={`row ${current?.id === page.id ? 'active' : ''}`}
-											key={page.id}
-											type='button'
-											onClick={() => startPlay(visiblePages, i)}
-											onContextMenu={(event) => onRowMenu(event, page)}
-										>
-											<span className='idx'>
-												{String(i + 1).padStart(2, '0')}
-											</span>
-											<img
-												className='cover'
-												src={page.artwork}
-												alt=''
-											/>
-											<div>
-												<div>{page.title}</div>
-												<div className='sub'>{page.artist}</div>
-											</div>
-											<span className='muted'>
-												{downloadTasks[page.id] === 'completed'
-													? '已缓存'
-													: downloadTasks[page.id] === 'downloading'
-														? '缓存中'
-														: downloadTasks[page.id] === 'queued'
-															? '排队'
-															: formatMs(page.duration * 1000)}
-											</span>
-										</button>
-									))}
-								</div>
-							)}
-							{!hits.length &&
-								!pages.length &&
-								playlists.length === 0 &&
-								!account && (
-									<p className='empty'>
-										还没有内容。创建本地歌单，或用顶栏搜索试试。
-									</p>
-								)}
-							{player.error && <p className='error'>{player.error}</p>}
-						</>
-					)}
-					{tab === 'settings' && (
-						<>
-							<h1 className='page-title'>设置</h1>
-							<div className='card'>
-								<BbplayerAccount
-									biliLoggedIn={Boolean(account)}
-									onPlaylistsChanged={() => void refreshPlaylists()}
-								/>
-							</div>
-							<div className='card'>
-								<p className='muted'>
-									扫码登录后可打开收藏夹、合集和稍后再看。也可以继续粘贴
-									Cookie。
-								</p>
-								{account ? (
-									<div className='account-row'>
-										<img
-											src={account.face}
-											alt=''
-										/>
-										<div>
-											<div className='title'>{account.name}</div>
-											<div className='muted'>UID {account.mid}</div>
-										</div>
-										<button
-											className='chip'
-											type='button'
-											onClick={() => void logout()}
-										>
-											退出登录
-										</button>
-									</div>
-								) : (
-									<div className='qr-box'>
-										{qr?.dataUrl ? (
-											<img
-												className='qr-image'
-												src={qr.dataUrl}
-												alt='登录二维码'
-											/>
-										) : (
-											<div className='qr-placeholder'>二维码</div>
-										)}
-										<p className='muted'>
-											{qr?.statusText || '点击下方按钮生成二维码'}
-										</p>
-										<div className='chips'>
-											<button
-												className='chip'
-												type='button'
-												onClick={() =>
-													void trpc.auth.qrStart.mutate().catch((err) => {
-														setQr({
-															status: 'error',
-															statusText:
-																err instanceof Error
-																	? err.message
-																	: String(err),
-														})
-													})
-												}
-											>
-												{qr?.status === 'expired' || qr?.status === 'error'
-													? '重新生成'
-													: '扫码登录'}
-											</button>
-											{qr?.url && (
-												<button
-													className='chip'
-													type='button'
-													onClick={() =>
-														void trpc.desktop.openExternal.mutate({
-															url: qr.url!,
-														})
-													}
-												>
-													在浏览器打开
-												</button>
-											)}
-										</div>
-									</div>
-								)}
-								<PhoneLogin
-									disabled={Boolean(account)}
-									onLoggedIn={() => {
-										void trpc.settings.get.query().then((settings) => {
-											setCookie(settings.cookie)
-											setAccount(settings.account)
-										})
-										void loadRemoteLibrary()
-									}}
-								/>
-								<label className='field'>
-									Cookie
-									<textarea
-										value={cookie}
-										onChange={(e) => setCookie(e.target.value)}
-										placeholder='粘贴 Bilibili Cookie'
-									/>
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={continuePlayingAfterClose}
-										onChange={(e) =>
-											setContinuePlayingAfterClose(e.target.checked)
-										}
-									/>
-									关闭窗口后继续播放
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={autoOpenLyricsWindow}
-										onChange={(e) => setAutoOpenLyricsWindow(e.target.checked)}
-									/>
-									播放时打开歌词窗口
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={lyricsAlwaysOnTop}
-										onChange={(e) => setLyricsAlwaysOnTop(e.target.checked)}
-									/>
-									歌词窗口置顶
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={lyricsWindowLocked}
-										onChange={(e) => setLyricsWindowLocked(e.target.checked)}
-									/>
-									歌词窗口锁定
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={menuBarShowLyrics}
-										onChange={(e) => setMenuBarShowLyrics(e.target.checked)}
-									/>
-									菜单栏显示歌词
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={autoOpenMiniWindow}
-										onChange={(e) => setAutoOpenMiniWindow(e.target.checked)}
-									/>
-									播放时打开迷你窗口
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={miniAlwaysOnTop}
-										onChange={(e) => setMiniAlwaysOnTop(e.target.checked)}
-									/>
-									迷你窗口置顶
-								</label>
-								<label className='inline'>
-									<input
-										type='checkbox'
-										checked={autoCache}
-										onChange={(e) => setAutoCache(e.target.checked)}
-									/>
-									播放时自动缓存音频
-								</label>
-								<div className='chips'>
-									<button
-										className='chip'
-										type='button'
-										onClick={() => void exportCached()}
-									>
-										导出已缓存音频
-									</button>
-									<button
-										className='chip'
-										type='button'
-										onClick={async () => {
-											const result = (await trpc.backup.import.mutate()) as {
-												message: string
-											}
-											setSaved(result.message)
-											await refreshPlaylists()
-										}}
-									>
-										导入备份
-									</button>
-									<button
-										className='chip'
-										type='button'
-										onClick={async () => {
-											const result = (await trpc.backup.export.mutate()) as {
-												message: string
-											}
-											setSaved(result.message)
-										}}
-									>
-										导出备份
-									</button>
-									<button
-										className='chip'
-										type='button'
-										onClick={async () => {
-											const result = await trpc.desktop.checkUpdate.mutate()
-											setSaved(result.message)
-										}}
-									>
-										检查更新
-									</button>
-								</div>
-								<SkinPicker
-									value={skin}
-									onChange={(next) => {
-										setSkin(next)
-										void trpc.settings.set.mutate({ skin: next })
-									}}
-								/>
-								<button
-									className='save-btn'
-									type='button'
-									onClick={() => void saveSettings()}
-								>
-									保存
-								</button>
-								{saved && <p className='muted'>{saved}</p>}
-							</div>
-						</>
-					)}
-				</main>
-			</div>
-			<footer
-				className='bar'
-				onContextMenu={(event) => {
-					event.preventDefault()
-					setBarMenu({ x: event.clientX, y: event.clientY })
+		<TooltipProvider>
+			<div
+				className={`app${tab === 'player' ? ' player-open' : ''}`}
+				style={{
+					['--cover-image' as string]: coverImage,
+					...(skin?.primary
+						? {
+								['--app-primary' as string]: skin.primary,
+								['--app-primary-hex' as string]: `rgb(${skin.primary})`,
+							}
+						: {}),
 				}}
 			>
-				<input
-					className='progress'
-					type='range'
-					min={0}
-					max={player.duration || 1}
-					value={player.currentTime}
-					onChange={(e) => player.seek(Math.round(Number(e.target.value)))}
-				/>
-				<button
-					className='now'
-					type='button'
-					onClick={openPlayer}
-				>
-					{current?.artwork ? (
-						<img
-							src={current.artwork}
-							alt=''
-						/>
-					) : (
-						<div
-							className='cover'
-							style={{ width: 56, height: 56, borderRadius: 8 }}
-						/>
-					)}
-					<div className='meta'>
-						<div className='title'>{current?.title ?? '未在播放'}</div>
-						<div className='artist'>
-							{player.lyricLine || current?.artist || '从搜索开始'}
-						</div>
+				<header className='header'>
+					<div className='brand'>
+						<span className='brand-mark'>
+							<MusicIcon />
+						</span>
+						BBPlayer
 					</div>
-				</button>
-				<div className='controls'>
-					<button
-						className={`play-icon ${player.shuffle ? 'on' : ''}`}
-						type='button'
-						title='随机'
-						onClick={player.toggleShuffle}
-					>
-						<Icon
-							d={icons.shuffle}
-							size={16}
+					<InputGroup className='max-w-xl flex-1 bg-background/40'>
+						<InputGroupAddon>
+							<SearchIcon />
+						</InputGroupAddon>
+						<InputGroupInput
+							ref={searchRef}
+							placeholder='搜索关键词 / b23.tv / av / bv'
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === 'Enter') void submitSearch()
+							}}
 						/>
-					</button>
-					<button
-						className='play-icon'
+					</InputGroup>
+					<Button
 						type='button'
-						onClick={() => player.skip(-1)}
+						variant='ghost'
+						size='icon'
+						onClick={() => setTab('settings')}
+						aria-label='设置'
 					>
-						<Icon d={icons.prev} />
-					</button>
-					<button
-						className='play-pause'
-						type='button'
-						onClick={player.toggle}
-					>
-						<Icon
-							d={player.playing ? icons.pause : icons.play}
-							size={20}
-						/>
-					</button>
-					<button
-						className='play-icon'
-						type='button'
-						onClick={() => player.skip(1)}
-					>
-						<Icon d={icons.next} />
-					</button>
-					<button
-						className={`play-icon ${player.repeatMode ? 'on' : ''}`}
-						type='button'
-						title={repeatLabel(player.repeatMode)}
-						onClick={player.cycleRepeat}
-					>
-						<Icon
-							d={icons.repeat}
-							size={16}
-						/>
-					</button>
-				</div>
-				<div className='bar-right'>
-					<button
-						className='text-btn'
-						type='button'
-						onClick={cycleSleep}
-					>
-						{player.sleepLeft > 0
-							? `定时 ${formatMs(player.sleepLeft)}`
-							: '定时'}
-					</button>
-					<button
-						className='text-btn'
-						type='button'
-						onClick={player.cycleSpeed}
-					>
-						{player.playbackRate}x
-					</button>
-					<button
-						className='play-icon'
-						type='button'
-						title='歌词窗口'
-						onClick={() => void trpc.lyrics.toggle.mutate()}
-					>
-						<Icon d={icons.lyric} />
-					</button>
-					<button
-						className='play-icon'
-						type='button'
-						title='迷你窗口'
-						onClick={() => void trpc.mini.toggle.mutate()}
-					>
-						<Icon d={icons.music} />
-					</button>
-					<button
-						className='play-icon'
-						type='button'
-						title='队列'
-						onClick={() => setShowQueue((value) => !value)}
-					>
-						<Icon d={icons.queue} />
-					</button>
-					<div className='time'>
-						<b>{formatMs(player.currentTime)}</b> / {formatMs(player.duration)}
-					</div>
-				</div>
-			</footer>
-			{showQueue && (
-				<aside className='queue-panel'>
-					<div className='queue-head'>
-						<strong>播放队列 ({player.queue.length})</strong>
-						<div className='chips'>
-							<button
-								className='chip'
+						<SettingsIcon />
+					</Button>
+				</header>
+				<div className='body'>
+					<aside className='sidebar'>
+						<div className='nav-label'>在线音乐</div>
+						<Button
+							className='w-full justify-start'
+							variant={tab === 'home' ? 'secondary' : 'ghost'}
+							onClick={() => setTab('home')}
+							type='button'
+						>
+							<HouseIcon data-icon='inline-start' />
+							主页
+						</Button>
+						<Button
+							className='w-full justify-start'
+							variant={tab === 'library' ? 'secondary' : 'ghost'}
+							onClick={() => setTab('library')}
+							type='button'
+						>
+							<LibraryIcon data-icon='inline-start' />
+							音乐库
+						</Button>
+						<div className='nav-label'>其他</div>
+						<Button
+							className='w-full justify-start'
+							variant={tab === 'settings' ? 'secondary' : 'ghost'}
+							onClick={() => setTab('settings')}
+							type='button'
+						>
+							<SettingsIcon data-icon='inline-start' />
+							设置
+						</Button>
+						{current && (
+							<Button
+								className='w-full justify-start'
+								variant={tab === 'player' ? 'secondary' : 'ghost'}
+								onClick={openPlayer}
 								type='button'
-								onClick={() => {
-									if (!player.queue.length) return
-									void createLocalPlaylist(
-										player.queue,
-										createTitle.trim() || '播放队列',
-									)
-								}}
 							>
-								保存为本地歌单
-							</button>
-							<button
-								type='button'
-								onClick={() => setShowQueue(false)}
-							>
-								关闭
-							</button>
-						</div>
-					</div>
-					<div className='list'>
-						{player.queue.map((item, i) => (
-							<button
-								className={`row ${i === player.index ? 'active' : ''}`}
-								key={`${item.id}-${i}`}
-								type='button'
-								onClick={() => void player.playTrack(player.queue, i)}
-							>
-								<span className='idx'>{String(i + 1).padStart(2, '0')}</span>
-								<img
-									className='cover'
-									src={item.artwork}
-									alt=''
-								/>
-								<div>
-									<div>{item.title}</div>
-									<div className='sub'>{item.artist}</div>
+								<MusicIcon data-icon='inline-start' />
+								正在播放
+							</Button>
+						)}
+					</aside>
+					<main className='content'>
+						{tab === 'home' && (
+							<>
+								<h1 className='page-title'>
+									{account ? `${greeting()}，${account.name}` : greeting()}
+								</h1>
+								<p className='greeting'>
+									空格播放，左右切歌，Shift+方向键快进快退，⌘L 聚焦搜索
+								</p>
+								<div className='hero'>
+									<Card>
+										<CardHeader>
+											<CardTitle>快速开始</CardTitle>
+											<CardDescription>
+												粘贴完整链接，或直接输入作品标题。
+											</CardDescription>
+										</CardHeader>
+										<CardContent className='flex flex-wrap gap-2'>
+											<Button
+												type='button'
+												variant='secondary'
+												onClick={() => void submitSearch('洛天依')}
+											>
+												洛天依
+											</Button>
+											<Button
+												type='button'
+												variant='secondary'
+												onClick={() =>
+													void submitSearch('Never Gonna Give You Up')
+												}
+											>
+												Never Gonna Give You Up
+											</Button>
+										</CardContent>
+									</Card>
+									<Card className='hero-play'>
+										{current ? (
+											<CardContent className='flex items-center gap-4'>
+												<img
+													src={current.artwork}
+													alt=''
+													className='size-24 rounded-xl object-cover'
+												/>
+												<div className='min-w-0 flex-1'>
+													<div className='text-muted-foreground'>
+														队列 {player.queue.length} 首
+													</div>
+													<div className='truncate font-medium'>
+														{current.title}
+													</div>
+													<div className='text-muted-foreground truncate'>
+														{current.artist}
+													</div>
+													<div className='mt-2 flex flex-wrap gap-2'>
+														<Button
+															type='button'
+															size='sm'
+															onClick={player.toggle}
+														>
+															{player.playing ? '暂停' : '继续播放'}
+														</Button>
+														<Button
+															type='button'
+															size='sm'
+															variant='secondary'
+															onClick={openPlayer}
+														>
+															打开播放页
+														</Button>
+													</div>
+												</div>
+											</CardContent>
+										) : (
+											<>
+												<CardHeader>
+													<CardTitle>尚未播放</CardTitle>
+													<CardDescription>
+														{player.queue.length
+															? '上次队列还在，按空格或播放即可续播。'
+															: '搜索后点进分 P，封面会铺到整个窗口背景。'}
+													</CardDescription>
+												</CardHeader>
+											</>
+										)}
+									</Card>
 								</div>
-								<button
+								{player.error && <p className='error'>{player.error}</p>}
+							</>
+						)}
+						{tab === 'library' && (
+							<>
+								<h1 className='page-title'>音乐库</h1>
+								<p className='muted'>
+									{listTitle || '本地歌单、收藏夹和合集会显示在这里。'}
+								</p>
+								{libraryNotice && <p className='muted'>{libraryNotice}</p>}
+								<div className='flex flex-wrap items-center gap-2'>
+									<Input
+										value={shareInput}
+										placeholder='粘贴共享链接或歌单 ID'
+										onChange={(e) => setShareInput(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter') void subscribeShared()
+										}}
+									/>
+									<Input
+										className='max-w-40'
+										value={shareInvite}
+										placeholder='邀请码（可选）'
+										onChange={(e) => setShareInvite(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter') void subscribeShared()
+										}}
+									/>
+									<Button
+										type='button'
+										variant='secondary'
+										onClick={() => void subscribeShared()}
+									>
+										订阅共享歌单
+									</Button>
+								</div>
+								{account && (
+									<>
+										<div className='section-title'>B 站</div>
+										<div className='cover-grid'>
+											<Button
+												className={coverButtonClass}
+												type='button'
+												variant='ghost'
+												onClick={() => void openWatchLater()}
+											>
+												<CoverFace fallback='稍' />
+												<CoverMeta
+													title='稍后再看'
+													subtitle={`${watchLaterCount} 首`}
+												/>
+											</Button>
+											{favorites.map((folder) => (
+												<Button
+													className={coverButtonClass}
+													key={`fav-${folder.id}`}
+													type='button'
+													variant='ghost'
+													onClick={() => void openFavorite(folder.id)}
+												>
+													<CoverFace
+														src={folder.coverUrl}
+														fallback='藏'
+													/>
+													<CoverMeta
+														title={folder.title}
+														subtitle={`${folder.itemCount} 首`}
+													/>
+												</Button>
+											))}
+											{collections.map((folder) => (
+												<Button
+													className={coverButtonClass}
+													key={`col-${folder.id}`}
+													type='button'
+													variant='ghost'
+													onClick={() => void openCollection(folder.id)}
+												>
+													<CoverFace
+														src={folder.coverUrl}
+														fallback='集'
+													/>
+													<CoverMeta
+														title={folder.title}
+														subtitle={`${folder.itemCount} 首`}
+													/>
+												</Button>
+											))}
+										</div>
+									</>
+								)}
+								<div className='section-title'>本地歌单</div>
+								<div className='cover-grid'>
+									<Button
+										className={coverButtonClass}
+										type='button'
+										variant='ghost'
+										onClick={() => {
+											setActivePlaylistId(null)
+											setHits([])
+											setPages(downloads)
+											setListTitle('已下载')
+											setDownloadQuery('')
+											setTab('library')
+										}}
+									>
+										<CoverFace fallback='下' />
+										<CoverMeta
+											title='已下载'
+											subtitle={`${downloads.length} 首`}
+										/>
+									</Button>
+								</div>
+								<div className='flex flex-wrap items-center gap-2'>
+									<Input
+										value={createTitle}
+										placeholder='新播放列表标题'
+										onChange={(e) => setCreateTitle(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter') void createLocalPlaylist()
+										}}
+									/>
+									<Button
+										type='button'
+										onClick={() => void createLocalPlaylist()}
+									>
+										创建播放列表
+									</Button>
+								</div>
+								{playlists.length > 0 && (
+									<div className='cover-grid'>
+										{playlists.map((playlist) => (
+											<ContextMenu key={playlist.id}>
+												<ContextMenuTrigger>
+													<Button
+														className={coverButtonClass}
+														type='button'
+														variant='ghost'
+														onClick={() => void openPlaylist(playlist.id)}
+													>
+														<CoverFace
+															src={playlist.coverUrl}
+															fallback={playlist.title.slice(0, 1)}
+														/>
+														<CoverMeta
+															title={playlist.title}
+															subtitle={
+																playlist.shareRole
+																	? `${shareRoleLabel(playlist.shareRole)} · ${playlist.itemCount} 首`
+																	: `${playlist.itemCount} 首`
+															}
+															active={activePlaylistId === playlist.id}
+														/>
+													</Button>
+												</ContextMenuTrigger>
+												<ContextMenuContent>
+													<ContextMenuGroup>
+														{!playlist.shareId && (
+															<ContextMenuItem
+																onClick={() =>
+																	void runPlaylistAction(playlist.id, 'share')
+																}
+															>
+																设为共享
+															</ContextMenuItem>
+														)}
+														{playlist.shareId && (
+															<ContextMenuItem
+																onClick={() =>
+																	void runPlaylistAction(playlist.id, 'copy')
+																}
+															>
+																复制订阅链接
+															</ContextMenuItem>
+														)}
+														{playlist.shareRole === 'owner' && (
+															<ContextMenuItem
+																onClick={() =>
+																	void runPlaylistAction(playlist.id, 'editor')
+																}
+															>
+																复制协作链接
+															</ContextMenuItem>
+														)}
+														{playlist.shareId && (
+															<ContextMenuItem
+																onClick={() =>
+																	void runPlaylistAction(playlist.id, 'sync')
+																}
+															>
+																同步云端
+															</ContextMenuItem>
+														)}
+														{playlist.shareRole === 'owner' && (
+															<ContextMenuItem
+																onClick={() =>
+																	void runPlaylistAction(playlist.id, 'rotate')
+																}
+															>
+																重置邀请码
+															</ContextMenuItem>
+														)}
+														<ContextMenuItem
+															variant='destructive'
+															onClick={() =>
+																void runPlaylistAction(playlist.id, 'delete')
+															}
+														>
+															删除
+														</ContextMenuItem>
+													</ContextMenuGroup>
+												</ContextMenuContent>
+											</ContextMenu>
+										))}
+									</div>
+								)}
+								{listTitle === '已下载' && (
+									<div className='flex flex-wrap items-center gap-2'>
+										<Input
+											value={downloadQuery}
+											placeholder='搜索已下载歌曲'
+											onChange={(e) => setDownloadQuery(e.target.value)}
+										/>
+										<Button
+											type='button'
+											variant='secondary'
+											onClick={() => void exportCached()}
+										>
+											导出
+										</Button>
+									</div>
+								)}
+								{hits.length > 0 && (
+									<div className='cover-grid'>
+										{hits.map((hit) => (
+											<Button
+												className={coverButtonClass}
+												key={hit.bvid}
+												type='button'
+												variant='ghost'
+												onClick={() => void openHit(hit)}
+											>
+												<CoverFace src={hit.pic} />
+												<CoverMeta
+													title={stripHtml(hit.title)}
+													subtitle={`${hit.author} · ${hit.duration}`}
+												/>
+											</Button>
+										))}
+									</div>
+								)}
+								{visiblePages.length > 0 && (
+									<div className='flex flex-col gap-1'>
+										{visiblePages.map((page, i) => (
+											<ContextMenu key={page.id}>
+												<ContextMenuTrigger>
+													<Button
+														className={cn(
+															'grid h-auto w-full grid-cols-[28px_48px_1fr_auto] items-center gap-3 rounded-lg px-2.5 py-2 whitespace-normal',
+															current?.id === page.id && 'bg-muted',
+														)}
+														type='button'
+														variant='ghost'
+														onClick={() => startPlay(visiblePages, i)}
+													>
+														<span className='text-muted-foreground text-right text-[13px]'>
+															{String(i + 1).padStart(2, '0')}
+														</span>
+														<img
+															className='size-12 rounded-lg object-cover'
+															src={page.artwork}
+															alt=''
+														/>
+														<div className='min-w-0 text-left'>
+															<div className='truncate'>{page.title}</div>
+															<div className='text-muted-foreground truncate text-xs'>
+																{page.artist}
+															</div>
+														</div>
+														<span className='text-muted-foreground text-xs'>
+															{downloadTasks[page.id] === 'completed'
+																? '已缓存'
+																: downloadTasks[page.id] === 'downloading'
+																	? '缓存中'
+																	: downloadTasks[page.id] === 'queued'
+																		? '排队'
+																		: formatMs(page.duration * 1000)}
+														</span>
+													</Button>
+												</ContextMenuTrigger>
+												<ContextMenuContent>
+													<ContextMenuGroup>
+														<ContextMenuItem
+															onClick={() => startPlay(visiblePages, i)}
+														>
+															播放
+														</ContextMenuItem>
+														<ContextMenuItem
+															onClick={() => player.playNext(page)}
+														>
+															下一首播放
+														</ContextMenuItem>
+														<ContextMenuItem
+															onClick={() => player.addToEnd(page)}
+														>
+															加入队列末尾
+														</ContextMenuItem>
+														<ContextMenuItem
+															onClick={() => setPickPlaylistFor(page)}
+														>
+															添加到本地歌单
+														</ContextMenuItem>
+														<ContextMenuItem
+															onClick={() => {
+																if (downloadTasks[page.id] === 'completed') {
+																	void trpc.downloads.remove.mutate({
+																		id: page.id,
+																	})
+																} else {
+																	void trpc.downloads.start.mutate(page)
+																}
+															}}
+														>
+															{downloadTasks[page.id] === 'completed'
+																? '删除缓存'
+																: downloadTasks[page.id] === 'downloading' ||
+																	  downloadTasks[page.id] === 'queued'
+																	? '正在缓存'
+																	: '缓存音频'}
+														</ContextMenuItem>
+														{downloadTasks[page.id] === 'completed' && (
+															<ContextMenuItem
+																onClick={() => void exportCached([page.id])}
+															>
+																导出
+															</ContextMenuItem>
+														)}
+														{activePlaylistId && (
+															<ContextMenuItem
+																onClick={() => {
+																	void trpc.library.removeTrack
+																		.mutate({
+																			playlistId: activePlaylistId,
+																			trackId: page.id,
+																		})
+																		.then(() => openPlaylist(activePlaylistId))
+																		.then(refreshPlaylists)
+																}}
+															>
+																从列表中移除
+															</ContextMenuItem>
+														)}
+													</ContextMenuGroup>
+												</ContextMenuContent>
+											</ContextMenu>
+										))}
+									</div>
+								)}
+								{!hits.length &&
+									!pages.length &&
+									playlists.length === 0 &&
+									!account && (
+										<Empty>
+											<EmptyHeader>
+												<EmptyTitle>还没有内容</EmptyTitle>
+												<EmptyDescription>
+													创建本地歌单，或用顶栏搜索试试。
+												</EmptyDescription>
+											</EmptyHeader>
+										</Empty>
+									)}
+								{player.error && <p className='error'>{player.error}</p>}
+							</>
+						)}
+						{tab === 'settings' && (
+							<>
+								<h1 className='page-title'>设置</h1>
+								<Card>
+									<CardContent>
+										<BbplayerAccount
+											biliLoggedIn={Boolean(account)}
+											onPlaylistsChanged={() => void refreshPlaylists()}
+										/>
+									</CardContent>
+								</Card>
+								<Card>
+									<CardHeader>
+										<CardDescription>
+											扫码登录后可打开收藏夹、合集和稍后再看。也可以继续粘贴
+											Cookie。
+										</CardDescription>
+									</CardHeader>
+									<CardContent className='flex flex-col gap-4'>
+										{account ? (
+											<div className='flex items-center gap-3'>
+												<Avatar size='lg'>
+													<AvatarImage
+														src={account.face}
+														alt=''
+													/>
+													<AvatarFallback>
+														{account.name.slice(0, 1)}
+													</AvatarFallback>
+												</Avatar>
+												<div className='min-w-0 flex-1'>
+													<div className='truncate font-medium'>
+														{account.name}
+													</div>
+													<div className='text-muted-foreground'>
+														UID {account.mid}
+													</div>
+												</div>
+												<Button
+													type='button'
+													variant='outline'
+													onClick={() => void logout()}
+												>
+													退出登录
+												</Button>
+											</div>
+										) : (
+											<div className='flex flex-col gap-3'>
+												{qr?.dataUrl ? (
+													<img
+														className='size-40 rounded-lg'
+														src={qr.dataUrl}
+														alt='登录二维码'
+													/>
+												) : (
+													<div className='bg-muted text-muted-foreground flex size-40 items-center justify-center rounded-lg'>
+														二维码
+													</div>
+												)}
+												<p className='text-muted-foreground'>
+													{qr?.statusText || '点击下方按钮生成二维码'}
+												</p>
+												<div className='flex flex-wrap gap-2'>
+													<Button
+														type='button'
+														variant='secondary'
+														onClick={() =>
+															void trpc.auth.qrStart.mutate().catch((err) => {
+																setQr({
+																	status: 'error',
+																	statusText:
+																		err instanceof Error
+																			? err.message
+																			: String(err),
+																})
+															})
+														}
+													>
+														{qr?.status === 'expired' || qr?.status === 'error'
+															? '重新生成'
+															: '扫码登录'}
+													</Button>
+													{qr?.url && (
+														<Button
+															type='button'
+															variant='outline'
+															onClick={() =>
+																void trpc.desktop.openExternal.mutate({
+																	url: qr.url!,
+																})
+															}
+														>
+															在浏览器打开
+														</Button>
+													)}
+												</div>
+											</div>
+										)}
+										<PhoneLogin
+											disabled={Boolean(account)}
+											onLoggedIn={() => {
+												void trpc.settings.get.query().then((settings) => {
+													setCookie(settings.cookie)
+													setAccount(settings.account)
+												})
+												void loadRemoteLibrary()
+											}}
+										/>
+										<Field>
+											<FieldLabel htmlFor='cookie'>Cookie</FieldLabel>
+											<Textarea
+												id='cookie'
+												value={cookie}
+												onChange={(e) => setCookie(e.target.value)}
+												placeholder='粘贴 Bilibili Cookie'
+											/>
+										</Field>
+										<SettingSwitch
+											id='continue-playing'
+											label='关闭窗口后继续播放'
+											checked={continuePlayingAfterClose}
+											onCheckedChange={setContinuePlayingAfterClose}
+										/>
+										<SettingSwitch
+											id='auto-open-lyrics'
+											label='播放时打开歌词窗口'
+											checked={autoOpenLyricsWindow}
+											onCheckedChange={setAutoOpenLyricsWindow}
+										/>
+										<SettingSwitch
+											id='lyrics-top'
+											label='歌词窗口置顶'
+											checked={lyricsAlwaysOnTop}
+											onCheckedChange={setLyricsAlwaysOnTop}
+										/>
+										<SettingSwitch
+											id='lyrics-lock'
+											label='歌词窗口锁定'
+											checked={lyricsWindowLocked}
+											onCheckedChange={setLyricsWindowLocked}
+										/>
+										<SettingSwitch
+											id='menubar-lyrics'
+											label='菜单栏显示歌词'
+											checked={menuBarShowLyrics}
+											onCheckedChange={setMenuBarShowLyrics}
+										/>
+										<SettingSwitch
+											id='auto-open-mini'
+											label='播放时打开迷你窗口'
+											checked={autoOpenMiniWindow}
+											onCheckedChange={setAutoOpenMiniWindow}
+										/>
+										<SettingSwitch
+											id='mini-top'
+											label='迷你窗口置顶'
+											checked={miniAlwaysOnTop}
+											onCheckedChange={setMiniAlwaysOnTop}
+										/>
+										<SettingSwitch
+											id='auto-cache'
+											label='播放时自动缓存音频'
+											checked={autoCache}
+											onCheckedChange={setAutoCache}
+										/>
+										<div className='flex flex-wrap gap-2'>
+											<Button
+												type='button'
+												variant='outline'
+												onClick={() => void exportCached()}
+											>
+												导出已缓存音频
+											</Button>
+											<Button
+												type='button'
+												variant='outline'
+												onClick={async () => {
+													const result =
+														(await trpc.backup.import.mutate()) as {
+															message: string
+														}
+													setSaved(result.message)
+													await refreshPlaylists()
+												}}
+											>
+												导入备份
+											</Button>
+											<Button
+												type='button'
+												variant='outline'
+												onClick={async () => {
+													const result =
+														(await trpc.backup.export.mutate()) as {
+															message: string
+														}
+													setSaved(result.message)
+												}}
+											>
+												导出备份
+											</Button>
+											<Button
+												type='button'
+												variant='outline'
+												onClick={async () => {
+													const result = await trpc.desktop.checkUpdate.mutate()
+													setSaved(result.message)
+												}}
+											>
+												检查更新
+											</Button>
+										</div>
+										<SkinPicker
+											value={skin}
+											onChange={(next) => {
+												setSkin(next)
+												void trpc.settings.set.mutate({ skin: next })
+											}}
+										/>
+									</CardContent>
+									<CardFooter className='justify-start'>
+										<Button
+											type='button'
+											onClick={() => void saveSettings()}
+										>
+											保存
+										</Button>
+										{saved && <p className='text-muted-foreground'>{saved}</p>}
+									</CardFooter>
+								</Card>
+							</>
+						)}
+					</main>
+				</div>
+				<ContextMenu>
+					<ContextMenuTrigger
+						className='bar'
+						render={<footer />}
+					>
+						<Slider
+							className='absolute top-[-8px] right-0 left-0'
+							min={0}
+							max={player.duration || 1}
+							value={player.currentTime}
+							onValueChange={(value) => {
+								const next = Array.isArray(value) ? value[0] : value
+								player.seek(Math.round(Number(next)))
+							}}
+						/>
+						<Button
+							className='now h-auto justify-start gap-3 px-0 hover:bg-transparent'
+							variant='ghost'
+							type='button'
+							onClick={openPlayer}
+						>
+							{current?.artwork ? (
+								<img
+									src={current.artwork}
+									alt=''
+									className='size-14 rounded-lg object-cover'
+								/>
+							) : (
+								<div className='bg-muted size-14 rounded-lg' />
+							)}
+							<div className='min-w-0 text-left'>
+								<div className='truncate font-medium'>
+									{current?.title ?? '未在播放'}
+								</div>
+								<div className='text-muted-foreground truncate text-sm'>
+									{player.lyricLine || current?.artist || '从搜索开始'}
+								</div>
+							</div>
+						</Button>
+						<div className='controls'>
+							<Button
+								className={cn(player.shuffle && 'bg-muted')}
+								variant='ghost'
+								size='icon'
+								type='button'
+								title='随机'
+								onClick={player.toggleShuffle}
+							>
+								<ShuffleIcon />
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								onClick={() => player.skip(-1)}
+							>
+								<SkipBackIcon />
+							</Button>
+							<Button
+								size='icon-lg'
+								type='button'
+								onClick={player.toggle}
+							>
+								{player.playing ? <PauseIcon /> : <PlayIcon />}
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								onClick={() => player.skip(1)}
+							>
+								<SkipForwardIcon />
+							</Button>
+							<Button
+								className={cn(player.repeatMode && 'bg-muted')}
+								variant='ghost'
+								size='icon'
+								type='button'
+								title={repeatLabel(player.repeatMode)}
+								onClick={player.cycleRepeat}
+							>
+								<RepeatIcon />
+							</Button>
+						</div>
+						<div className='bar-right'>
+							<Button
+								variant='ghost'
+								size='sm'
+								type='button'
+								onClick={cycleSleep}
+							>
+								{player.sleepLeft > 0
+									? `定时 ${formatMs(player.sleepLeft)}`
+									: '定时'}
+							</Button>
+							<Button
+								variant='ghost'
+								size='sm'
+								type='button'
+								onClick={player.cycleSpeed}
+							>
+								{player.playbackRate}x
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								title='歌词窗口'
+								onClick={() => void trpc.lyrics.toggle.mutate()}
+							>
+								<MicVocalIcon />
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								title='迷你窗口'
+								onClick={() => void trpc.mini.toggle.mutate()}
+							>
+								<MusicIcon />
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								title='队列'
+								onClick={() => setShowQueue((value) => !value)}
+							>
+								<ListMusicIcon />
+							</Button>
+							<div className='time'>
+								<b>{formatMs(player.currentTime)}</b> /{' '}
+								{formatMs(player.duration)}
+							</div>
+						</div>
+					</ContextMenuTrigger>
+					<ContextMenuContent>
+						<ContextMenuGroup>
+							<ContextMenuItem onClick={() => setShowQueue(true)}>
+								打开队列
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => void trpc.lyrics.toggle.mutate({ show: true })}
+							>
+								打开歌词窗口
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => void trpc.mini.toggle.mutate({ show: true })}
+							>
+								打开迷你窗口
+							</ContextMenuItem>
+						</ContextMenuGroup>
+					</ContextMenuContent>
+				</ContextMenu>
+				{showQueue && (
+					<aside className='queue-panel'>
+						<div className='flex items-center justify-between gap-2'>
+							<strong>播放队列 ({player.queue.length})</strong>
+							<div className='flex gap-2'>
+								<Button
 									type='button'
-									className='text-btn'
-									onClick={(event) => {
-										event.stopPropagation()
-										player.removeFromQueue(item.id)
+									size='sm'
+									variant='secondary'
+									onClick={() => {
+										if (!player.queue.length) return
+										void createLocalPlaylist(
+											player.queue,
+											createTitle.trim() || '播放队列',
+										)
 									}}
 								>
-									移除
-								</button>
-							</button>
-						))}
-					</div>
-				</aside>
-			)}
-			{tab === 'player' && current && (
-				<NowPlaying
-					track={current}
-					player={player}
-					commentsOpen={showComments}
-					queueOpen={showQueue}
-					onClose={() => setTab(lastTab === 'player' ? 'home' : lastTab)}
-					onToggleComments={() => setShowComments((value) => !value)}
-					onToggleQueue={() => setShowQueue((value) => !value)}
-					onSleep={cycleSleep}
-				/>
-			)}
-			{tab === 'player' && current && showComments && (
-				<CommentsPanel
-					key={current.bvid}
-					bvid={current.bvid}
-					onClose={() => setShowComments(false)}
-				/>
-			)}
-			<audio
-				ref={player.audioRef}
-				preload='auto'
-			/>
-			{menu && (
-				<div
-					className='ctx-backdrop'
-					onClick={() => setMenu(null)}
-					onContextMenu={(event) => {
-						event.preventDefault()
-						setMenu(null)
-					}}
-				>
-					<div
-						className='ctx-menu'
-						style={{ left: menu.x, top: menu.y }}
-						onClick={(event) => event.stopPropagation()}
-					>
-						<button
-							type='button'
-							onClick={() => {
-								startPlay(
-									pages,
-									pages.findIndex((item) => item.id === menu.track.id),
-								)
-								setMenu(null)
-							}}
-						>
-							播放
-						</button>
-						<button
-							type='button'
-							onClick={() => {
-								player.playNext(menu.track)
-								setMenu(null)
-							}}
-						>
-							下一首播放
-						</button>
-						<button
-							type='button'
-							onClick={() => {
-								player.addToEnd(menu.track)
-								setMenu(null)
-							}}
-						>
-							加入队列末尾
-						</button>
-						<button
-							type='button'
-							onClick={() => {
-								setPickPlaylistFor(menu.track)
-								setMenu(null)
-							}}
-						>
-							添加到本地歌单
-						</button>
-						<button
-							type='button'
-							onClick={() => {
-								if (downloadTasks[menu.track.id] === 'completed') {
-									void trpc.downloads.remove.mutate({ id: menu.track.id })
-								} else {
-									void trpc.downloads.start.mutate(menu.track)
-								}
-								setMenu(null)
-							}}
-						>
-							{downloadTasks[menu.track.id] === 'completed'
-								? '删除缓存'
-								: downloadTasks[menu.track.id] === 'downloading' ||
-									  downloadTasks[menu.track.id] === 'queued'
-									? '正在缓存'
-									: '缓存音频'}
-						</button>
-						{downloadTasks[menu.track.id] === 'completed' && (
-							<button
-								type='button'
-								onClick={() => {
-									void exportCached([menu.track.id])
-									setMenu(null)
-								}}
-							>
-								导出
-							</button>
-						)}
-						{activePlaylistId && (
-							<button
-								type='button'
-								onClick={() => {
-									void trpc.library.removeTrack
-										.mutate({
-											playlistId: activePlaylistId,
-											trackId: menu.track.id,
-										})
-										.then(() => openPlaylist(activePlaylistId))
-										.then(refreshPlaylists)
-									setMenu(null)
-								}}
-							>
-								从列表中移除
-							</button>
-						)}
-					</div>
-				</div>
-			)}
-			{barMenu && (
-				<div
-					className='ctx-backdrop'
-					onClick={() => setBarMenu(null)}
-					onContextMenu={(event) => {
-						event.preventDefault()
-						setBarMenu(null)
-					}}
-				>
-					<div
-						className='ctx-menu'
-						style={{ left: barMenu.x, top: barMenu.y }}
-						onClick={(event) => event.stopPropagation()}
-					>
-						<button
-							type='button'
-							onClick={() => {
-								setShowQueue(true)
-								setBarMenu(null)
-							}}
-						>
-							打开队列
-						</button>
-						<button
-							type='button'
-							onClick={() => {
-								void trpc.lyrics.toggle.mutate({ show: true })
-								setBarMenu(null)
-							}}
-						>
-							打开歌词窗口
-						</button>
-						<button
-							type='button'
-							onClick={() => {
-								void trpc.mini.toggle.mutate({ show: true })
-								setBarMenu(null)
-							}}
-						>
-							打开迷你窗口
-						</button>
-					</div>
-				</div>
-			)}
-			{playlistMenu && (
-				<div
-					className='ctx-backdrop'
-					onClick={() => setPlaylistMenu(null)}
-					onContextMenu={(event) => {
-						event.preventDefault()
-						setPlaylistMenu(null)
-					}}
-				>
-					<div
-						className='ctx-menu'
-						style={{ left: playlistMenu.x, top: playlistMenu.y }}
-						onClick={(event) => event.stopPropagation()}
-					>
-						{(() => {
-							const playlist = playlists.find(
-								(item) => item.id === playlistMenu.id,
-							)
-							if (!playlist) return null
-							return (
-								<>
-									{!playlist.shareId && (
-										<button
-											type='button'
-											onClick={() =>
-												void runPlaylistAction(playlist.id, 'share')
-											}
-										>
-											设为共享
-										</button>
+									保存为本地歌单
+								</Button>
+								<Button
+									type='button'
+									size='sm'
+									variant='ghost'
+									onClick={() => setShowQueue(false)}
+								>
+									关闭
+								</Button>
+							</div>
+						</div>
+						<div className='mt-2 flex flex-col gap-1'>
+							{player.queue.map((item, i) => (
+								<div
+									className={cn(
+										'grid grid-cols-[28px_48px_1fr_auto] items-center gap-3 rounded-lg px-2.5 py-2',
+										i === player.index && 'bg-muted',
 									)}
-									{playlist.shareId && (
-										<button
-											type='button'
-											onClick={() =>
-												void runPlaylistAction(playlist.id, 'copy')
-											}
-										>
-											复制订阅链接
-										</button>
-									)}
-									{playlist.shareRole === 'owner' && (
-										<button
-											type='button'
-											onClick={() =>
-												void runPlaylistAction(playlist.id, 'editor')
-											}
-										>
-											复制协作链接
-										</button>
-									)}
-									{playlist.shareId && (
-										<button
-											type='button'
-											onClick={() =>
-												void runPlaylistAction(playlist.id, 'sync')
-											}
-										>
-											同步云端
-										</button>
-									)}
-									{playlist.shareRole === 'owner' && (
-										<button
-											type='button'
-											onClick={() =>
-												void runPlaylistAction(playlist.id, 'rotate')
-											}
-										>
-											重置邀请码
-										</button>
-									)}
-									<button
+									key={`${item.id}-${i}`}
+								>
+									<Button
+										className='col-span-3 grid h-auto grid-cols-[28px_48px_1fr] items-center gap-3 p-0 whitespace-normal'
 										type='button'
-										onClick={() =>
-											void runPlaylistAction(playlist.id, 'delete')
-										}
+										variant='ghost'
+										onClick={() => void player.playTrack(player.queue, i)}
 									>
-										删除
-									</button>
-								</>
-							)
-						})()}
-					</div>
-				</div>
-			)}
-			{pickPlaylistFor && (
-				<div
-					className='ctx-backdrop'
-					onClick={() => setPickPlaylistFor(null)}
+										<span className='text-muted-foreground text-right text-[13px]'>
+											{String(i + 1).padStart(2, '0')}
+										</span>
+										<img
+											className='size-12 rounded-lg object-cover'
+											src={item.artwork}
+											alt=''
+										/>
+										<div className='min-w-0 text-left'>
+											<div className='truncate'>{item.title}</div>
+											<div className='text-muted-foreground truncate text-xs'>
+												{item.artist}
+											</div>
+										</div>
+									</Button>
+									<Button
+										type='button'
+										size='sm'
+										variant='ghost'
+										onClick={() => player.removeFromQueue(item.id)}
+									>
+										移除
+									</Button>
+								</div>
+							))}
+						</div>
+					</aside>
+				)}
+				{tab === 'player' && current && (
+					<NowPlaying
+						track={current}
+						player={player}
+						commentsOpen={showComments}
+						queueOpen={showQueue}
+						onClose={() => setTab(lastTab === 'player' ? 'home' : lastTab)}
+						onToggleComments={() => setShowComments((value) => !value)}
+						onToggleQueue={() => setShowQueue((value) => !value)}
+						onSleep={cycleSleep}
+					/>
+				)}
+				{tab === 'player' && current && showComments && (
+					<CommentsPanel
+						key={current.bvid}
+						bvid={current.bvid}
+						onClose={() => setShowComments(false)}
+					/>
+				)}
+				<audio
+					ref={player.audioRef}
+					preload='auto'
+				/>
+				<Dialog
+					open={Boolean(pickPlaylistFor)}
+					onOpenChange={(open) => {
+						if (!open) setPickPlaylistFor(null)
+					}}
 				>
-					<div
-						className='dialog'
-						onClick={(event) => event.stopPropagation()}
-					>
-						<div className='section-title'>添加到本地歌单</div>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>添加到本地歌单</DialogTitle>
+						</DialogHeader>
 						{playlists.length === 0 && (
-							<p className='muted'>还没有歌单。先在音乐库创建一个。</p>
+							<p className='text-muted-foreground'>
+								还没有歌单。先在音乐库创建一个。
+							</p>
 						)}
-						{playlists.map((playlist) => (
-							<button
-								key={playlist.id}
-								type='button'
-								className='row'
-								onClick={() =>
-									void addTrackToPlaylist(playlist.id, pickPlaylistFor)
-								}
-							>
-								<div>{playlist.title}</div>
-								<div className='sub'>{playlist.itemCount} 首</div>
-							</button>
-						))}
-					</div>
-				</div>
-			)}
-		</div>
+						<div className='flex flex-col gap-1'>
+							{playlists.map((playlist) => (
+								<Button
+									key={playlist.id}
+									type='button'
+									variant='ghost'
+									className='h-auto justify-between'
+									onClick={() =>
+										void addTrackToPlaylist(playlist.id, pickPlaylistFor!)
+									}
+								>
+									<span>{playlist.title}</span>
+									<span className='text-muted-foreground'>
+										{playlist.itemCount} 首
+									</span>
+								</Button>
+							))}
+						</div>
+					</DialogContent>
+				</Dialog>
+			</div>
+		</TooltipProvider>
 	)
 }

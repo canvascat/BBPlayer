@@ -1,6 +1,8 @@
 import type { AmllLyricLine } from '@bbplayer/core'
 import { useEffect, useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+
 import { currentLyricText } from './lyric-text'
 import { listen, trpc } from './trpc'
 
@@ -41,35 +43,46 @@ export default function LyricsApp() {
 		'暂无歌词'
 
 	return (
-		<div className={`lyrics-app ${expanded ? 'expanded' : ''}`}>
+		<div className='flex h-full flex-col justify-center bg-linear-to-b from-zinc-800 to-zinc-950 px-4.5 pt-7 pb-3.5 [-webkit-app-region:drag]'>
 			<button
-				className='lyric-hit'
+				className='cursor-pointer border-0 bg-transparent p-0 text-left text-inherit [-webkit-app-region:no-drag]'
 				type='button'
 				onClick={() => setExpanded((value) => !value)}
 			>
-				<div className='lyric-line'>{line}</div>
-				{payload.artist && <div className='lyric-sub'>{payload.artist}</div>}
+				<div className='line-clamp-2 text-[22px] leading-snug font-semibold'>
+					{line}
+				</div>
+				{payload.artist && (
+					<div className='text-muted-foreground mt-2 text-[13px]'>
+						{payload.artist}
+					</div>
+				)}
 			</button>
 			{expanded && (
-				<div className='lyric-controls'>
-					<button
+				<div className='mt-3.5 flex gap-2 [-webkit-app-region:no-drag]'>
+					<Button
 						type='button'
+						size='sm'
+						variant='secondary'
 						onClick={() => sendCommand('prev')}
 					>
 						上一首
-					</button>
-					<button
+					</Button>
+					<Button
 						type='button'
+						size='sm'
 						onClick={() => sendCommand('playpause')}
 					>
 						{payload.playing ? '暂停' : '播放'}
-					</button>
-					<button
+					</Button>
+					<Button
 						type='button'
+						size='sm'
+						variant='secondary'
 						onClick={() => sendCommand('next')}
 					>
 						下一首
-					</button>
+					</Button>
 				</div>
 			)}
 		</div>

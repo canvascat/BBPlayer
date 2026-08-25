@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+
 import { trpc } from './trpc'
 
 type Mode = 'login' | 'register'
@@ -78,26 +84,27 @@ export function BbplayerAccount({
 
 	if (account) {
 		return (
-			<div className='bbplayer-account'>
-				<p className='muted'>BBPlayer 账号用于恢复和订阅共享歌单。</p>
-				<div className='account-row'>
-					{account.face ? (
-						<img
-							src={account.face}
+			<div className='flex flex-col gap-4'>
+				<p className='text-muted-foreground'>
+					BBPlayer 账号用于恢复和订阅共享歌单。
+				</p>
+				<div className='flex items-center gap-3'>
+					<Avatar>
+						<AvatarImage
+							src={account.face ?? undefined}
 							alt=''
 						/>
-					) : (
-						<div className='cover-fallback small'>
-							{account.name.slice(0, 1)}
+						<AvatarFallback>{account.name.slice(0, 1)}</AvatarFallback>
+					</Avatar>
+					<div className='min-w-0 flex-1'>
+						<div className='truncate font-medium'>{account.name}</div>
+						<div className='text-muted-foreground truncate'>
+							@{account.username}
 						</div>
-					)}
-					<div>
-						<div className='title'>{account.name}</div>
-						<div className='muted'>@{account.username}</div>
 					</div>
-					<button
-						className='chip'
+					<Button
 						type='button'
+						variant='outline'
 						onClick={() => {
 							void trpc.account.logout.mutate().then((settings) => {
 								setAccount(settings.bbplayerAccount)
@@ -106,19 +113,22 @@ export function BbplayerAccount({
 						}}
 					>
 						退出登录
-					</button>
+					</Button>
 				</div>
-				<label className='field'>
-					昵称
-					<input
-						value={name}
-						onChange={(event) => setName(event.target.value)}
-					/>
-				</label>
-				<div className='chips'>
-					<button
-						className='chip'
+				<FieldGroup>
+					<Field>
+						<FieldLabel htmlFor='bbplayer-name'>昵称</FieldLabel>
+						<Input
+							id='bbplayer-name'
+							value={name}
+							onChange={(event) => setName(event.target.value)}
+						/>
+					</Field>
+				</FieldGroup>
+				<div className='flex flex-wrap gap-2'>
+					<Button
 						type='button'
+						variant='outline'
 						disabled={busy}
 						onClick={() => {
 							setBusy(true)
@@ -134,10 +144,10 @@ export function BbplayerAccount({
 						}}
 					>
 						保存资料
-					</button>
-					<button
-						className='chip'
+					</Button>
+					<Button
 						type='button'
+						variant='outline'
 						disabled={busy || !biliLoggedIn}
 						onClick={() => {
 							setBusy(true)
@@ -153,10 +163,10 @@ export function BbplayerAccount({
 						}}
 					>
 						用 B 站资料填充
-					</button>
-					<button
-						className='chip'
+					</Button>
+					<Button
 						type='button'
+						variant='outline'
 						disabled={busy}
 						onClick={() => {
 							setBusy(true)
@@ -175,69 +185,71 @@ export function BbplayerAccount({
 						}}
 					>
 						同步云端共享歌单
-					</button>
+					</Button>
 				</div>
-				{message && <p className='muted'>{message}</p>}
+				{message && <p className='text-muted-foreground'>{message}</p>}
 			</div>
 		)
 	}
 
 	return (
-		<div className='bbplayer-account'>
-			<p className='muted'>BBPlayer 账号用于恢复和订阅共享歌单。</p>
-			<div className='chips'>
-				<button
-					className={`chip ${mode === 'login' ? 'on' : ''}`}
-					type='button'
-					onClick={() => setMode('login')}
-				>
-					登录
-				</button>
-				<button
-					className={`chip ${mode === 'register' ? 'on' : ''}`}
-					type='button'
-					onClick={() => setMode('register')}
-				>
-					注册
-				</button>
-			</div>
-			<label className='field'>
-				用户名
-				<input
-					value={username}
-					onChange={(event) => setUsername(event.target.value)}
-					autoComplete='username'
-				/>
-			</label>
-			<label className='field'>
-				密码
-				<input
-					type='password'
-					value={password}
-					onChange={(event) => setPassword(event.target.value)}
-					autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-				/>
-			</label>
-			{mode === 'register' && (
-				<label className='field'>
-					昵称（可选）
-					<input
-						value={name}
-						onChange={(event) => setName(event.target.value)}
+		<div className='flex flex-col gap-4'>
+			<p className='text-muted-foreground'>
+				BBPlayer 账号用于恢复和订阅共享歌单。
+			</p>
+			<ToggleGroup
+				value={[mode]}
+				onValueChange={(value) => {
+					const next = value[0]
+					if (next === 'login' || next === 'register') setMode(next)
+				}}
+				variant='outline'
+				spacing={0}
+			>
+				<ToggleGroupItem value='login'>登录</ToggleGroupItem>
+				<ToggleGroupItem value='register'>注册</ToggleGroupItem>
+			</ToggleGroup>
+			<FieldGroup>
+				<Field>
+					<FieldLabel htmlFor='bbplayer-username'>用户名</FieldLabel>
+					<Input
+						id='bbplayer-username'
+						value={username}
+						onChange={(event) => setUsername(event.target.value)}
+						autoComplete='username'
 					/>
-				</label>
-			)}
-			<div className='chips'>
-				<button
-					className='chip'
-					type='button'
-					disabled={busy}
-					onClick={() => void submit()}
-				>
-					{busy ? '处理中…' : mode === 'register' ? '注册' : '登录'}
-				</button>
-			</div>
-			{message && <p className='muted'>{message}</p>}
+				</Field>
+				<Field>
+					<FieldLabel htmlFor='bbplayer-password'>密码</FieldLabel>
+					<Input
+						id='bbplayer-password'
+						type='password'
+						value={password}
+						onChange={(event) => setPassword(event.target.value)}
+						autoComplete={
+							mode === 'login' ? 'current-password' : 'new-password'
+						}
+					/>
+				</Field>
+				{mode === 'register' && (
+					<Field>
+						<FieldLabel htmlFor='bbplayer-nickname'>昵称（可选）</FieldLabel>
+						<Input
+							id='bbplayer-nickname'
+							value={name}
+							onChange={(event) => setName(event.target.value)}
+						/>
+					</Field>
+				)}
+			</FieldGroup>
+			<Button
+				type='button'
+				disabled={busy}
+				onClick={() => void submit()}
+			>
+				{busy ? '处理中…' : mode === 'register' ? '注册' : '登录'}
+			</Button>
+			{message && <p className='text-muted-foreground'>{message}</p>}
 		</div>
 	)
 }

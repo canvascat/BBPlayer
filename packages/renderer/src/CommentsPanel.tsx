@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react'
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle,
+} from '@/components/ui/empty'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+
 import { trpc } from './trpc'
 
 export interface CommentItem {
@@ -36,40 +47,48 @@ function CommentRow({
 	onReplies: (item: CommentItem) => void
 }) {
 	return (
-		<div className='comment-item'>
-			<img
-				className='comment-avatar'
-				src={item.avatar}
-				alt=''
-			/>
-			<div>
-				<div className='comment-name'>
-					{item.uname}
-					<span className='muted'>{formatTime(item.ctime)}</span>
+		<div className='flex gap-3'>
+			<Avatar size='sm'>
+				<AvatarImage
+					src={item.avatar}
+					alt=''
+				/>
+				<AvatarFallback>{item.uname.slice(0, 1)}</AvatarFallback>
+			</Avatar>
+			<div className='min-w-0 flex-1'>
+				<div className='flex items-center gap-2 text-sm'>
+					<span className='font-medium'>{item.uname}</span>
+					<span className='text-muted-foreground'>
+						{formatTime(item.ctime)}
+					</span>
 				</div>
-				<p className='comment-text'>{item.message}</p>
-				<div className='comment-actions'>
-					<button
+				<p className='mt-1 text-sm leading-relaxed'>{item.message}</p>
+				<div className='mt-1 flex gap-1'>
+					<Button
 						type='button'
+						variant='ghost'
+						size='xs'
 						onClick={() => onLike(item)}
 					>
 						{item.action ? '已赞' : '赞'} {item.like || ''}
-					</button>
+					</Button>
 					{item.rcount > 0 && (
-						<button
+						<Button
 							type='button'
+							variant='ghost'
+							size='xs'
 							onClick={() => onReplies(item)}
 						>
 							回复 {item.rcount}
-						</button>
+						</Button>
 					)}
 				</div>
 				{item.replies.map((reply) => (
 					<div
-						className='comment-reply'
+						className='text-muted-foreground mt-2 text-sm'
 						key={reply.rpid}
 					>
-						<b>{reply.uname}</b> {reply.message}
+						<b className='text-foreground'>{reply.uname}</b> {reply.message}
 					</div>
 				))}
 			</div>
@@ -162,56 +181,61 @@ export function CommentsPanel({
 	}
 
 	return (
-		<aside className='comments-panel'>
-			<div className='queue-head'>
+		<aside className='bg-background/80 ring-foreground/10 absolute top-16 right-4 bottom-24 z-30 flex w-80 flex-col gap-3 rounded-xl p-3 ring-1 backdrop-blur-xl'>
+			<div className='flex items-center justify-between'>
 				<strong>评论 {count ? `(${count})` : ''}</strong>
-				<button
+				<Button
 					type='button'
+					variant='ghost'
+					size='sm'
 					onClick={onClose}
 				>
 					关闭
-				</button>
+				</Button>
 			</div>
-			<div className='chips'>
-				<button
-					className={`chip ${mode === 3 ? 'on' : ''}`}
-					type='button'
-					onClick={() => setMode(3)}
-				>
-					热度
-				</button>
-				<button
-					className={`chip ${mode === 2 ? 'on' : ''}`}
-					type='button'
-					onClick={() => setMode(2)}
-				>
-					时间
-				</button>
-			</div>
-			{error && <p className='error'>{error}</p>}
-			<div className='comment-list'>
-				{items.map((item) => (
-					<CommentRow
-						key={item.rpid}
-						item={item}
-						bvid={bvid}
-						onLike={like}
-						onReplies={replies}
-					/>
-				))}
-				{!loading && !items.length && !error && (
-					<p className='muted'>暂无评论</p>
-				)}
-			</div>
+			<ToggleGroup
+				value={[String(mode)]}
+				onValueChange={(value) => {
+					if (value[0] === '2') setMode(2)
+					if (value[0] === '3') setMode(3)
+				}}
+				variant='outline'
+				spacing={0}
+			>
+				<ToggleGroupItem value='3'>热度</ToggleGroupItem>
+				<ToggleGroupItem value='2'>时间</ToggleGroupItem>
+			</ToggleGroup>
+			{error && <p className='text-destructive text-sm'>{error}</p>}
+			<ScrollArea className='min-h-0 flex-1'>
+				<div className='flex flex-col gap-4 pr-3'>
+					{items.map((item) => (
+						<CommentRow
+							key={item.rpid}
+							item={item}
+							bvid={bvid}
+							onLike={like}
+							onReplies={replies}
+						/>
+					))}
+					{!loading && !items.length && !error && (
+						<Empty>
+							<EmptyHeader>
+								<EmptyTitle>暂无评论</EmptyTitle>
+								<EmptyDescription>这首还没有评论。</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
+					)}
+				</div>
+			</ScrollArea>
 			{!isEnd && items.length > 0 && (
-				<button
-					className='chip'
+				<Button
 					type='button'
+					variant='outline'
 					disabled={loading}
 					onClick={() => void load(false)}
 				>
 					{loading ? '加载中…' : '加载更多'}
-				</button>
+				</Button>
 			)}
 		</aside>
 	)

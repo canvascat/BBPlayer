@@ -1,5 +1,9 @@
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+
 import { trpc } from './trpc'
 
 export interface SkinTheme {
@@ -94,72 +98,78 @@ export function SkinPicker({
 	}
 
 	return (
-		<div className='skin-picker'>
-			<p className='muted'>
+		<div className='flex flex-col gap-4'>
+			<p className='text-muted-foreground'>
 				搜索 B 站装扮，用封面和主色点缀界面。完整资源包稍后补齐。
 			</p>
 			{value && (
-				<div className='account-row'>
+				<div className='flex items-center gap-3'>
 					{value.coverUrl && (
 						<img
 							src={value.coverUrl}
 							alt=''
+							className='size-12 rounded-lg object-cover'
 						/>
 					)}
-					<div>
-						<div className='title'>{value.name}</div>
-						<div className='muted'>当前装扮</div>
+					<div className='min-w-0 flex-1'>
+						<div className='truncate font-medium'>{value.name}</div>
+						<div className='text-muted-foreground'>当前装扮</div>
 					</div>
-					<button
-						className='chip'
+					<Button
 						type='button'
+						variant='outline'
 						onClick={() => onChange(null)}
 					>
 						清除
-					</button>
+					</Button>
 				</div>
 			)}
-			<label className='field'>
-				搜索装扮
-				<input
-					value={keyword}
-					onChange={(event) => setKeyword(event.target.value)}
-					onKeyDown={(event) => {
-						if (event.key === 'Enter') {
-							event.preventDefault()
-							void search()
-						}
-					}}
-					placeholder='装扮 / 收藏集名称'
-				/>
-			</label>
-			<div className='chips'>
-				<button
-					className='chip'
-					type='button'
-					disabled={busy}
-					onClick={() => void search()}
-				>
-					{busy ? '搜索中…' : '搜索'}
-				</button>
-			</div>
-			<div className='skin-grid'>
+			<FieldGroup>
+				<Field>
+					<FieldLabel htmlFor='skin-search'>搜索装扮</FieldLabel>
+					<div className='flex gap-2'>
+						<Input
+							id='skin-search'
+							value={keyword}
+							onChange={(event) => setKeyword(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === 'Enter') {
+									event.preventDefault()
+									void search()
+								}
+							}}
+							placeholder='装扮 / 收藏集名称'
+						/>
+						<Button
+							type='button'
+							variant='outline'
+							disabled={busy}
+							onClick={() => void search()}
+						>
+							{busy ? '搜索中…' : '搜索'}
+						</Button>
+					</div>
+				</Field>
+			</FieldGroup>
+			<div className='grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] gap-3'>
 				{list.map((item) => (
-					<button
-						className='cover-card'
+					<Button
 						key={item.itemId}
 						type='button'
+						variant='ghost'
+						className='h-auto flex-col items-stretch gap-2 p-0'
 						onClick={() => void apply(item)}
 					>
 						<img
 							src={item.coverUrl}
 							alt=''
+							className='aspect-square w-full rounded-xl object-cover'
 						/>
-						<div className='name'>{item.name}</div>
-					</button>
+						<div className='truncate px-1 text-left text-sm'>{item.name}</div>
+					</Button>
 				))}
 			</div>
-			{message && <p className='muted'>{message}</p>}
+			{message && <p className='text-muted-foreground'>{message}</p>}
 		</div>
 	)
 }

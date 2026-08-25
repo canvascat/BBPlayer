@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+
 import { listen, trpc } from './trpc'
 
 interface MiniState {
@@ -29,10 +31,11 @@ export default function MiniApp() {
 	}, [])
 
 	return (
-		<div className='mini-app'>
-			<button
-				className='mini-cover'
+		<div className='grid h-full grid-cols-[64px_1fr_auto] items-center gap-2.5 bg-linear-to-b from-zinc-800 to-zinc-950 px-3 pt-5.5 pb-2.5 [-webkit-app-region:drag]'>
+			<Button
+				className='size-14 overflow-hidden rounded-lg p-0 [-webkit-app-region:no-drag]'
 				type='button'
+				variant='secondary'
 				title='打开播放页'
 				onDoubleClick={() => sendCommand('open-player')}
 			>
@@ -40,34 +43,44 @@ export default function MiniApp() {
 					<img
 						src={state.artwork}
 						alt=''
+						className='size-full object-cover'
 					/>
 				) : (
 					<span />
 				)}
-			</button>
-			<div className='mini-meta'>
-				<div className='mini-title'>{state.title || '未在播放'}</div>
-				<div className='mini-sub'>{state.artist || 'BBPlayer'}</div>
+			</Button>
+			<div className='min-w-0'>
+				<div className='truncate text-sm font-semibold'>
+					{state.title || '未在播放'}
+				</div>
+				<div className='text-muted-foreground mt-1 truncate text-xs'>
+					{state.artist || 'BBPlayer'}
+				</div>
 			</div>
-			<div className='mini-controls'>
-				<button
+			<div className='flex gap-1.5 [-webkit-app-region:no-drag]'>
+				<Button
 					type='button'
+					size='xs'
+					variant='secondary'
 					onClick={() => sendCommand('prev')}
 				>
 					上一首
-				</button>
-				<button
+				</Button>
+				<Button
 					type='button'
+					size='xs'
 					onClick={() => sendCommand('playpause')}
 				>
 					{state.playing ? '暂停' : '播放'}
-				</button>
-				<button
+				</Button>
+				<Button
 					type='button'
+					size='xs'
+					variant='secondary'
 					onClick={() => sendCommand('next')}
 				>
 					下一首
-				</button>
+				</Button>
 			</div>
 		</div>
 	)
