@@ -78,14 +78,15 @@ function openWebLoginWindow(options: WebLoginOptions) {
 		const win = new BrowserWindow({
 			parent: options.parent ?? undefined,
 			modal: Boolean(options.parent),
-			width: 880,
-			height: 520,
+			width: 820,
+			height: 430,
+			useContentSize: true,
 			title: '登录哔哩哔哩',
 			show: false,
 			resizable: false,
 			minimizable: false,
 			maximizable: false,
-			closable: false,
+			// closable: false,
 			webPreferences: {
 				partition: BILI_WEB_LOGIN_PARTITION,
 				sandbox: true,
