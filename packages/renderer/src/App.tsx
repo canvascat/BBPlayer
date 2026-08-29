@@ -16,7 +16,7 @@ import {
 	SkipForwardIcon,
 	UserIcon,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SettingSwitch } from '@/components/setting-switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -397,13 +397,10 @@ export default function App() {
 				event.preventDefault()
 				player.skipRef.current(1)
 			}
-			if (event.code === 'Escape' && tab === 'player') {
-				setTab(lastTab === 'player' ? 'home' : lastTab)
-			}
 		}
 		window.addEventListener('keydown', onKey)
 		return () => window.removeEventListener('keydown', onKey)
-	}, [lastTab, player, tab])
+	}, [player])
 
 	useEffect(() => {
 		if (tab === 'player' && !current) {
@@ -437,6 +434,10 @@ export default function App() {
 			}
 		})
 	}, [player, tab])
+
+	const closePlayer = useCallback(() => {
+		setTab(lastTab === 'player' ? 'home' : lastTab)
+	}, [lastTab])
 
 	const openPlayer = () => {
 		if (!current) return
@@ -666,10 +667,7 @@ export default function App() {
 	return (
 		<TooltipProvider>
 			<div
-				className={cn(
-					'relative isolate grid h-full bg-background text-foreground',
-					tab === 'player' ? 'grid-rows-1' : 'grid-rows-[1fr_var(--bar-h)]',
-				)}
+				className='relative isolate grid h-full grid-rows-[1fr_var(--bar-h)] bg-background text-foreground'
 				style={{
 					['--cover-image' as string]: coverImage,
 					...(skin?.primary
@@ -680,7 +678,10 @@ export default function App() {
 						: {}),
 				}}
 			>
-				<div className='grid min-h-0 grid-cols-[var(--sidebar-w)_1px_1fr]'>
+				<div
+					className='grid min-h-0 grid-cols-[var(--sidebar-w)_1px_1fr]'
+					inert={tab === 'player' || undefined}
+				>
 					<aside className='bg-sidebar text-sidebar-foreground flex flex-col gap-2 overflow-auto p-2'>
 						<div
 							className='flex min-h-[68px] items-center gap-3 pl-3'
@@ -1480,10 +1481,8 @@ export default function App() {
 					</main>
 				</div>
 				<footer
-					className={cn(
-						'relative flex items-center overflow-visible border-t bg-background px-4 py-3',
-						tab === 'player' && 'hidden',
-					)}
+					className='relative flex items-center overflow-visible border-t bg-background px-4 py-3'
+					inert={tab === 'player' || undefined}
 				>
 					<div className='grid min-h-0 flex-1 grid-cols-3 items-center gap-4'>
 						<Button
@@ -1593,7 +1592,7 @@ export default function App() {
 				<Slider
 					className={cn(
 						'absolute inset-x-0 bottom-[calc(var(--bar-h)-6px)] z-10 flex h-3 items-center px-[3px]',
-						tab === 'player' && 'hidden',
+						tab === 'player' && 'pointer-events-none',
 					)}
 					trackClassName='absolute top-1/2 left-[-3px] mt-[-2px] h-1 min-w-[calc(100%+6px)] rounded-none data-horizontal:w-[calc(100%+6px)]'
 					min={0}
@@ -1690,18 +1689,19 @@ export default function App() {
 						player={player}
 						commentsOpen={showComments}
 						queueOpen={showQueue}
-						onClose={() => setTab(lastTab === 'player' ? 'home' : lastTab)}
+						onClose={closePlayer}
 						onToggleComments={() => setShowComments((value) => !value)}
 						onToggleQueue={() => setShowQueue((value) => !value)}
 						onSleep={cycleSleep}
-					/>
-				)}
-				{tab === 'player' && current && showComments && (
-					<CommentsPanel
-						key={current.bvid}
-						bvid={current.bvid}
-						onClose={() => setShowComments(false)}
-					/>
+					>
+						{showComments && (
+							<CommentsPanel
+								key={current.bvid}
+								bvid={current.bvid}
+								onClose={() => setShowComments(false)}
+							/>
+						)}
+					</NowPlaying>
 				)}
 				<audio
 					ref={player.audioRef}

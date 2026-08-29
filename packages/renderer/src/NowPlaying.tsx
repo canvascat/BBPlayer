@@ -10,6 +10,7 @@ import {
 	SkipBackIcon,
 	SkipForwardIcon,
 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -27,11 +28,15 @@ import type { usePlayback } from './usePlayback'
 
 type Playback = ReturnType<typeof usePlayback>
 
+const ENTER_MS = 320
+const EXIT_MS = 240
+
 export function NowPlaying({
 	track,
 	player,
 	commentsOpen,
 	queueOpen,
+	children,
 	onClose,
 	onToggleComments,
 	onToggleQueue,
@@ -41,16 +46,57 @@ export function NowPlaying({
 	player: Playback
 	commentsOpen: boolean
 	queueOpen: boolean
+	children?: ReactNode
 	onClose: () => void
 	onToggleComments: () => void
 	onToggleQueue: () => void
 	onSleep: () => void
 }) {
 	const remaining = Math.max(0, player.duration - player.currentTime)
+	const [leaving, setLeaving] = useState(false)
+	const onCloseRef = useRef(onClose)
+
+	useEffect(() => {
+		onCloseRef.current = onClose
+	}, [onClose])
+
+	const requestClose = useCallback(() => {
+		setLeaving(true)
+	}, [])
+
+	useEffect(() => {
+		if (!leaving) return
+		const reduced = window.matchMedia(
+			'(prefers-reduced-motion: reduce)',
+		).matches
+		const id = window.setTimeout(
+			() => onCloseRef.current(),
+			reduced ? 0 : EXIT_MS,
+		)
+		return () => window.clearTimeout(id)
+	}, [leaving])
+
+	useEffect(() => {
+		const onKey = (event: KeyboardEvent) => {
+			if (event.code !== 'Escape' || event.defaultPrevented) return
+			event.preventDefault()
+			requestClose()
+		}
+		window.addEventListener('keydown', onKey)
+		return () => window.removeEventListener('keydown', onKey)
+	}, [requestClose])
 
 	return (
 		<section
-			className='bg-background text-foreground absolute inset-0 z-20 grid grid-rows-[52px_1fr] overflow-hidden'
+			className={cn(
+				'bg-background text-foreground absolute inset-0 z-20 grid grid-rows-[52px_1fr] overflow-hidden motion-reduce:animate-none',
+				leaving
+					? 'animate-out slide-out-to-bottom fill-mode-forwards ease-in'
+					: 'animate-in slide-in-from-bottom fill-mode-both ease-out',
+			)}
+			style={{
+				animationDuration: `${leaving ? EXIT_MS : ENTER_MS}ms`,
+			}}
 			data-player-page
 		>
 			<div className='flex items-center justify-end px-4'>
@@ -59,7 +105,7 @@ export function NowPlaying({
 					variant='ghost'
 					size='icon'
 					aria-label='收起播放页'
-					onClick={onClose}
+					onClick={requestClose}
 				>
 					<ChevronDownIcon />
 				</Button>
@@ -215,6 +261,7 @@ export function NowPlaying({
 					<ListMusicIcon />
 				</Button>
 			</div>
+			{children}
 		</section>
 	)
 }
