@@ -8,6 +8,7 @@ function Slider({
 	value,
 	min = 0,
 	max = 100,
+	thumbAlignment = 'edge',
 	...props
 }: SliderPrimitive.Root.Props) {
 	const thumbValues = Array.isArray(value)
@@ -28,10 +29,13 @@ function Slider({
 			value={value}
 			min={min}
 			max={max}
-			thumbAlignment='edge'
 			{...props}
+			thumbAlignment={thumbAlignment}
 		>
-			<SliderPrimitive.Control className='relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col'>
+			<SliderPrimitive.Control
+				className='relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col'
+				data-slot='slider-control'
+			>
 				<SliderPrimitive.Track
 					data-slot='slider-track'
 					className='relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1'

@@ -1,9 +1,11 @@
 import '@applemusic-like-lyrics/core/style.css'
 
 import {
+	ChevronsUpDownIcon,
 	HouseIcon,
 	LibraryIcon,
 	ListMusicIcon,
+	MusicIcon,
 	PauseIcon,
 	PlayIcon,
 	RepeatIcon,
@@ -12,7 +14,7 @@ import {
 	ShuffleIcon,
 	SkipBackIcon,
 	SkipForwardIcon,
-	MusicIcon,
+	UserIcon,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -53,6 +55,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 } from '@/components/ui/input-group'
+import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -62,7 +65,7 @@ import { BbplayerAccount } from './BbplayerAccount'
 import { CommentsPanel } from './CommentsPanel'
 import { NowPlaying } from './NowPlaying'
 import { PhoneLogin } from './PhoneLogin'
-import { formatMs, repeatLabel, type TrackItem } from './playback'
+import { formatClock, formatMs, repeatLabel, type TrackItem } from './playback'
 import { SkinPicker, type SkinTheme } from './SkinPicker'
 import { listen, trpcClient } from './trpc'
 import { usePlayback } from './usePlayback'
@@ -98,7 +101,7 @@ function stripHtml(input: string) {
 	return input.replace(/<[^>]+>/g, '')
 }
 const coverButtonClass =
-	'h-auto min-w-0 flex-col items-stretch gap-2 p-0 whitespace-normal'
+	'h-auto w-32 min-w-0 flex-col items-stretch gap-2 p-0 whitespace-normal'
 
 function CoverFace({ src, fallback }: { src?: string; fallback?: string }) {
 	if (src) {
@@ -106,12 +109,12 @@ function CoverFace({ src, fallback }: { src?: string; fallback?: string }) {
 			<img
 				src={src}
 				alt=''
-				className='aspect-square w-full rounded-xl object-cover'
+				className='size-32 rounded-xl object-cover'
 			/>
 		)
 	}
 	return (
-		<div className='bg-muted text-muted-foreground flex aspect-square w-full items-center justify-center rounded-xl text-2xl'>
+		<div className='bg-muted text-muted-foreground flex size-32 items-center justify-center rounded-xl text-2xl'>
 			{fallback}
 		</div>
 	)
@@ -670,42 +673,41 @@ export default function App() {
 						: {}),
 				}}
 			>
-				<header className='header'>
-					<div className='brand'>
-						<span className='brand-mark'>
-							<MusicIcon />
-						</span>
-						BBPlayer
-					</div>
-					<InputGroup className='max-w-xl flex-1 bg-background/40'>
-						<InputGroupAddon>
-							<SearchIcon />
-						</InputGroupAddon>
-						<InputGroupInput
-							ref={searchRef}
-							placeholder='搜索关键词 / b23.tv / av / bv'
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === 'Enter') void submitSearch()
-							}}
-						/>
-					</InputGroup>
-					<Button
-						type='button'
-						variant='ghost'
-						size='icon'
-						onClick={() => setTab('settings')}
-						aria-label='设置'
-					>
-						<SettingsIcon />
-					</Button>
-				</header>
 				<div className='body'>
 					<aside className='sidebar'>
+						<div className='sidebar-titlebar'>
+							<div
+								className='traffic-light-space'
+								aria-hidden
+							/>
+							<div className='brand'>
+								<span className='brand-mark'>
+									<MusicIcon />
+								</span>
+								<div className='brand-copy'>
+									<div className='brand-title'>BBPlayer</div>
+									<div className='brand-sub'>本地音频</div>
+								</div>
+								<ChevronsUpDownIcon className='text-muted-foreground size-4 shrink-0' />
+							</div>
+						</div>
+						<InputGroup className='bg-background'>
+							<InputGroupAddon>
+								<SearchIcon />
+							</InputGroupAddon>
+							<InputGroupInput
+								ref={searchRef}
+								placeholder='搜索关键词 / BV'
+								value={query}
+								onChange={(e) => setQuery(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') void submitSearch()
+								}}
+							/>
+						</InputGroup>
 						<div className='nav-label'>在线音乐</div>
 						<Button
-							className='w-full justify-start'
+							className='h-9 w-full justify-start px-2'
 							variant={tab === 'home' ? 'secondary' : 'ghost'}
 							onClick={() => setTab('home')}
 							type='button'
@@ -714,7 +716,7 @@ export default function App() {
 							主页
 						</Button>
 						<Button
-							className='w-full justify-start'
+							className='h-9 w-full justify-start px-2'
 							variant={tab === 'library' ? 'secondary' : 'ghost'}
 							onClick={() => setTab('library')}
 							type='button'
@@ -724,7 +726,7 @@ export default function App() {
 						</Button>
 						<div className='nav-label'>其他</div>
 						<Button
-							className='w-full justify-start'
+							className='h-9 w-full justify-start px-2'
 							variant={tab === 'settings' ? 'secondary' : 'ghost'}
 							onClick={() => setTab('settings')}
 							type='button'
@@ -732,29 +734,29 @@ export default function App() {
 							<SettingsIcon data-icon='inline-start' />
 							设置
 						</Button>
-						{current && (
-							<Button
-								className='w-full justify-start'
-								variant={tab === 'player' ? 'secondary' : 'ghost'}
-								onClick={openPlayer}
-								type='button'
-							>
-								<MusicIcon data-icon='inline-start' />
-								正在播放
-							</Button>
-						)}
+						<div className='sidebar-spacer' />
+						<Button
+							className='h-9 w-full justify-start px-2'
+							variant='ghost'
+							onClick={() => setTab('settings')}
+							type='button'
+						>
+							<UserIcon data-icon='inline-start' />
+							{account?.name ?? '未登录'}
+						</Button>
 					</aside>
+					<Separator orientation='vertical' />
 					<main className='content'>
 						{tab === 'home' && (
 							<>
-								<h1 className='page-title'>
-									{account ? `${greeting()}，${account.name}` : greeting()}
-								</h1>
-								<p className='greeting'>
-									空格播放，左右切歌，Shift+方向键快进快退，⌘L 聚焦搜索
-								</p>
+								<div>
+									<h1 className='page-title'>
+										{account ? `${greeting()}，${account.name}` : greeting()}
+									</h1>
+									<p className='greeting'>空格播放 · 左右切歌 · ⌘L 聚焦搜索</p>
+								</div>
 								<div className='hero'>
-									<Card>
+									<Card className='min-h-[151px] justify-between gap-2 rounded-lg [--card-spacing:1.5rem]'>
 										<CardHeader>
 											<CardTitle>快速开始</CardTitle>
 											<CardDescription>
@@ -764,6 +766,7 @@ export default function App() {
 										<CardContent className='flex flex-wrap gap-2'>
 											<Button
 												type='button'
+												size='sm'
 												variant='secondary'
 												onClick={() => void submitSearch('洛天依')}
 											>
@@ -771,6 +774,7 @@ export default function App() {
 											</Button>
 											<Button
 												type='button'
+												size='sm'
 												variant='secondary'
 												onClick={() =>
 													void submitSearch('Never Gonna Give You Up')
@@ -780,28 +784,40 @@ export default function App() {
 											</Button>
 										</CardContent>
 									</Card>
-									<Card className='hero-play'>
+									<Card
+										className={cn(
+											'min-h-[151px] rounded-lg [--card-spacing:1.5rem]',
+											current && 'flex-row items-center',
+										)}
+									>
 										{current ? (
-											<CardContent className='flex items-center gap-4'>
-												<img
-													src={current.artwork}
-													alt=''
-													className='size-24 rounded-xl object-cover'
-												/>
-												<div className='min-w-0 flex-1'>
-													<div className='text-muted-foreground'>
+											<CardContent className='flex min-w-0 flex-1 items-center gap-4'>
+												{current.artwork ? (
+													<img
+														src={current.artwork}
+														alt=''
+														className='size-24 shrink-0 rounded-xl object-cover'
+													/>
+												) : (
+													<div className='bg-muted text-muted-foreground flex size-24 shrink-0 items-center justify-center rounded-xl'>
+														<MusicIcon />
+													</div>
+												)}
+												<div className='flex min-w-0 flex-1 flex-col gap-2'>
+													<div className='text-muted-foreground text-xs'>
 														队列 {player.queue.length} 首
 													</div>
-													<div className='truncate font-medium'>
+													<div className='truncate text-base'>
 														{current.title}
 													</div>
 													<div className='text-muted-foreground truncate'>
 														{current.artist}
 													</div>
-													<div className='mt-2 flex flex-wrap gap-2'>
+													<div className='flex flex-wrap gap-2'>
 														<Button
 															type='button'
 															size='sm'
+															variant='default'
 															onClick={player.toggle}
 														>
 															{player.playing ? '暂停' : '继续播放'}
@@ -818,20 +834,46 @@ export default function App() {
 												</div>
 											</CardContent>
 										) : (
-											<>
-												<CardHeader>
-													<CardTitle>尚未播放</CardTitle>
-													<CardDescription>
-														{player.queue.length
-															? '上次队列还在，按空格或播放即可续播。'
-															: '搜索后点进分 P，封面会铺到整个窗口背景。'}
-													</CardDescription>
-												</CardHeader>
-											</>
+											<CardHeader>
+												<CardTitle>尚未播放</CardTitle>
+												<CardDescription>
+													{player.queue.length
+														? '上次队列还在，按空格或播放即可续播。'
+														: '搜索后点进分 P 即可开播。'}
+												</CardDescription>
+											</CardHeader>
 										)}
 									</Card>
 								</div>
 								{player.error && <p className='error'>{player.error}</p>}
+								{player.queue.length > 0 && (
+									<div className='flex flex-col gap-6'>
+										<div className='section-title'>最近播放</div>
+										<div className='cover-grid'>
+											{player.queue.slice(0, 5).map((track, i) => (
+												<Button
+													className={coverButtonClass}
+													key={`${track.id}-${i}`}
+													type='button'
+													variant='ghost'
+													onClick={() => {
+														void player.playTrack(player.queue, i)
+													}}
+												>
+													<CoverFace
+														src={track.artwork}
+														fallback='♪'
+													/>
+													<CoverMeta
+														title={track.title}
+														subtitle={track.artist}
+														active={current?.id === track.id}
+													/>
+												</Button>
+											))}
+										</div>
+									</div>
+								)}
 							</>
 						)}
 						{tab === 'library' && (
@@ -944,15 +986,17 @@ export default function App() {
 										/>
 									</Button>
 								</div>
-								<div className='flex flex-wrap items-center gap-2'>
-									<Input
-										value={createTitle}
-										placeholder='新播放列表标题'
-										onChange={(e) => setCreateTitle(e.target.value)}
-										onKeyDown={(e) => {
-											if (e.key === 'Enter') void createLocalPlaylist()
-										}}
-									/>
+								<div className='flex items-center gap-2'>
+									<InputGroup className='flex-1'>
+										<InputGroupInput
+											value={createTitle}
+											placeholder='新播放列表标题'
+											onChange={(e) => setCreateTitle(e.target.value)}
+											onKeyDown={(e) => {
+												if (e.key === 'Enter') void createLocalPlaylist()
+											}}
+										/>
+									</InputGroup>
 									<Button
 										type='button'
 										onClick={() => void createLocalPlaylist()}
@@ -1197,7 +1241,7 @@ export default function App() {
 											<EmptyHeader>
 												<EmptyTitle>还没有内容</EmptyTitle>
 												<EmptyDescription>
-													创建本地歌单，或用顶栏搜索试试。
+													创建本地歌单，或用侧栏搜索试试。
 												</EmptyDescription>
 											</EmptyHeader>
 										</Empty>
@@ -1414,119 +1458,122 @@ export default function App() {
 					</main>
 				</div>
 				<footer className='bar'>
-					<Slider
-						className='absolute top-[-8px] right-0 left-0'
-						min={0}
-						max={player.duration || 1}
-						value={player.currentTime}
-						onValueChange={(value) => {
-							const next = Array.isArray(value) ? value[0] : value
-							player.seek(Math.round(Number(next)))
-						}}
-					/>
-					<Button
-						className='now h-auto justify-start gap-3 px-0 hover:bg-transparent'
-						variant='ghost'
-						type='button'
-						onClick={openPlayer}
-					>
-						{current?.artwork ? (
-							<img
-								src={current.artwork}
-								alt=''
-								className='size-14 rounded-lg object-cover'
-							/>
-						) : (
-							<div className='bg-muted size-14 rounded-lg' />
-						)}
-						<div className='min-w-0 text-left'>
-							<div className='truncate font-medium'>
-								{current?.title ?? '未在播放'}
+					<div className='bar-row'>
+						<Button
+							className='now h-auto justify-start gap-3 px-0 hover:bg-transparent'
+							variant='ghost'
+							type='button'
+							onClick={openPlayer}
+						>
+							{current?.artwork ? (
+								<img
+									src={current.artwork}
+									alt=''
+									className='size-12 rounded-lg object-cover'
+								/>
+							) : (
+								<div className='bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-lg'>
+									<MusicIcon />
+								</div>
+							)}
+							<div className='min-w-0 text-left'>
+								<div className='truncate text-sm'>
+									{current?.title ?? '未在播放'}
+								</div>
+								<div className='text-muted-foreground truncate text-xs'>
+									{current?.artist || '从搜索开始'}
+								</div>
 							</div>
-							<div className='text-muted-foreground truncate text-sm'>
-								{player.lyricLine || current?.artist || '从搜索开始'}
-							</div>
+						</Button>
+						<div className='controls'>
+							<Button
+								className={cn(player.shuffle && 'bg-muted')}
+								variant='ghost'
+								size='icon'
+								type='button'
+								title='随机'
+								onClick={player.toggleShuffle}
+							>
+								<ShuffleIcon />
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								onClick={() => player.skip(-1)}
+							>
+								<SkipBackIcon />
+							</Button>
+							<Button
+								variant='default'
+								size='icon'
+								type='button'
+								onClick={player.toggle}
+							>
+								{player.playing ? <PauseIcon /> : <PlayIcon />}
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								onClick={() => player.skip(1)}
+							>
+								<SkipForwardIcon />
+							</Button>
+							<Button
+								className={cn(player.repeatMode && 'bg-muted')}
+								variant='ghost'
+								size='icon'
+								title={repeatLabel(player.repeatMode)}
+								onClick={player.cycleRepeat}
+							>
+								<RepeatIcon />
+							</Button>
 						</div>
-					</Button>
-					<div className='controls'>
-						<Button
-							className={cn(player.shuffle && 'bg-muted')}
-							variant='ghost'
-							size='icon'
-							type='button'
-							title='随机'
-							onClick={player.toggleShuffle}
-						>
-							<ShuffleIcon />
-						</Button>
-						<Button
-							variant='ghost'
-							size='icon'
-							type='button'
-							onClick={() => player.skip(-1)}
-						>
-							<SkipBackIcon />
-						</Button>
-						<Button
-							size='icon-lg'
-							type='button'
-							onClick={player.toggle}
-						>
-							{player.playing ? <PauseIcon /> : <PlayIcon />}
-						</Button>
-						<Button
-							variant='ghost'
-							size='icon'
-							type='button'
-							onClick={() => player.skip(1)}
-						>
-							<SkipForwardIcon />
-						</Button>
-						<Button
-							className={cn(player.repeatMode && 'bg-muted')}
-							variant='ghost'
-							size='icon'
-							type='button'
-							title={repeatLabel(player.repeatMode)}
-							onClick={player.cycleRepeat}
-						>
-							<RepeatIcon />
-						</Button>
-					</div>
-					<div className='bar-right'>
-						<Button
-							variant='ghost'
-							size='sm'
-							type='button'
-							onClick={cycleSleep}
-						>
-							{player.sleepLeft > 0
-								? `定时 ${formatMs(player.sleepLeft)}`
-								: '定时'}
-						</Button>
-						<Button
-							variant='ghost'
-							size='sm'
-							type='button'
-							onClick={player.cycleSpeed}
-						>
-							{player.playbackRate}x
-						</Button>
-						<Button
-							variant='ghost'
-							size='icon'
-							type='button'
-							title='队列'
-							onClick={() => setShowQueue((value) => !value)}
-						>
-							<ListMusicIcon />
-						</Button>
-						<div className='time'>
-							<b>{formatMs(player.currentTime)}</b> /{' '}
-							{formatMs(player.duration)}
+						<div className='bar-right'>
+							<Button
+								variant='ghost'
+								type='button'
+								onClick={cycleSleep}
+							>
+								{player.sleepLeft > 0
+									? `定时 ${formatMs(player.sleepLeft)}`
+									: '定时'}
+							</Button>
+							<Button
+								variant='ghost'
+								type='button'
+								onClick={player.cycleSpeed}
+							>
+								{Number(player.playbackRate).toFixed(1)}x
+							</Button>
+							<Button
+								variant='ghost'
+								size='icon'
+								type='button'
+								title='队列'
+								onClick={() => setShowQueue((value) => !value)}
+							>
+								<ListMusicIcon />
+							</Button>
+							<div className='time'>
+								{formatClock(player.currentTime)} /{' '}
+								{formatClock(player.duration)}
+							</div>
 						</div>
 					</div>
 				</footer>
+				<Slider
+					className='bar-progress'
+					min={0}
+					max={player.duration || 1}
+					value={player.currentTime}
+					aria-label='播放进度'
+					onValueChange={(value) => {
+						const next = Array.isArray(value) ? value[0] : value
+						player.seek(Math.round(Number(next)))
+					}}
+				/>
 				{showQueue && (
 					<aside className='queue-panel'>
 						<div className='flex items-center justify-between gap-2'>

@@ -130,14 +130,14 @@ function sendCommand(command: string) {
 
 function createWindow() {
 	mainWindow = new BrowserWindow({
-		width: 1280,
-		height: 820,
-		minWidth: 960,
-		minHeight: 640,
+		width: 1024,
+		height: 640,
+		minWidth: 900,
+		minHeight: 560,
 		title: 'BBPlayer',
 		titleBarStyle: 'hiddenInset',
-		trafficLightPosition: { x: 16, y: 18 },
-		backgroundColor: '#1a1c20',
+		trafficLightPosition: { x: 20, y: 36 },
+		backgroundColor: '#ffffff',
 		webPreferences: {
 			preload: PRELOAD,
 			sandbox: false,

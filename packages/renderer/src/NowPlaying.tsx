@@ -54,10 +54,9 @@ export function NowPlaying({
 			<div className='now-playing-scrim' />
 			<div className='now-playing-top'>
 				<Button
-					className='now-playing-close rounded-full text-white hover:bg-white/15'
 					type='button'
 					variant='ghost'
-					size='icon-sm'
+					size='icon'
 					aria-label='收起播放页'
 					onClick={onClose}
 				>
@@ -82,7 +81,6 @@ export function NowPlaying({
 									<Button
 										variant='ghost'
 										size='icon'
-										className='rounded-full text-white/80 hover:bg-white/10 hover:text-white'
 										aria-label='更多'
 									/>
 								}
@@ -124,55 +122,47 @@ export function NowPlaying({
 					</div>
 					<div className='now-playing-transport'>
 						<Button
-							className={cn(
-								'rounded-full text-white/80 hover:bg-white/10 hover:text-white',
-								player.shuffle && 'bg-white/10 text-white',
-							)}
+							className={cn(player.shuffle && 'bg-muted')}
 							type='button'
 							variant='ghost'
-							size='icon-lg'
+							size='icon'
 							title='随机'
 							onClick={player.toggleShuffle}
 						>
 							<ShuffleIcon />
 						</Button>
 						<Button
-							className='rounded-full text-white hover:bg-white/10'
 							type='button'
 							variant='ghost'
-							size='icon-lg'
+							size='icon'
 							aria-label='上一首'
 							onClick={() => player.skip(-1)}
 						>
 							<SkipBackIcon />
 						</Button>
 						<Button
-							className='size-16 rounded-full'
 							type='button'
-							size='icon-lg'
+							variant='default'
+							size='icon'
 							aria-label={player.playing ? '暂停' : '播放'}
 							onClick={player.toggle}
 						>
 							{player.playing ? <PauseIcon /> : <PlayIcon />}
 						</Button>
 						<Button
-							className='rounded-full text-white hover:bg-white/10'
 							type='button'
 							variant='ghost'
-							size='icon-lg'
+							size='icon'
 							aria-label='下一首'
 							onClick={() => player.skip(1)}
 						>
 							<SkipForwardIcon />
 						</Button>
 						<Button
-							className={cn(
-								'rounded-full text-white/80 hover:bg-white/10 hover:text-white',
-								player.repeatMode && 'bg-white/10 text-white',
-							)}
+							className={cn(player.repeatMode && 'bg-muted')}
 							type='button'
 							variant='ghost'
-							size='icon-lg'
+							size='icon'
 							title={repeatLabel(player.repeatMode)}
 							onClick={player.cycleRepeat}
 						>
@@ -204,10 +194,7 @@ export function NowPlaying({
 			</div>
 			<div className='now-playing-dock'>
 				<Button
-					className={cn(
-						'rounded-full text-white/80 hover:bg-white/10 hover:text-white',
-						queueOpen && 'bg-white/10 text-white',
-					)}
+					className={cn(queueOpen && 'bg-muted')}
 					type='button'
 					variant='ghost'
 					size='icon'
