@@ -102,6 +102,10 @@ function stripHtml(input: string) {
 }
 const coverButtonClass =
 	'h-auto w-32 min-w-0 flex-col items-stretch gap-2 p-0 whitespace-normal'
+const pageTitleClass = 'text-3xl font-semibold tracking-tight'
+const coverGridClass =
+	'grid grid-cols-[repeat(auto-fill,128px)] justify-between gap-4'
+const navLabelClass = 'mt-1 ml-2 text-xs font-medium text-sidebar-foreground/70'
 
 function CoverFace({ src, fallback }: { src?: string; fallback?: string }) {
 	if (src) {
@@ -664,9 +668,7 @@ export default function App() {
 			<div
 				className={cn(
 					'relative isolate grid h-full bg-background text-foreground',
-					tab === 'player'
-						? 'player-open grid-rows-1'
-						: 'grid-rows-[1fr_var(--bar-h)]',
+					tab === 'player' ? 'grid-rows-1' : 'grid-rows-[1fr_var(--bar-h)]',
 				)}
 				style={{
 					['--cover-image' as string]: coverImage,
@@ -679,19 +681,26 @@ export default function App() {
 				}}
 			>
 				<div className='grid min-h-0 grid-cols-[var(--sidebar-w)_1px_1fr]'>
-					<aside className='sidebar'>
-						<div className='sidebar-titlebar'>
+					<aside className='bg-sidebar text-sidebar-foreground flex flex-col gap-2 overflow-auto p-2'>
+						<div
+							className='flex min-h-[68px] items-center gap-3 pl-3'
+							data-titlebar
+						>
 							<div
-								className='traffic-light-space'
+								className='h-3 w-[52px] shrink-0'
 								aria-hidden
 							/>
-							<div className='brand'>
-								<span className='brand-mark'>
+							<div className='flex min-w-0 flex-1 items-center gap-2'>
+								<span className='bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-lg'>
 									<MusicIcon />
 								</span>
-								<div className='brand-copy'>
-									<div className='brand-title'>BBPlayer</div>
-									<div className='brand-sub'>本地音频</div>
+								<div className='min-w-0 flex-1'>
+									<div className='truncate text-sm font-semibold leading-tight'>
+										BBPlayer
+									</div>
+									<div className='text-muted-foreground truncate text-xs leading-tight'>
+										本地音频
+									</div>
 								</div>
 								<ChevronsUpDownIcon className='text-muted-foreground size-4 shrink-0' />
 							</div>
@@ -710,7 +719,7 @@ export default function App() {
 								}}
 							/>
 						</InputGroup>
-						<div className='nav-label'>在线音乐</div>
+						<div className={navLabelClass}>在线音乐</div>
 						<Button
 							className='h-9 w-full justify-start px-2'
 							variant={tab === 'home' ? 'secondary' : 'ghost'}
@@ -729,7 +738,7 @@ export default function App() {
 							<LibraryIcon data-icon='inline-start' />
 							音乐库
 						</Button>
-						<div className='nav-label'>其他</div>
+						<div className={navLabelClass}>其他</div>
 						<Button
 							className='h-9 w-full justify-start px-2'
 							variant={tab === 'settings' ? 'secondary' : 'ghost'}
@@ -739,7 +748,7 @@ export default function App() {
 							<SettingsIcon data-icon='inline-start' />
 							设置
 						</Button>
-						<div className='sidebar-spacer' />
+						<div className='flex-1' />
 						<Button
 							className='h-9 w-full justify-start px-2'
 							variant='ghost'
@@ -751,16 +760,18 @@ export default function App() {
 						</Button>
 					</aside>
 					<Separator orientation='vertical' />
-					<main className='content'>
+					<main className='bg-background flex min-w-0 flex-col gap-6 overflow-auto p-6'>
 						{tab === 'home' && (
 							<>
 								<div>
-									<h1 className='page-title'>
+									<h1 className={pageTitleClass}>
 										{account ? `${greeting()}，${account.name}` : greeting()}
 									</h1>
-									<p className='greeting'>空格播放 · 左右切歌 · ⌘L 聚焦搜索</p>
+									<p className='text-muted-foreground mt-6 text-sm'>
+										空格播放 · 左右切歌 · ⌘L 聚焦搜索
+									</p>
 								</div>
-								<div className='hero'>
+								<div className='grid grid-cols-1 gap-4 min-[980px]:grid-cols-2'>
 									<Card className='min-h-[151px] justify-between gap-2 rounded-lg [--card-spacing:1.5rem]'>
 										<CardHeader>
 											<CardTitle>快速开始</CardTitle>
@@ -850,11 +861,13 @@ export default function App() {
 										)}
 									</Card>
 								</div>
-								{player.error && <p className='error'>{player.error}</p>}
+								{player.error && (
+									<p className='text-destructive mt-3'>{player.error}</p>
+								)}
 								{player.queue.length > 0 && (
 									<div className='flex flex-col gap-6'>
-										<div className='section-title'>最近播放</div>
-										<div className='cover-grid'>
+										<div className='text-base font-normal'>最近播放</div>
+										<div className={coverGridClass}>
 											{player.queue.slice(0, 5).map((track, i) => (
 												<Button
 													className={coverButtonClass}
@@ -883,11 +896,13 @@ export default function App() {
 						)}
 						{tab === 'library' && (
 							<>
-								<h1 className='page-title'>音乐库</h1>
-								<p className='muted'>
+								<h1 className={pageTitleClass}>音乐库</h1>
+								<p className='text-muted-foreground'>
 									{listTitle || '本地歌单、收藏夹和合集会显示在这里。'}
 								</p>
-								{libraryNotice && <p className='muted'>{libraryNotice}</p>}
+								{libraryNotice && (
+									<p className='text-muted-foreground'>{libraryNotice}</p>
+								)}
 								<div className='flex flex-wrap items-center gap-2'>
 									<Input
 										value={shareInput}
@@ -916,8 +931,8 @@ export default function App() {
 								</div>
 								{account && (
 									<>
-										<div className='section-title'>B 站</div>
-										<div className='cover-grid'>
+										<div className='text-base font-normal'>B 站</div>
+										<div className={coverGridClass}>
 											<Button
 												className={coverButtonClass}
 												type='button'
@@ -969,8 +984,8 @@ export default function App() {
 										</div>
 									</>
 								)}
-								<div className='section-title'>本地歌单</div>
-								<div className='cover-grid'>
+								<div className='text-base font-normal'>本地歌单</div>
+								<div className={coverGridClass}>
 									<Button
 										className={coverButtonClass}
 										type='button'
@@ -1010,7 +1025,7 @@ export default function App() {
 									</Button>
 								</div>
 								{playlists.length > 0 && (
-									<div className='cover-grid'>
+									<div className={coverGridClass}>
 										{playlists.map((playlist) => (
 											<ContextMenu key={playlist.id}>
 												<ContextMenuTrigger>
@@ -1113,7 +1128,7 @@ export default function App() {
 									</div>
 								)}
 								{hits.length > 0 && (
-									<div className='cover-grid'>
+									<div className={coverGridClass}>
 										{hits.map((hit) => (
 											<Button
 												className={coverButtonClass}
@@ -1251,12 +1266,14 @@ export default function App() {
 											</EmptyHeader>
 										</Empty>
 									)}
-								{player.error && <p className='error'>{player.error}</p>}
+								{player.error && (
+									<p className='text-destructive mt-3'>{player.error}</p>
+								)}
 							</>
 						)}
 						{tab === 'settings' && (
 							<>
-								<h1 className='page-title'>设置</h1>
+								<h1 className={pageTitleClass}>设置</h1>
 								<Card>
 									<CardContent>
 										<BbplayerAccount
@@ -1589,7 +1606,14 @@ export default function App() {
 					}}
 				/>
 				{showQueue && (
-					<aside className='queue-panel'>
+					<aside
+						className={cn(
+							'bg-card absolute right-3 w-[360px] max-h-[min(520px,62vh)] overflow-auto rounded-xl border p-3',
+							tab === 'player'
+								? 'bottom-4 z-30'
+								: 'bottom-[calc(var(--bar-h)+12px)] z-[15]',
+						)}
+					>
 						<div className='flex items-center justify-between gap-2'>
 							<strong>播放队列 ({player.queue.length})</strong>
 							<div className='flex gap-2'>

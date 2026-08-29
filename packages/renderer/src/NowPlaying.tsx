@@ -49,10 +49,11 @@ export function NowPlaying({
 	const remaining = Math.max(0, player.duration - player.currentTime)
 
 	return (
-		<section className='now-playing'>
-			<div className='now-playing-bg' />
-			<div className='now-playing-scrim' />
-			<div className='now-playing-top'>
+		<section
+			className='bg-background text-foreground absolute inset-0 z-20 grid grid-rows-[52px_1fr] overflow-hidden'
+			data-player-page
+		>
+			<div className='flex items-center justify-end px-4'>
 				<Button
 					type='button'
 					variant='ghost'
@@ -63,17 +64,21 @@ export function NowPlaying({
 					<ChevronDownIcon />
 				</Button>
 			</div>
-			<div className='now-playing-stage'>
-				<div className='now-playing-col'>
+			<div className='grid min-h-0 grid-cols-[1fr_minmax(256px,320px)_1fr] items-stretch gap-6 px-6 pb-6 max-[980px]:grid-cols-[220px_1fr] max-[980px]:px-8 max-[980px]:pt-2 max-[980px]:pb-16'>
+				<div className='col-start-2 flex w-full min-w-0 flex-col items-center justify-center'>
 					<img
-						className='now-playing-art'
+						className='bg-muted size-64 rounded-xl object-cover'
 						src={track.artwork}
 						alt=''
 					/>
-					<div className='now-playing-heading'>
-						<div className='now-playing-titles'>
-							<h1>{track.title}</h1>
-							<p>{track.artist}</p>
+					<div className='mt-4 flex w-full flex-col items-center gap-2'>
+						<div className='min-w-0 text-center'>
+							<h1 className='truncate text-3xl font-semibold tracking-tight'>
+								{track.title}
+							</h1>
+							<p className='text-muted-foreground mt-1 truncate text-base'>
+								{track.artist}
+							</p>
 						</div>
 						<DropdownMenu>
 							<DropdownMenuTrigger
@@ -104,7 +109,7 @@ export function NowPlaying({
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
-					<div className='now-playing-seek'>
+					<div className='mt-4 w-full max-w-64'>
 						<Slider
 							min={0}
 							max={player.duration || 1}
@@ -115,12 +120,12 @@ export function NowPlaying({
 								player.seek(Math.round(Number(next)))
 							}}
 						/>
-						<div className='now-playing-times'>
+						<div className='text-muted-foreground mt-1.5 flex justify-between text-xs tabular-nums'>
 							<span>{formatClock(player.currentTime)}</span>
 							<span>-{formatClock(remaining)}</span>
 						</div>
 					</div>
-					<div className='now-playing-transport'>
+					<div className='mt-4 flex w-full max-w-64 items-center justify-center gap-2'>
 						<Button
 							className={cn(player.shuffle && 'bg-muted')}
 							type='button'
@@ -170,7 +175,10 @@ export function NowPlaying({
 						</Button>
 					</div>
 				</div>
-				<div className='now-playing-lyrics'>
+				<div
+					className='relative col-start-3 h-full min-h-0 pr-2 font-semibold tracking-tight [--amll-lp-color:var(--foreground)] [--amll-lp-font-size:max(18px,3.2vh,1.6vw)] [--amll-lp-hover-bg-color:transparent] [--amll-lp-line-width-aspect:1] [&_.amll-lyric-player]:h-full'
+					data-lyrics
+				>
 					{player.lyrics.length > 0 ? (
 						<LyricPlayer
 							lyricLines={player.lyrics}
@@ -188,11 +196,13 @@ export function NowPlaying({
 							}}
 						/>
 					) : (
-						<p className='now-playing-empty'>暂无歌词</p>
+						<p className='text-muted-foreground m-0 grid h-full place-items-center text-[22px]'>
+							暂无歌词
+						</p>
 					)}
 				</div>
 			</div>
-			<div className='now-playing-dock'>
+			<div className='absolute right-[22px] bottom-[22px] flex gap-1'>
 				<Button
 					className={cn(queueOpen && 'bg-muted')}
 					type='button'
