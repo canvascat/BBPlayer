@@ -48,7 +48,6 @@ import {
 	EmptyHeader,
 	EmptyTitle,
 } from '@/components/ui/empty'
-import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import {
 	InputGroup,
@@ -57,13 +56,11 @@ import {
 } from '@/components/ui/input-group'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
-import { Textarea } from '@/components/ui/textarea'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 import { CommentsPanel } from './CommentsPanel'
 import { NowPlaying } from './NowPlaying'
-import { PhoneLogin } from './PhoneLogin'
 import { formatClock, formatMs, repeatLabel, type TrackItem } from './playback'
 import { SkinPicker, type SkinTheme } from './SkinPicker'
 import { listen, trpcClient } from './trpc'
@@ -149,7 +146,6 @@ export default function App() {
 	const [hits, setHits] = useState<SearchHit[]>([])
 	const [pages, setPages] = useState<TrackItem[]>([])
 	const [listTitle, setListTitle] = useState('')
-	const [cookie, setCookie] = useState('')
 	const [continuePlayingAfterClose, setContinuePlayingAfterClose] =
 		useState(true)
 	const [menuBarShowLyrics, setMenuBarShowLyrics] = useState(false)
@@ -195,12 +191,8 @@ export default function App() {
 		}>
 	>([])
 	const [watchLaterCount, setWatchLaterCount] = useState(0)
-	const [qr, setQr] = useState<{
-		status: string
-		statusText: string
-		dataUrl?: string
-		url?: string
-	} | null>(null)
+	const [loginBusy, setLoginBusy] = useState(false)
+	const [loginMessage, setLoginMessage] = useState('')
 
 	const current = player.current
 	const visiblePages =
@@ -221,7 +213,6 @@ export default function App() {
 
 	useEffect(() => {
 		void trpcClient.settings.get.query().then((settings) => {
-			setCookie(settings.cookie)
 			setContinuePlayingAfterClose(settings.continuePlayingAfterClose)
 			setMenuBarShowLyrics(settings.menuBarShowLyrics)
 			setAutoCache(settings.autoCache ?? true)
@@ -241,20 +232,6 @@ export default function App() {
 			if (listTitle === '已下载') setPages(payload.records as TrackItem[])
 		})
 	}, [listTitle])
-
-	useEffect(() => {
-		return listen(trpcClient.auth.qrUpdates.subscribe, (payload) => {
-			void (async () => {
-				setQr(payload)
-				if (payload.status === 'success') {
-					const settings = await trpcClient.settings.get.query()
-					setCookie(settings.cookie)
-					setAccount(settings.account)
-					await loadRemoteLibrary()
-				}
-			})()
-		})
-	}, [])
 
 	const refreshPlaylists = async () => {
 		setPlaylists(await trpcClient.library.list.query())
@@ -482,7 +459,6 @@ export default function App() {
 
 	const saveSettings = async () => {
 		await trpcClient.settings.set.mutate({
-			cookie,
 			continuePlayingAfterClose,
 			menuBarShowLyrics,
 			autoCache,
@@ -506,13 +482,27 @@ export default function App() {
 
 	const logout = async () => {
 		await trpcClient.auth.logout.mutate()
-		setCookie('')
 		setAccount(null)
 		setFavorites([])
 		setCollections([])
 		setWatchLaterCount(0)
-		setQr(null)
+		setLoginMessage('')
 		setSaved('已退出登录')
+	}
+
+	const connectBili = async () => {
+		setLoginBusy(true)
+		setLoginMessage('')
+		try {
+			const result = await trpcClient.auth.webStart.mutate()
+			setAccount(result.account)
+			await loadRemoteLibrary()
+			setLoginMessage('登录成功')
+		} catch (err) {
+			setLoginMessage(err instanceof Error ? err.message : String(err))
+		} finally {
+			setLoginBusy(false)
+		}
 	}
 
 	const createLocalPlaylist = async (
@@ -1092,8 +1082,7 @@ export default function App() {
 								<Card>
 									<CardHeader>
 										<CardDescription>
-											扫码登录后可打开收藏夹、合集和稍后再看。也可以继续粘贴
-											Cookie。
+											在官方页面登录后可打开收藏夹、合集和稍后再看。
 										</CardDescription>
 									</CardHeader>
 									<CardContent className='flex flex-col gap-4'>
@@ -1126,79 +1115,21 @@ export default function App() {
 											</div>
 										) : (
 											<div className='flex flex-col gap-3'>
-												{qr?.dataUrl ? (
-													<img
-														className='size-40 rounded-lg'
-														src={qr.dataUrl}
-														alt='登录二维码'
-													/>
-												) : (
-													<div className='bg-muted text-muted-foreground flex size-40 items-center justify-center rounded-lg'>
-														二维码
-													</div>
+												<Button
+													type='button'
+													variant='secondary'
+													disabled={loginBusy}
+													onClick={() => void connectBili()}
+												>
+													{loginBusy ? '登录中…' : '连接 Bilibili'}
+												</Button>
+												{loginMessage && (
+													<p className='text-muted-foreground'>
+														{loginMessage}
+													</p>
 												)}
-												<p className='text-muted-foreground'>
-													{qr?.statusText || '点击下方按钮生成二维码'}
-												</p>
-												<div className='flex flex-wrap gap-2'>
-													<Button
-														type='button'
-														variant='secondary'
-														onClick={() =>
-															void trpcClient.auth.qrStart
-																.mutate()
-																.catch((err) => {
-																	setQr({
-																		status: 'error',
-																		statusText:
-																			err instanceof Error
-																				? err.message
-																				: String(err),
-																	})
-																})
-														}
-													>
-														{qr?.status === 'expired' || qr?.status === 'error'
-															? '重新生成'
-															: '扫码登录'}
-													</Button>
-													{qr?.url && (
-														<Button
-															type='button'
-															variant='outline'
-															onClick={() =>
-																void trpcClient.desktop.openExternal.mutate({
-																	url: qr.url!,
-																})
-															}
-														>
-															在浏览器打开
-														</Button>
-													)}
-												</div>
 											</div>
 										)}
-										<PhoneLogin
-											disabled={Boolean(account)}
-											onLoggedIn={() => {
-												void trpcClient.settings.get
-													.query()
-													.then((settings) => {
-														setCookie(settings.cookie)
-														setAccount(settings.account)
-													})
-												void loadRemoteLibrary()
-											}}
-										/>
-										<Field>
-											<FieldLabel htmlFor='cookie'>Cookie</FieldLabel>
-											<Textarea
-												id='cookie'
-												value={cookie}
-												onChange={(e) => setCookie(e.target.value)}
-												placeholder='粘贴 Bilibili Cookie'
-											/>
-										</Field>
 										<SettingSwitch
 											id='continue-playing'
 											label='关闭窗口后继续播放'
