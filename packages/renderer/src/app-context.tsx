@@ -342,17 +342,24 @@ function useAppModel() {
 		void navigate({ to: '/library' })
 	}
 
-	const saveSettings = async () => {
-		await trpcClient.settings.set.mutate({
-			continuePlayingAfterClose,
-			menuBarShowLyrics,
-			autoCache,
-			skin,
-		})
-		const accountNow = await trpcClient.auth.refresh.mutate()
-		setAccount(accountNow)
-		await loadRemoteLibrary()
-		setSaved('已保存')
+	const persistContinuePlayingAfterClose = (value: boolean) => {
+		setContinuePlayingAfterClose(value)
+		void trpcClient.settings.set.mutate({ continuePlayingAfterClose: value })
+	}
+
+	const persistMenuBarShowLyrics = (value: boolean) => {
+		setMenuBarShowLyrics(value)
+		void trpcClient.settings.set.mutate({ menuBarShowLyrics: value })
+	}
+
+	const persistAutoCache = (value: boolean) => {
+		setAutoCache(value)
+		void trpcClient.settings.set.mutate({ autoCache: value })
+	}
+
+	const persistSkin = (value: SkinTheme | null) => {
+		setSkin(value)
+		void trpcClient.settings.set.mutate({ skin: value })
 	}
 
 	const exportCached = async (ids?: string[]) => {
@@ -453,9 +460,9 @@ function useAppModel() {
 		pages,
 		listTitle,
 		continuePlayingAfterClose,
-		setContinuePlayingAfterClose,
+		setContinuePlayingAfterClose: persistContinuePlayingAfterClose,
 		menuBarShowLyrics,
-		setMenuBarShowLyrics,
+		setMenuBarShowLyrics: persistMenuBarShowLyrics,
 		saved,
 		setSaved,
 		showQueue,
@@ -467,9 +474,9 @@ function useAppModel() {
 		pickPlaylistFor,
 		setPickPlaylistFor,
 		autoCache,
-		setAutoCache,
+		setAutoCache: persistAutoCache,
 		skin,
-		setSkin,
+		setSkin: persistSkin,
 		showComments,
 		setShowComments,
 		downloads,
@@ -495,7 +502,6 @@ function useAppModel() {
 		startPlay,
 		submitSearch,
 		openHit,
-		saveSettings,
 		exportCached,
 		logout,
 		connectBili,

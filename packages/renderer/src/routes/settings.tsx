@@ -37,7 +37,6 @@ function SettingsPage() {
 		setSaved,
 		skin,
 		setSkin,
-		saveSettings,
 		saved,
 	} = useApp()
 
@@ -151,21 +150,14 @@ function SettingsPage() {
 					</div>
 					<SkinPicker
 						value={skin}
-						onChange={(next) => {
-							setSkin(next)
-							void trpcClient.settings.set.mutate({ skin: next })
-						}}
+						onChange={setSkin}
 					/>
 				</CardContent>
-				<CardFooter className='justify-start'>
-					<Button
-						type='button'
-						onClick={() => void saveSettings()}
-					>
-						保存
-					</Button>
-					{saved && <p className='text-muted-foreground'>{saved}</p>}
-				</CardFooter>
+				{saved && (
+					<CardFooter>
+						<p className='text-muted-foreground'>{saved}</p>
+					</CardFooter>
+				)}
 			</Card>
 		</>
 	)
