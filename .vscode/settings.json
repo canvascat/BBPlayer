@@ -25,5 +25,14 @@
 		"source.fixAll.oxc": "explicit"
 	},
 	"typescript.tsdk": "node_modules/typescript/lib",
-	"typescript.native-preview.tsdk": "${workspaceFolder}/node_modules/@typescript/native-preview"
+	"typescript.native-preview.tsdk": "${workspaceFolder}/node_modules/@typescript/native-preview",
+	"files.readonlyInclude": {
+		"**/routeTree.gen.ts": true
+	},
+	"files.watcherExclude": {
+		"**/routeTree.gen.ts": true
+	},
+	"search.exclude": {
+		"**/routeTree.gen.ts": true
+	}
 }

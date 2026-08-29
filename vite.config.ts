@@ -1,8 +1,11 @@
+import { resolve } from 'node:path'
+
 import { defineConfig } from 'vite-plus'
 
 export default defineConfig({
 	defaultPackage: './packages/renderer',
 	lint: {
+		ignorePatterns: ['**/routeTree.gen.ts'],
 		plugins: [
 			'react',
 			'typescript',
@@ -93,6 +96,7 @@ export default defineConfig({
 		],
 	},
 	fmt: {
+		ignorePatterns: ['**/routeTree.gen.ts'],
 		printWidth: 80,
 		useTabs: true,
 		semi: false,
@@ -117,6 +121,9 @@ export default defineConfig({
 	test: {
 		environment: 'node',
 		include: ['packages/**/*.test.ts'],
+		alias: {
+			'@': resolve(import.meta.dirname, 'packages/renderer/src'),
+		},
 		exclude: [
 			'**/node_modules/**',
 			'**/dist/**',

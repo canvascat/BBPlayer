@@ -1,3 +1,5 @@
+import '@applemusic-like-lyrics/core/style.css'
+
 import { LyricPlayer } from '@applemusic-like-lyrics/react'
 import {
 	ChevronDownIcon,
