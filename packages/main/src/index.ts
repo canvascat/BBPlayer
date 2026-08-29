@@ -49,6 +49,7 @@ import { liveState } from './trpc/live-state'
 import { appRouter } from './trpc/router'
 import { stopQrLogin } from './trpc/routers/auth'
 import { interpretUpdate, notesFromRelease } from './updater'
+import { clearBiliLoginSession, openWebLogin } from './web-login'
 
 registerAppSchemePrivileged()
 
@@ -613,6 +614,14 @@ function openGeetest(input: { gt: string; challenge: string }) {
 	})
 }
 
+function openBiliWebLogin() {
+	return openWebLogin({
+		parent: mainWindow,
+		verifyAccount: async (cookieHeader) =>
+			Boolean(await getAccount(cookieHeader)),
+	})
+}
+
 app.setName('BBPlayer')
 
 if (process.defaultApp) {
@@ -652,6 +661,8 @@ app.whenReady().then(async () => {
 						checkUpdate: () => checkUpdates(true),
 						showMain,
 						openGeetest,
+						openWebLogin: openBiliWebLogin,
+						clearBiliLoginSession,
 						exportDownloads: (ids) => exportDownloads(ids, false),
 						exportBackup: () => exportBackup(true),
 						importBackup: () => importBackup(true),
