@@ -25,7 +25,6 @@ export function readSettings(store: Pick<TrpcStore, 'get'>) {
 		autoCache: store.get('autoCache') ?? true,
 		account: store.get('account') ?? null,
 		skin: store.get('skin') ?? null,
-		bbplayerAccount: store.get('bbplayerAccount') ?? null,
 	}
 }
 

@@ -61,7 +61,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
-import { BbplayerAccount } from './BbplayerAccount'
 import { CommentsPanel } from './CommentsPanel'
 import { NowPlaying } from './NowPlaying'
 import { PhoneLogin } from './PhoneLogin'
@@ -78,15 +77,6 @@ interface SearchHit {
 	pic: string
 	author: string
 	duration: string
-}
-
-function shareRoleLabel(
-	role: 'owner' | 'editor' | 'subscriber' | null | undefined,
-) {
-	if (role === 'owner') return '共享'
-	if (role === 'editor') return '协作'
-	if (role === 'subscriber') return '订阅'
-	return ''
 }
 
 function greeting() {
@@ -172,15 +162,10 @@ export default function App() {
 			description: string
 			coverUrl: string
 			itemCount: number
-			shareId: string | null
-			shareRole: 'owner' | 'editor' | 'subscriber' | null
 		}>
 	>([])
 	const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null)
 	const [createTitle, setCreateTitle] = useState('')
-	const [shareInput, setShareInput] = useState('')
-	const [shareInvite, setShareInvite] = useState('')
-	const [libraryNotice, setLibraryNotice] = useState('')
 	const [pickPlaylistFor, setPickPlaylistFor] = useState<TrackItem | null>(null)
 	const [autoCache, setAutoCache] = useState(true)
 	const [skin, setSkin] = useState<SkinTheme | null>(null)
@@ -247,21 +232,6 @@ export default function App() {
 		void loadRemoteLibrary()
 		void trpcClient.downloads.list.query().then(setDownloads)
 		void trpcClient.downloads.status.query().then(setDownloadTasks)
-		void trpcClient.share.pending.query().then((payload) => {
-			if (!payload?.shareId) return
-			setShareInput(payload.shareId)
-			if (payload.inviteCode) setShareInvite(payload.inviteCode)
-			setTab('library')
-		})
-	}, [])
-
-	useEffect(() => {
-		return listen(trpcClient.share.incoming.subscribe, (payload) => {
-			if (!payload.shareId) return
-			setShareInput(payload.shareId)
-			if (payload.inviteCode) setShareInvite(payload.inviteCode)
-			setTab('library')
-		})
 	}, [])
 
 	useEffect(() => {
@@ -349,16 +319,8 @@ export default function App() {
 	}
 
 	const openPlaylist = async (id: string) => {
-		let playlist = await trpcClient.library.get.query({ id })
+		const playlist = await trpcClient.library.get.query({ id })
 		if (!playlist) return
-		if (playlist.shareId) {
-			try {
-				await trpcClient.share.pull.mutate({ playlistId: id })
-				playlist = (await trpcClient.library.get.query({ id })) ?? playlist
-			} catch (error) {
-				setLibraryNotice(error instanceof Error ? error.message : String(error))
-			}
-		}
 		setActivePlaylistId(id)
 		setListTitle(playlist.title)
 		setPages(playlist.tracks)
@@ -576,83 +538,15 @@ export default function App() {
 		if (activePlaylistId === playlistId) await openPlaylist(playlistId)
 	}
 
-	const subscribeShared = async () => {
-		setLibraryNotice('')
-		try {
-			await trpcClient.share.preview.query({ input: shareInput })
-			const result = await trpcClient.share.subscribe.mutate({
-				input: shareInput,
-				inviteCode: shareInvite.trim() || undefined,
-			})
-			setShareInput('')
-			setShareInvite('')
-			setLibraryNotice(
-				result.alreadyMember
-					? `已在本地：${result.title}`
-					: `已订阅「${result.title}」`,
-			)
-			await refreshPlaylists()
-			await openPlaylist(result.playlistId)
-		} catch (error) {
-			setLibraryNotice(error instanceof Error ? error.message : String(error))
-		}
-	}
-
-	const runPlaylistAction = async (
-		id: string,
-		action: 'share' | 'copy' | 'editor' | 'sync' | 'rotate' | 'delete',
-	) => {
+	const deletePlaylist = async (id: string) => {
 		const playlist = playlists.find((item) => item.id === id)
-		try {
-			if (action === 'delete') {
-				if (!window.confirm(`删除「${playlist?.title ?? ''}」？`)) return
-				await trpcClient.library.delete.mutate({ id })
-				await refreshPlaylists()
-				if (activePlaylistId === id) {
-					setActivePlaylistId(null)
-					setPages([])
-					setListTitle('')
-				}
-				return
-			}
-			if (action === 'share') {
-				const result = await trpcClient.share.enable.mutate({ playlistId: id })
-				setLibraryNotice(
-					result.alreadyShared ? `已复制订阅链接` : '已设为共享，链接已复制',
-				)
-				await trpcClient.desktop.copyText.mutate({ text: result.subscribeUrl })
-				await refreshPlaylists()
-				return
-			}
-			if (action === 'copy') {
-				await trpcClient.share.copyLink.mutate({
-					playlistId: id,
-					kind: 'subscribe',
-				})
-				setLibraryNotice('已复制订阅链接')
-				return
-			}
-			if (action === 'editor') {
-				await trpcClient.share.copyLink.mutate({
-					playlistId: id,
-					kind: 'editor',
-				})
-				setLibraryNotice('已复制协作链接')
-				return
-			}
-			if (action === 'sync') {
-				await trpcClient.share.pull.mutate({ playlistId: id })
-				setLibraryNotice('云端共享歌单已同步')
-				await refreshPlaylists()
-				if (activePlaylistId === id) await openPlaylist(id)
-				return
-			}
-			if (action === 'rotate') {
-				await trpcClient.share.rotateInvite.mutate({ playlistId: id })
-				setLibraryNotice('已重置邀请码并复制协作链接')
-			}
-		} catch (error) {
-			setLibraryNotice(error instanceof Error ? error.message : String(error))
+		if (!window.confirm(`删除「${playlist?.title ?? ''}」？`)) return
+		await trpcClient.library.delete.mutate({ id })
+		await refreshPlaylists()
+		if (activePlaylistId === id) {
+			setActivePlaylistId(null)
+			setPages([])
+			setListTitle('')
 		}
 	}
 
@@ -901,35 +795,6 @@ export default function App() {
 								<p className='text-muted-foreground'>
 									{listTitle || '本地歌单、收藏夹和合集会显示在这里。'}
 								</p>
-								{libraryNotice && (
-									<p className='text-muted-foreground'>{libraryNotice}</p>
-								)}
-								<div className='flex flex-wrap items-center gap-2'>
-									<Input
-										value={shareInput}
-										placeholder='粘贴共享链接或歌单 ID'
-										onChange={(e) => setShareInput(e.target.value)}
-										onKeyDown={(e) => {
-											if (e.key === 'Enter') void subscribeShared()
-										}}
-									/>
-									<Input
-										className='max-w-40'
-										value={shareInvite}
-										placeholder='邀请码（可选）'
-										onChange={(e) => setShareInvite(e.target.value)}
-										onKeyDown={(e) => {
-											if (e.key === 'Enter') void subscribeShared()
-										}}
-									/>
-									<Button
-										type='button'
-										variant='secondary'
-										onClick={() => void subscribeShared()}
-									>
-										订阅共享歌单
-									</Button>
-								</div>
 								{account && (
 									<>
 										<div className='text-base font-normal'>B 站</div>
@@ -1042,67 +907,16 @@ export default function App() {
 														/>
 														<CoverMeta
 															title={playlist.title}
-															subtitle={
-																playlist.shareRole
-																	? `${shareRoleLabel(playlist.shareRole)} · ${playlist.itemCount} 首`
-																	: `${playlist.itemCount} 首`
-															}
+															subtitle={`${playlist.itemCount} 首`}
 															active={activePlaylistId === playlist.id}
 														/>
 													</Button>
 												</ContextMenuTrigger>
 												<ContextMenuContent>
 													<ContextMenuGroup>
-														{!playlist.shareId && (
-															<ContextMenuItem
-																onClick={() =>
-																	void runPlaylistAction(playlist.id, 'share')
-																}
-															>
-																设为共享
-															</ContextMenuItem>
-														)}
-														{playlist.shareId && (
-															<ContextMenuItem
-																onClick={() =>
-																	void runPlaylistAction(playlist.id, 'copy')
-																}
-															>
-																复制订阅链接
-															</ContextMenuItem>
-														)}
-														{playlist.shareRole === 'owner' && (
-															<ContextMenuItem
-																onClick={() =>
-																	void runPlaylistAction(playlist.id, 'editor')
-																}
-															>
-																复制协作链接
-															</ContextMenuItem>
-														)}
-														{playlist.shareId && (
-															<ContextMenuItem
-																onClick={() =>
-																	void runPlaylistAction(playlist.id, 'sync')
-																}
-															>
-																同步云端
-															</ContextMenuItem>
-														)}
-														{playlist.shareRole === 'owner' && (
-															<ContextMenuItem
-																onClick={() =>
-																	void runPlaylistAction(playlist.id, 'rotate')
-																}
-															>
-																重置邀请码
-															</ContextMenuItem>
-														)}
 														<ContextMenuItem
 															variant='destructive'
-															onClick={() =>
-																void runPlaylistAction(playlist.id, 'delete')
-															}
+															onClick={() => void deletePlaylist(playlist.id)}
 														>
 															删除
 														</ContextMenuItem>
@@ -1275,14 +1089,6 @@ export default function App() {
 						{tab === 'settings' && (
 							<>
 								<h1 className={pageTitleClass}>设置</h1>
-								<Card>
-									<CardContent>
-										<BbplayerAccount
-											biliLoggedIn={Boolean(account)}
-											onPlaylistsChanged={() => void refreshPlaylists()}
-										/>
-									</CardContent>
-								</Card>
 								<Card>
 									<CardHeader>
 										<CardDescription>

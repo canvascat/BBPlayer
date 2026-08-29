@@ -67,8 +67,6 @@ export type TrpcContext = {
 		cached?: boolean
 		lyricSource?: string
 	}>
-	restoreShared: () => Promise<{ restored: number; message: string }>
-	takePendingShare: () => { shareId?: string; inviteCode?: string } | null
 }
 
 export function createTRPCContext(ctx: TrpcContext): TrpcContext {
@@ -77,10 +75,6 @@ export function createTRPCContext(ctx: TrpcContext): TrpcContext {
 
 export function cookieFrom(store: Pick<TrpcStore, 'get'>) {
 	return store.get('cookie') ?? ''
-}
-
-export function tokenFrom(store: Pick<TrpcStore, 'get'>) {
-	return store.get('bbplayerToken') || null
 }
 
 export function sameSnapshot(a: PlayerSnapshot, b: PlayerSnapshot) {

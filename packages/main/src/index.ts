@@ -42,8 +42,6 @@ import { downloadManager } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
 import { fetchMatchedLyrics } from './lyrics-fetch'
 import { openGeetestWindow } from './phone-login'
-import { parseShareLink } from './share-link'
-import { restoreFromCloud } from './shared-playlists'
 import { type AppStore } from './store'
 import { createTRPCContext } from './trpc/context'
 import { createDesktopEvents } from './trpc/events'
@@ -83,29 +81,6 @@ async function refreshAccount() {
 
 function cookie() {
 	return store.get('cookie') ?? ''
-}
-
-function bbplayerToken() {
-	return store.get('bbplayerToken') || null
-}
-
-async function finishBbplayerAuth() {
-	try {
-		return await restoreFromCloud(playerDb, bbplayerToken())
-	} catch {
-		return { restored: 0, message: '同步云端共享歌单失败' }
-	}
-}
-
-let pendingShareUrl: string | null = null
-
-function emitShareLink(url: string) {
-	const parsed = parseShareLink(url)
-	if (!parsed.shareId) return
-	pendingShareUrl = url
-	if (!mainWindow || mainWindow.isDestroyed()) return
-	showMain()
-	events.shareIncoming$.next(parsed)
 }
 
 function loadRenderer(win: BrowserWindow) {
@@ -628,13 +603,6 @@ async function resolvePlay(track: {
 	}
 }
 
-function takePendingShare() {
-	if (!pendingShareUrl) return null
-	const parsed = parseShareLink(pendingShareUrl)
-	pendingShareUrl = null
-	return parsed.shareId ? parsed : null
-}
-
 function openGeetest(input: { gt: string; challenge: string }) {
 	return openGeetestWindow({
 		gt: input.gt,
@@ -657,9 +625,9 @@ if (process.defaultApp) {
 	app.setAsDefaultProtocolClient('bbplayer')
 }
 
-app.on('open-url', (event, url) => {
+app.on('open-url', (event) => {
 	event.preventDefault()
-	emitShareLink(url)
+	showMain()
 })
 
 app.whenReady().then(async () => {
@@ -688,8 +656,6 @@ app.whenReady().then(async () => {
 						exportBackup: () => exportBackup(true),
 						importBackup: () => importBackup(true),
 						resolvePlay,
-						restoreShared: finishBbplayerAuth,
-						takePendingShare,
 					}),
 			}),
 	})
@@ -736,9 +702,7 @@ app.whenReady().then(async () => {
 	createTray()
 	registerShortcuts()
 	void refreshAccount()
-	if (pendingShareUrl) emitShareLink(pendingShareUrl)
-	const argvShare = process.argv.find((item) => item.startsWith('bbplayer://'))
-	if (argvShare) emitShareLink(argvShare)
+	if (process.argv.some((item) => item.startsWith('bbplayer://'))) showMain()
 	app.on('activate', () => showMain())
 })
 

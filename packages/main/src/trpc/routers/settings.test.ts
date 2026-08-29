@@ -12,7 +12,6 @@ test('settings.get 返回 store 中的 cookie 与默认值', async () => {
 	assert.equal(result.cookie, 'SESS=1')
 	assert.equal(result.continuePlayingAfterClose, true)
 	assert.equal(result.account, null)
-	assert.equal(result.bbplayerAccount, null)
 })
 
 test('settings.set 写入 cookie 并刷新账号', async () => {

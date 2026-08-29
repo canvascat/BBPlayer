@@ -52,8 +52,6 @@ export function mockTrpcContext(
 		exportBackup: async () => ({ ok: true }),
 		importBackup: async () => ({ ok: true }),
 		resolvePlay: async () => ({ playUrl: '', lyrics: [] }),
-		restoreShared: async () => ({ restored: 0, message: '' }),
-		takePendingShare: () => null,
 		...overrides,
 	}
 }

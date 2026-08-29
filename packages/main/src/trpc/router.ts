@@ -1,4 +1,3 @@
-import { accountRouter } from './routers/account'
 import { authRouter } from './routers/auth'
 import { biliRouter } from './routers/bili'
 import { desktopRouter } from './routers/desktop'
@@ -7,7 +6,6 @@ import { libraryRouter } from './routers/library'
 import { playerRouter } from './routers/player'
 import { sessionRouter } from './routers/session'
 import { settingsRouter } from './routers/settings'
-import { shareRouter } from './routers/share'
 import { publicProcedure, router } from './trpc'
 
 export const appRouter = router({
@@ -23,8 +21,6 @@ export const appRouter = router({
 	bili: biliRouter,
 	downloads: downloadsRouter,
 	backup: backupRouter,
-	account: accountRouter,
-	share: shareRouter,
 })
 
 export type AppRouter = typeof appRouter

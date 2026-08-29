@@ -35,6 +35,5 @@ pnpm --filter @bbplayer/main release:mac
 - B 站登录：Cookie、扫码、手机号 + Geetest
 - 本机 SQLite 歌单库、备份导入/导出
 - 缓存音频与导出 m4a
-- 网易云自动匹配歌词，播放页 / 独立歌词窗用 AMLL 渲染
-- BBPlayer 账号与共享歌单
+- 网易云自动匹配歌词，播放页用 AMLL 渲染
 - 只读评论、装扮皮肤子集、检查更新

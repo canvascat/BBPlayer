@@ -1,4 +1,3 @@
-import type { BbplayerAccount } from './bbplayer-account'
 import type { BiliAccount } from './bili'
 import type { LibraryTrack, LocalPlaylist } from './db'
 import type { CachedTrack } from './downloads'
@@ -31,8 +30,6 @@ export type Persisted = {
 	playlists: LocalPlaylist[]
 	account: BiliAccount | null
 	downloads: CachedTrack[]
-	bbplayerToken?: string
-	bbplayerAccount?: BbplayerAccount | null
 }
 
 export type AppStore = Settings & Persisted
