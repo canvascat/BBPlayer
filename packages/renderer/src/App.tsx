@@ -662,7 +662,12 @@ export default function App() {
 	return (
 		<TooltipProvider>
 			<div
-				className={`app${tab === 'player' ? ' player-open' : ''}`}
+				className={cn(
+					'relative isolate grid h-full bg-background text-foreground',
+					tab === 'player'
+						? 'player-open grid-rows-1'
+						: 'grid-rows-[1fr_var(--bar-h)]',
+				)}
 				style={{
 					['--cover-image' as string]: coverImage,
 					...(skin?.primary
@@ -673,7 +678,7 @@ export default function App() {
 						: {}),
 				}}
 			>
-				<div className='body'>
+				<div className='grid min-h-0 grid-cols-[var(--sidebar-w)_1px_1fr]'>
 					<aside className='sidebar'>
 						<div className='sidebar-titlebar'>
 							<div
@@ -1457,10 +1462,15 @@ export default function App() {
 						)}
 					</main>
 				</div>
-				<footer className='bar'>
-					<div className='bar-row'>
+				<footer
+					className={cn(
+						'relative flex items-center overflow-visible border-t bg-background px-4 py-3',
+						tab === 'player' && 'hidden',
+					)}
+				>
+					<div className='grid min-h-0 flex-1 grid-cols-3 items-center gap-4'>
 						<Button
-							className='now h-auto justify-start gap-3 px-0 hover:bg-transparent'
+							className='flex h-auto min-w-0 items-center justify-start gap-3 px-0 text-left hover:bg-transparent'
 							variant='ghost'
 							type='button'
 							onClick={openPlayer}
@@ -1485,7 +1495,7 @@ export default function App() {
 								</div>
 							</div>
 						</Button>
-						<div className='controls'>
+						<div className='flex items-center justify-center gap-2'>
 							<Button
 								className={cn(player.shuffle && 'bg-muted')}
 								variant='ghost'
@@ -1530,7 +1540,7 @@ export default function App() {
 								<RepeatIcon />
 							</Button>
 						</div>
-						<div className='bar-right'>
+						<div className='flex min-w-0 items-center justify-end gap-2'>
 							<Button
 								variant='ghost'
 								type='button'
@@ -1556,7 +1566,7 @@ export default function App() {
 							>
 								<ListMusicIcon />
 							</Button>
-							<div className='time'>
+							<div className='text-muted-foreground justify-self-end text-sm tabular-nums'>
 								{formatClock(player.currentTime)} /{' '}
 								{formatClock(player.duration)}
 							</div>
@@ -1564,7 +1574,11 @@ export default function App() {
 					</div>
 				</footer>
 				<Slider
-					className='bar-progress'
+					className={cn(
+						'absolute inset-x-0 bottom-[calc(var(--bar-h)-6px)] z-10 flex h-3 items-center px-[3px]',
+						tab === 'player' && 'hidden',
+					)}
+					trackClassName='absolute top-1/2 left-[-3px] mt-[-2px] h-1 min-w-[calc(100%+6px)] rounded-none data-horizontal:w-[calc(100%+6px)]'
 					min={0}
 					max={player.duration || 1}
 					value={player.currentTime}

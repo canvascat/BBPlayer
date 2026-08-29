@@ -4,13 +4,16 @@ import { cn } from '@/lib/utils'
 
 function Slider({
 	className,
+	trackClassName,
 	defaultValue,
 	value,
 	min = 0,
 	max = 100,
 	thumbAlignment = 'edge',
 	...props
-}: SliderPrimitive.Root.Props) {
+}: SliderPrimitive.Root.Props & {
+	trackClassName?: string
+}) {
 	const thumbValues = Array.isArray(value)
 		? value
 		: typeof value === 'number'
@@ -38,7 +41,10 @@ function Slider({
 			>
 				<SliderPrimitive.Track
 					data-slot='slider-track'
-					className='relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1'
+					className={cn(
+						'relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1',
+						trackClassName,
+					)}
 				>
 					<SliderPrimitive.Indicator
 						data-slot='slider-range'
