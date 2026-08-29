@@ -655,7 +655,7 @@ export default function App() {
 						</Button>
 					</aside>
 					<Separator orientation='vertical' />
-					<main className='bg-background flex min-w-0 flex-col gap-6 overflow-auto p-6'>
+					<main className='bg-background flex min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 [&>*]:shrink-0'>
 						{tab === 'home' && (
 							<>
 								<div>
