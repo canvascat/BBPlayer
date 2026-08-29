@@ -58,6 +58,8 @@ export type TrpcContext = {
 		gt: string
 		challenge: string
 	}) => Promise<GeetestResult>
+	openWebLogin: () => Promise<string>
+	clearBiliLoginSession: () => Promise<void>
 	exportDownloads: (ids?: string[]) => Promise<unknown>
 	exportBackup: () => Promise<unknown>
 	importBackup: () => Promise<unknown>

@@ -32,12 +32,22 @@ function stopQr() {
 export const authRouter = router({
 	me: publicProcedure.query(({ ctx }) => ctx.store.get('account') ?? null),
 	refresh: publicProcedure.mutation(({ ctx }) => ctx.refreshAccount()),
-	logout: publicProcedure.mutation(({ ctx }) => {
+	logout: publicProcedure.mutation(async ({ ctx }) => {
 		stopQr()
 		ctx.store.set('cookie', '')
 		ctx.store.set('account', null)
 		clearWbiCache()
+		await ctx.clearBiliLoginSession()
 		return true
+	}),
+	webStart: publicProcedure.mutation(async ({ ctx }) => {
+		const cookieHeader = await ctx.openWebLogin()
+		ctx.store.set('cookie', cookieHeader)
+		await ctx.refreshAccount()
+		return {
+			cookie: cookieFrom(ctx.store),
+			account: ctx.store.get('account') ?? null,
+		}
 	}),
 	qrCancel: publicProcedure.mutation(() => {
 		stopQr()

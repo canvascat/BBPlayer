@@ -48,6 +48,10 @@ export function mockTrpcContext(
 			seccode: '',
 			challenge: '',
 		}),
+		openWebLogin: async () => {
+			throw new Error('unused')
+		},
+		clearBiliLoginSession: async () => undefined,
 		exportDownloads: async () => ({ ok: true }),
 		exportBackup: async () => ({ ok: true }),
 		importBackup: async () => ({ ok: true }),
