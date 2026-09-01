@@ -10,6 +10,7 @@ import {
 	CaptionsIcon,
 	ChevronDownIcon,
 	EllipsisIcon,
+	LanguagesIcon,
 	ListMusicIcon,
 	PauseIcon,
 	PlayIcon,
@@ -17,8 +18,16 @@ import {
 	ShuffleIcon,
 	SkipBackIcon,
 	SkipForwardIcon,
+	SpeechIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+} from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -33,6 +42,11 @@ import { cn } from '@/lib/utils'
 
 import { lyricBgRendererLabel } from './lyric-bg-renderer'
 import {
+	applyLyricAuxDisplay,
+	lyricLinesHaveRoman,
+	lyricLinesHaveTranslation,
+} from './lyric-overlay'
+import {
 	LYRIC_MOTION_EASE,
 	lyricsPanelTransition,
 	lyricsPanelVisible,
@@ -41,6 +55,7 @@ import {
 	STAGE_MOVE_MS,
 } from './now-playing-layout'
 import { formatClock, formatMs, repeatLabel, type TrackItem } from './playback'
+import { useLyricAuxDisplay } from './useLyricAuxDisplay'
 import { useLyricBgRenderer } from './useLyricBgRenderer'
 import type { usePlayback } from './usePlayback'
 
@@ -74,7 +89,18 @@ export function NowPlaying({
 	const [leaving, setLeaving] = useState(false)
 	const [lyricsOpen, setLyricsOpen] = useState(true)
 	const [bgKind, setBgKind] = useLyricBgRenderer()
+	const aux = useLyricAuxDisplay()
 	const lyricsVisible = lyricsPanelVisible(lyricsOpen)
+	const hasTranslation = lyricLinesHaveTranslation(player.lyrics)
+	const hasRoman = lyricLinesHaveRoman(player.lyrics)
+	const displayedLyrics = useMemo(
+		() =>
+			applyLyricAuxDisplay(player.lyrics, {
+				translation: aux.translation,
+				roman: aux.roman,
+			}),
+		[player.lyrics, aux.translation, aux.roman],
+	)
 	const onCloseRef = useRef(onClose)
 
 	useEffect(() => {
@@ -298,7 +324,7 @@ export function NowPlaying({
 						{player.lyrics.length > 0 ? (
 							<LyricPlayer
 								className='h-full min-h-0 w-full'
-								lyricLines={player.lyrics}
+								lyricLines={displayedLyrics}
 								currentTime={Math.round(player.currentTime)}
 								playing={player.playing}
 								enableBlur
@@ -333,6 +359,34 @@ export function NowPlaying({
 				>
 					<CaptionsIcon />
 				</Button>
+				{lyricsOpen && hasTranslation ? (
+					<Button
+						className={cn(aux.translation && 'bg-muted')}
+						type='button'
+						variant='ghost'
+						size='icon'
+						title='翻译'
+						aria-label='翻译'
+						aria-pressed={aux.translation}
+						onClick={() => aux.setTranslation(!aux.translation)}
+					>
+						<LanguagesIcon />
+					</Button>
+				) : null}
+				{lyricsOpen && hasRoman ? (
+					<Button
+						className={cn(aux.roman && 'bg-muted')}
+						type='button'
+						variant='ghost'
+						size='icon'
+						title='读音'
+						aria-label='读音'
+						aria-pressed={aux.roman}
+						onClick={() => aux.setRoman(!aux.roman)}
+					>
+						<SpeechIcon />
+					</Button>
+				) : null}
 				<Button
 					className={cn(queueOpen && 'bg-muted')}
 					type='button'
