@@ -11,6 +11,13 @@ import {
 	CardFooter,
 	CardHeader,
 } from '@/components/ui/card'
+import {
+	Field,
+	FieldContent,
+	FieldDescription,
+	FieldLabel,
+} from '@/components/ui/field'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { pageTitleClass } from '@/cover-ui'
 import { SkinPicker } from '@/SkinPicker'
 import { trpcClient } from '@/trpc'
@@ -32,6 +39,8 @@ function SettingsPage() {
 		setMenuBarShowLyrics,
 		autoCache,
 		setAutoCache,
+		lyricSource,
+		setLyricSource,
 		exportCached,
 		refreshPlaylists,
 		setSaved,
@@ -104,6 +113,38 @@ function SettingsPage() {
 						checked={autoCache}
 						onCheckedChange={setAutoCache}
 					/>
+					<Field orientation='horizontal'>
+						<FieldContent>
+							<FieldLabel id='lyric-source'>自动匹配的歌词源</FieldLabel>
+							<FieldDescription>
+								默认只用网易云。选「自动」时取最先返回的源，不保证匹配最好。
+							</FieldDescription>
+						</FieldContent>
+						<ToggleGroup
+							value={[lyricSource]}
+							onValueChange={(value) => {
+								const next = value[0]
+								if (
+									next === 'auto' ||
+									next === 'netease' ||
+									next === 'qqmusic' ||
+									next === 'kugou'
+								) {
+									setLyricSource(next)
+								}
+							}}
+							variant='outline'
+							size='sm'
+							spacing={0}
+							aria-labelledby='lyric-source'
+							className='max-w-xs flex-wrap'
+						>
+							<ToggleGroupItem value='netease'>网易云</ToggleGroupItem>
+							<ToggleGroupItem value='qqmusic'>QQ 音乐</ToggleGroupItem>
+							<ToggleGroupItem value='kugou'>酷狗</ToggleGroupItem>
+							<ToggleGroupItem value='auto'>自动</ToggleGroupItem>
+						</ToggleGroup>
+					</Field>
 					<div className='flex flex-wrap gap-2'>
 						<Button
 							type='button'

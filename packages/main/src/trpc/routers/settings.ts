@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { parseLyricSource } from '../../lyric-match'
 import type { TrpcStore } from '../context'
 import { publicProcedure, router } from '../trpc'
 
@@ -15,6 +16,7 @@ const settingsPatchSchema = z.object({
 	menuBarShowLyrics: z.boolean().optional(),
 	autoCache: z.boolean().optional(),
 	skin: z.union([z.null(), skinSchema]).optional(),
+	lyricSource: z.enum(['auto', 'netease', 'qqmusic', 'kugou']).optional(),
 })
 
 export function readSettings(store: Pick<TrpcStore, 'get'>) {
@@ -25,6 +27,7 @@ export function readSettings(store: Pick<TrpcStore, 'get'>) {
 		autoCache: store.get('autoCache') ?? true,
 		account: store.get('account') ?? null,
 		skin: store.get('skin') ?? null,
+		lyricSource: parseLyricSource(store.get('lyricSource')),
 	}
 }
 
@@ -55,6 +58,9 @@ export const settingsRouter = router({
 				(patch.skin && typeof patch.skin === 'object')
 			) {
 				ctx.store.set('skin', patch.skin)
+			}
+			if (patch.lyricSource) {
+				ctx.store.set('lyricSource', patch.lyricSource)
 			}
 			return true
 		}),

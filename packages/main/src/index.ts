@@ -35,11 +35,17 @@ import {
 } from './app-protocol'
 import { audioProxy } from './audio-proxy'
 import { readBackupZip, writeBackupZip } from './backup'
-import { clearWbiCache, getAccount, getAudioStream } from './bili'
+import {
+	clearWbiCache,
+	getAccount,
+	getAudioStream,
+	getPreciseMusicNameOnBilibiliVideo,
+} from './bili'
 import { BILI_IMAGE_URL_FILTER, withBiliImageHeaders } from './bili-image'
 import { PlayerDatabase } from './db'
 import { downloadManager } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
+import { parseLyricSource } from './lyric-match'
 import { fetchMatchedLyrics } from './lyrics-fetch'
 import { openGeetestWindow } from './phone-login'
 import { type AppStore } from './store'
@@ -580,11 +586,17 @@ async function resolvePlay(track: {
 			lyricSource = 'cache'
 		} else {
 			try {
-				const raw = await fetchMatchedLyrics(
-					track.title,
-					track.artist,
-					track.duration ?? 0,
+				const preciseKeyword = await getPreciseMusicNameOnBilibiliVideo(
+					track.bvid,
+					track.cid,
+					cookie(),
 				)
+				const raw = await fetchMatchedLyrics({
+					title: track.title,
+					durationSec: track.duration ?? 0,
+					source: parseLyricSource(store.get('lyricSource')),
+					preciseKeyword,
+				})
 				if (raw?.lrc) {
 					lyrics = splLinesToAmll(parseAndMergeLyrics(raw))
 					lyricSource = raw.source
@@ -680,6 +692,7 @@ app.whenReady().then(async () => {
 			account: null,
 			skin: null,
 			downloads: [],
+			lyricSource: 'netease',
 		},
 	})
 	playerDb = PlayerDatabase.open(join(app.getPath('userData'), 'db.db'))

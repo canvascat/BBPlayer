@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { bv2av } from '@bbplayer/core'
 
 import { coverUrl } from './bili-image.ts'
+import { preciseMusicNameFromBgm } from './lyric-match.ts'
 
 export { coverUrl } from './bili-image.ts'
 
@@ -193,6 +194,27 @@ export async function getAudioStream(
 		return { url: durl[0].url as string, type: 'mp4' as const }
 	}
 	throw new Error('无法获取音频流，可能需要大会员或该歌曲已下架')
+}
+
+export async function getPreciseMusicNameOnBilibiliVideo(
+	bvid: string,
+	cid: number,
+	cookie: string,
+) {
+	try {
+		const json = await biliFetch(
+			'/x/player/wbi/v2',
+			cookie,
+			{ bvid, cid: String(cid) },
+			true,
+		)
+		const title = (
+			json.data as { bgm_info?: { music_title?: string } } | undefined
+		)?.bgm_info?.music_title
+		return preciseMusicNameFromBgm(title)
+	} catch {
+		return undefined
+	}
 }
 
 export async function fetchNeteaseLyrics(title: string, artist?: string) {

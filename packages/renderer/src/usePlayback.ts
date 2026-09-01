@@ -106,7 +106,9 @@ export function usePlayback() {
 						? '歌词来自 QQ 音乐'
 						: resolved.lyricSource === 'kugou'
 							? '歌词来自酷狗'
-							: '',
+							: resolved.lyricSource === 'netease'
+								? '歌词来自网易云'
+								: '',
 					resolved.lyrics?.length ? '' : '暂无匹配歌词',
 				].filter(Boolean)
 				setStatus(bits.join(' · '))

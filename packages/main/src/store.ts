@@ -1,6 +1,7 @@
 import type { BiliAccount } from './bili'
 import type { LibraryTrack, LocalPlaylist } from './db'
 import type { CachedTrack } from './downloads'
+import type { LyricSource } from './lyric-match'
 
 export type SkinTheme = {
 	name: string
@@ -14,6 +15,7 @@ export type Settings = {
 	menuBarShowLyrics: boolean
 	autoCache: boolean
 	skin: SkinTheme | null
+	lyricSource: LyricSource
 }
 
 export type PlaySession = {

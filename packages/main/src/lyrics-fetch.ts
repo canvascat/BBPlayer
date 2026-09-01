@@ -1,17 +1,16 @@
-export interface LyricPayload {
-	lrc: string
-	tlyric?: string
-	romalrc?: string
-	source: 'netease' | 'qqmusic' | 'kugou'
-}
+import {
+	type LyricPayload,
+	type LyricSource,
+	parseLyricSource,
+	parseNeteaseLyrics,
+	providersForLyricSource,
+	raceLyricProviders,
+	resolveLyricKeyword,
+} from './lyric-match.ts'
+import { neteaseFetchLyrics, neteaseSearchSongs } from './netease-api.ts'
 
-export function cleanKeyword(keyword: string) {
-	const priority = /《(.+?)》|「(.+?)」/.exec(keyword)
-	if (priority?.[1] || priority?.[2])
-		return priority[1] || priority[2] || keyword
-	const replaced = keyword.replace(/【.*?】|“.*?”/g, '').trim()
-	return replaced || keyword
-}
+export type { LyricPayload } from './lyric-match.ts'
+export { cleanKeyword } from './lyric-match.ts'
 
 export function decodeHtml(input: string) {
 	return input
@@ -37,41 +36,45 @@ export function pickByDuration<T extends { duration: number }>(
 	return close ?? songs[0]
 }
 
-const UA =
-	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+type FetchLike = typeof fetch
 
-async function fromNetease(keyword: string): Promise<LyricPayload | null> {
-	const search = await fetch(
-		`https://music.163.com/api/search/get/web?s=${encodeURIComponent(keyword)}&type=1&offset=0&total=true&limit=1`,
-		{ headers: { Referer: 'https://music.163.com/', 'User-Agent': UA } },
-	)
-	const searchJson = (await search.json()) as {
-		result?: { songs?: { id: number }[] }
-	}
-	const id = searchJson.result?.songs?.[0]?.id
+export type LyricFetchers = {
+	netease?: (
+		keyword: string,
+		signal: AbortSignal,
+	) => Promise<LyricPayload | null>
+	qq?: (
+		keyword: string,
+		durationMs: number,
+		signal: AbortSignal,
+	) => Promise<LyricPayload | null>
+	kugou?: (
+		keyword: string,
+		durationMs: number,
+		signal: AbortSignal,
+	) => Promise<LyricPayload | null>
+}
+
+async function fromNetease(
+	keyword: string,
+	signal: AbortSignal,
+	fetchImpl: FetchLike = fetch,
+): Promise<LyricPayload | null> {
+	const songs = await neteaseSearchSongs(keyword, 10, signal, fetchImpl)
+	const id = songs[0]?.id
 	if (!id) return null
-	const lyricRes = await fetch(
-		`https://music.163.com/api/song/lyric?id=${id}&lv=-1&tv=-1&rv=-1`,
-		{ headers: { Referer: 'https://music.163.com/', 'User-Agent': UA } },
-	)
-	const lyricJson = (await lyricRes.json()) as {
-		lrc?: { lyric?: string }
-		tlyric?: { lyric?: string }
-		romalrc?: { lyric?: string }
-	}
-	if (!lyricJson.lrc?.lyric) return null
-	return {
-		lrc: lyricJson.lrc.lyric,
-		tlyric: lyricJson.tlyric?.lyric,
-		romalrc: lyricJson.romalrc?.lyric,
-		source: 'netease',
-	}
+	const lyrics = await neteaseFetchLyrics(id, signal, fetchImpl)
+	const parsed = parseNeteaseLyrics(lyrics)
+	if (!parsed.lrc) return null
+	return { ...parsed, source: 'netease' }
 }
 
 async function fromQq(
 	keyword: string,
-	durationSec: number,
+	durationMs: number,
+	signal: AbortSignal,
 ): Promise<LyricPayload | null> {
+	const durationSec = Math.round(durationMs / 1000)
 	const body = {
 		comm: { ct: '19', cv: '1859', uin: '0' },
 		req: {
@@ -89,6 +92,7 @@ async function fromQq(
 	const search = await fetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
 		method: 'POST',
 		body: JSON.stringify(body),
+		signal,
 		headers: {
 			'User-Agent':
 				'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
@@ -114,7 +118,7 @@ async function fromQq(
 	if (!match?.mid) return null
 	const lyricRes = await fetch(
 		`https://i.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?songmid=${match.mid}&g_tk=5381&format=json&inCharset=utf8&outCharset=utf-8&nobase64=1`,
-		{ headers: { Referer: 'https://y.qq.com/' } },
+		{ headers: { Referer: 'https://y.qq.com/' }, signal },
 	)
 	const lyricJson = (await lyricRes.json()) as {
 		lyric?: string
@@ -130,8 +134,10 @@ async function fromQq(
 
 async function fromKugou(
 	keyword: string,
-	durationSec: number,
+	durationMs: number,
+	signal: AbortSignal,
 ): Promise<LyricPayload | null> {
+	const durationSec = Math.round(durationMs / 1000)
 	const params = new URLSearchParams({
 		api_ver: '1',
 		area_code: '1',
@@ -148,6 +154,7 @@ async function fromKugou(
 	const search = await fetch(
 		`http://mobilecdn.kugou.com/api/v3/search/song?${params.toString()}`,
 		{
+			signal,
 			headers: {
 				'User-Agent': 'IPhone-8990-searchSong',
 				'UNI-UserAgent': 'iOS11.4-Phone8990-1009-0-WiFi',
@@ -177,6 +184,7 @@ async function fromKugou(
 			client: 'mobi',
 			man: 'yes',
 		}).toString()}`,
+		{ signal },
 	)
 	const candidates = (await lyricSearch.json()) as {
 		candidates?: Array<{ accesskey: string; id: string }>
@@ -192,6 +200,7 @@ async function fromKugou(
 			fmt: 'lrc',
 			ver: '1',
 		}).toString()}`,
+		{ signal },
 	)
 	const payload = (await download.json()) as { content?: string }
 	if (!payload.content) return null
@@ -202,26 +211,23 @@ async function fromKugou(
 }
 
 export async function fetchMatchedLyrics(
-	title: string,
-	artist?: string,
-	durationSec = 0,
+	input: {
+		title: string
+		durationSec?: number
+		source?: LyricSource
+		preciseKeyword?: string
+	},
+	fetchers: LyricFetchers = {},
 ) {
-	const keyword = [cleanKeyword(title), artist].filter(Boolean).join(' ')
-	try {
-		const netease = await fromNetease(keyword)
-		if (netease?.lrc) return netease
-	} catch {
-		// 继续尝试其他源
-	}
-	try {
-		const qq = await fromQq(keyword, durationSec)
-		if (qq?.lrc) return qq
-	} catch {
-		// 继续尝试酷狗
-	}
-	try {
-		return await fromKugou(keyword, durationSec)
-	} catch {
-		return null
-	}
+	const keyword = resolveLyricKeyword(input.title, input.preciseKeyword)
+	const source = parseLyricSource(input.source)
+	const durationMs = Math.round((input.durationSec ?? 0) * 1000)
+	const netease = fetchers.netease ?? fromNetease
+	const qq = fetchers.qq ?? fromQq
+	const kugou = fetchers.kugou ?? fromKugou
+	return raceLyricProviders(providersForLyricSource(source), (name, signal) => {
+		if (name === 'netease') return netease(keyword, signal)
+		if (name === 'qqmusic') return qq(keyword, durationMs, signal)
+		return kugou(keyword, durationMs, signal)
+	})
 }

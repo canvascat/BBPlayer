@@ -12,6 +12,7 @@ test('settings.get 返回 store 中的 cookie 与默认值', async () => {
 	assert.equal(result.cookie, 'SESS=1')
 	assert.equal(result.continuePlayingAfterClose, true)
 	assert.equal(result.account, null)
+	assert.equal(result.lyricSource, 'netease')
 })
 
 test('settings.set 写入 cookie 并刷新账号', async () => {
@@ -30,4 +31,12 @@ test('settings.set 写入 cookie 并刷新账号', async () => {
 	assert.equal(ok, true)
 	assert.equal(store.get('cookie'), 'SESS=2')
 	assert.equal(refreshed, 1)
+})
+
+test('settings.set 写入歌词源', async () => {
+	const store = memoryStore()
+	const caller = settingsRouter.createCaller(mockTrpcContext({ store }))
+	await caller.set({ lyricSource: 'auto' })
+	assert.equal(store.get('lyricSource'), 'auto')
+	assert.equal((await caller.get()).lyricSource, 'auto')
 })

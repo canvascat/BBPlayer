@@ -65,6 +65,9 @@ function useAppModel() {
 	const [createTitle, setCreateTitle] = useState('')
 	const [pickPlaylistFor, setPickPlaylistFor] = useState<TrackItem | null>(null)
 	const [autoCache, setAutoCache] = useState(true)
+	const [lyricSource, setLyricSource] = useState<
+		'auto' | 'netease' | 'qqmusic' | 'kugou'
+	>('netease')
 	const [skin, setSkin] = useState<SkinTheme | null>(null)
 	const [showComments, setShowComments] = useState(false)
 	const [downloads, setDownloads] = useState<TrackItem[]>([])
@@ -172,6 +175,7 @@ function useAppModel() {
 			setContinuePlayingAfterClose(settings.continuePlayingAfterClose)
 			setMenuBarShowLyrics(settings.menuBarShowLyrics)
 			setAutoCache(settings.autoCache ?? true)
+			setLyricSource(settings.lyricSource ?? 'netease')
 			setSkin(settings.skin ?? null)
 			setAccount(settings.account)
 		})
@@ -357,6 +361,13 @@ function useAppModel() {
 		void trpcClient.settings.set.mutate({ autoCache: value })
 	}
 
+	const persistLyricSource = (
+		value: 'auto' | 'netease' | 'qqmusic' | 'kugou',
+	) => {
+		setLyricSource(value)
+		void trpcClient.settings.set.mutate({ lyricSource: value })
+	}
+
 	const persistSkin = (value: SkinTheme | null) => {
 		setSkin(value)
 		void trpcClient.settings.set.mutate({ skin: value })
@@ -475,6 +486,8 @@ function useAppModel() {
 		setPickPlaylistFor,
 		autoCache,
 		setAutoCache: persistAutoCache,
+		lyricSource,
+		setLyricSource: persistLyricSource,
 		skin,
 		setSkin: persistSkin,
 		showComments,
