@@ -1,6 +1,10 @@
 import { test, assert } from 'vitest'
 
-import { coverUrl, withBiliImageHeaders } from './bili-image.ts'
+import {
+	coverUrl,
+	withBiliImageCorsHeaders,
+	withBiliImageHeaders,
+} from './bili-image.ts'
 
 test('协议相对封面地址补成 https', () => {
 	assert.equal(
@@ -35,4 +39,13 @@ test('会盖掉页面 Referer，避免 hdslb 按 RefererWhite 拒绝', () => {
 	})
 	assert.equal(headers.Referer, 'https://www.bilibili.com/')
 	assert.equal(headers.Accept, 'image/webp')
+})
+
+test('给封面响应加上 CORS，供 WebGL 背景读取', () => {
+	const headers = withBiliImageCorsHeaders({
+		'Content-Type': ['image/jpeg'],
+		'Access-Control-Allow-Origin': ['https://evil.example'],
+	})
+	assert.deepEqual(headers['Access-Control-Allow-Origin'], ['*'])
+	assert.deepEqual(headers['Content-Type'], ['image/jpeg'])
 })

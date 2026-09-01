@@ -41,7 +41,11 @@ import {
 	getAudioStream,
 	getPreciseMusicNameOnBilibiliVideo,
 } from './bili'
-import { BILI_IMAGE_URL_FILTER, withBiliImageHeaders } from './bili-image'
+import {
+	BILI_IMAGE_URL_FILTER,
+	withBiliImageCorsHeaders,
+	withBiliImageHeaders,
+} from './bili-image'
 import { PlayerDatabase } from './db'
 import { downloadManager } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
@@ -715,6 +719,16 @@ app.whenReady().then(async () => {
 		(details, callback) => {
 			callback({
 				requestHeaders: withBiliImageHeaders(details.requestHeaders),
+			})
+		},
+	)
+	session.defaultSession.webRequest.onHeadersReceived(
+		{ urls: BILI_IMAGE_URL_FILTER },
+		(details, callback) => {
+			callback({
+				responseHeaders: withBiliImageCorsHeaders(
+					details.responseHeaders ?? {},
+				),
 			})
 		},
 	)

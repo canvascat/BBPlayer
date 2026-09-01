@@ -19,8 +19,10 @@ import {
 } from '@/components/ui/field'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { pageTitleClass } from '@/cover-ui'
+import { parseLyricBgRenderer } from '@/lyric-bg-renderer'
 import { SkinPicker } from '@/SkinPicker'
 import { trpcClient } from '@/trpc'
+import { useLyricBgRenderer } from '@/useLyricBgRenderer'
 
 export const Route = createFileRoute('/settings')({
 	component: SettingsPage,
@@ -48,6 +50,7 @@ function SettingsPage() {
 		setSkin,
 		saved,
 	} = useApp()
+	const [bgKind, setBgKind] = useLyricBgRenderer()
 
 	return (
 		<>
@@ -143,6 +146,26 @@ function SettingsPage() {
 							<ToggleGroupItem value='qqmusic'>QQ 音乐</ToggleGroupItem>
 							<ToggleGroupItem value='kugou'>酷狗</ToggleGroupItem>
 							<ToggleGroupItem value='auto'>自动</ToggleGroupItem>
+						</ToggleGroup>
+					</Field>
+					<Field orientation='horizontal'>
+						<FieldContent>
+							<FieldLabel id='lyric-bg-renderer'>播放页动态背景</FieldLabel>
+							<FieldDescription>
+								封面流体背景，可选 Mesh Gradient 或 Pixi 渲染器。
+							</FieldDescription>
+						</FieldContent>
+						<ToggleGroup
+							value={[bgKind]}
+							onValueChange={(value) => {
+								if (value[0]) setBgKind(parseLyricBgRenderer(value[0]))
+							}}
+							variant='outline'
+							spacing={0}
+							aria-labelledby='lyric-bg-renderer'
+						>
+							<ToggleGroupItem value='mesh'>流体网格</ToggleGroupItem>
+							<ToggleGroupItem value='pixi'>Pixi</ToggleGroupItem>
 						</ToggleGroup>
 					</Field>
 					<div className='flex flex-wrap gap-2'>

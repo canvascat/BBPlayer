@@ -81,6 +81,18 @@
 	-webkit-app-region: no-drag;
 }
 
+/* AMLL lyrics use plus-lighter against the dark fluid background. */
+[data-player-page] [data-lyrics] .amll-lyric-player {
+	mix-blend-mode: plus-lighter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-player-page] [data-player-stage],
+	[data-player-page] [data-lyrics] {
+		transition: none !important;
+	}
+}
+
 @theme inline {
 	--font-heading: var(--font-sans);
 	--font-sans: 'Geist Variable', sans-serif;

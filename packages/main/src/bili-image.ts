@@ -27,3 +27,16 @@ export function withBiliImageHeaders(headers: Record<string, string>) {
 	next.Referer = BILI_REFERER
 	return next
 }
+
+export function withBiliImageCorsHeaders(
+	headers: Record<string, string | string[] | undefined>,
+) {
+	const next: Record<string, string[]> = {}
+	for (const [key, value] of Object.entries(headers)) {
+		if (value === undefined) continue
+		if (key.toLowerCase() === 'access-control-allow-origin') continue
+		next[key] = Array.isArray(value) ? value : [value]
+	}
+	next['Access-Control-Allow-Origin'] = ['*']
+	return next
+}
