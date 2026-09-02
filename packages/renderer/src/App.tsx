@@ -34,6 +34,7 @@ import { Slider } from '@/components/ui/slider'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { navLabelClass } from '@/cover-ui'
 import { cn } from '@/lib/utils'
+import { isLibraryPath } from '@/library-nav'
 
 import { CommentsPanel } from './CommentsPanel'
 import { NowPlaying } from './NowPlaying'
@@ -137,7 +138,7 @@ export default function App() {
 							className='h-9 w-full justify-start px-2'
 							nativeButton={false}
 							render={<Link to='/library' />}
-							variant={pathname === '/library' ? 'secondary' : 'ghost'}
+							variant={isLibraryPath(pathname) ? 'secondary' : 'ghost'}
 						>
 							<LibraryIcon data-icon='inline-start' />
 							音乐库

@@ -17,6 +17,7 @@ import {
 	coverGridClass,
 	greeting,
 	pageTitleClass,
+	stripHtml,
 } from '@/cover-ui'
 import { cn } from '@/lib/utils'
 
@@ -25,7 +26,16 @@ export const Route = createFileRoute('/')({
 })
 
 function HomePage() {
-	const { account, current, player, openPlayer, submitSearch } = useApp()
+	const {
+		account,
+		current,
+		player,
+		openPlayer,
+		submitSearch,
+		hits,
+		hitsTitle,
+		openHit,
+	} = useApp()
 
 	return (
 		<>
@@ -124,6 +134,28 @@ function HomePage() {
 				</Card>
 			</div>
 			{player.error && <p className='text-destructive mt-3'>{player.error}</p>}
+			{hits.length > 0 ? (
+				<div className='flex flex-col gap-3'>
+					<div className='text-base font-normal'>{hitsTitle || '搜索结果'}</div>
+					<div className={coverGridClass}>
+						{hits.map((hit) => (
+							<Button
+								className={coverButtonClass}
+								key={hit.bvid}
+								type='button'
+								variant='ghost'
+								onClick={() => openHit(hit)}
+							>
+								<CoverFace src={hit.pic} />
+								<CoverMeta
+									title={stripHtml(hit.title)}
+									subtitle={`${hit.author} · ${hit.duration}`}
+								/>
+							</Button>
+						))}
+					</div>
+				</div>
+			) : null}
 			{player.queue.length > 0 && (
 				<div className='flex flex-col gap-6'>
 					<div className='text-base font-normal'>最近播放</div>

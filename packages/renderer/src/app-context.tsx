@@ -53,15 +53,14 @@ function useAppModel() {
 	const searchRef = useRef<HTMLInputElement>(null)
 	const [query, setQuery] = useState('')
 	const [hits, setHits] = useState<SearchHit[]>([])
-	const [pages, setPages] = useState<TrackItem[]>([])
-	const [listTitle, setListTitle] = useState('')
+	const [hitsTitle, setHitsTitle] = useState('')
 	const [continuePlayingAfterClose, setContinuePlayingAfterClose] =
 		useState(true)
 	const [menuBarShowLyrics, setMenuBarShowLyrics] = useState(false)
 	const [saved, setSaved] = useState('')
 	const [showQueue, setShowQueue] = useState(false)
 	const [playlists, setPlaylists] = useState<PlaylistSummary[]>([])
-	const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null)
+	const [libraryTick, setLibraryTick] = useState(0)
 	const [createTitle, setCreateTitle] = useState('')
 	const [pickPlaylistFor, setPickPlaylistFor] = useState<TrackItem | null>(null)
 	const [autoCache, setAutoCache] = useState(true)
@@ -72,7 +71,6 @@ function useAppModel() {
 	const [showComments, setShowComments] = useState(false)
 	const [downloads, setDownloads] = useState<TrackItem[]>([])
 	const [downloadTasks, setDownloadTasks] = useState<Record<string, string>>({})
-	const [downloadQuery, setDownloadQuery] = useState('')
 	const [account, setAccount] = useState<AccountInfo | null>(null)
 	const [favorites, setFavorites] = useState<RemoteFolder[]>([])
 	const [collections, setCollections] = useState<RemoteFolder[]>([])
@@ -82,16 +80,6 @@ function useAppModel() {
 
 	const current = player.current
 	const isPlayer = pathname === '/player'
-	const visiblePages =
-		listTitle === '已下载' && downloadQuery.trim()
-			? pages.filter((item) => {
-					const q = downloadQuery.trim().toLowerCase()
-					return (
-						item.title.toLowerCase().includes(q) ||
-						item.artist.toLowerCase().includes(q)
-					)
-				})
-			: pages
 	const coverImage = current?.artwork
 		? `url("${current.artwork.replace(/"/g, '')}")`
 		: skin?.coverUrl
@@ -116,58 +104,22 @@ function useAppModel() {
 		}
 	}
 
-	const showRemoteVideos = (
-		title: string,
-		videos: Array<{
-			bvid: string
-			title: string
-			pic: string
-			author: string
-			duration: string
-		}>,
-	) => {
-		setActivePlaylistId(null)
-		setPages([])
-		setHits(videos)
-		setListTitle(title)
-		void navigate({ to: '/library' })
+	const bumpLibrary = () => setLibraryTick((n) => n + 1)
+
+	const openFavorite = (id: string) => {
+		void navigate({ to: '/library/favorites/$id', params: { id } })
 	}
 
-	const openFavorite = async (id: string) => {
-		try {
-			const result = await trpcClient.bili.favorite.query({ id })
-			showRemoteVideos(result.title, result.videos)
-		} catch (err) {
-			player.setError(err instanceof Error ? err.message : String(err))
-		}
+	const openCollection = (id: string) => {
+		void navigate({ to: '/library/collections/$id', params: { id } })
 	}
 
-	const openCollection = async (id: string) => {
-		try {
-			const result = await trpcClient.bili.collection.query({ id })
-			showRemoteVideos(result.title, result.videos)
-		} catch (err) {
-			player.setError(err instanceof Error ? err.message : String(err))
-		}
+	const openWatchLater = () => {
+		void navigate({ to: '/library/watch-later' })
 	}
 
-	const openWatchLater = async () => {
-		try {
-			const result = await trpcClient.bili.watchLater.query()
-			showRemoteVideos(result.title, result.videos)
-		} catch (err) {
-			player.setError(err instanceof Error ? err.message : String(err))
-		}
-	}
-
-	const openPlaylist = async (id: string) => {
-		const playlist = await trpcClient.library.get.query({ id })
-		if (!playlist) return
-		setActivePlaylistId(id)
-		setListTitle(playlist.title)
-		setPages(playlist.tracks)
-		setHits([])
-		void navigate({ to: '/library' })
+	const openPlaylist = (id: string) => {
+		void navigate({ to: '/library/playlists/$id', params: { id } })
 	}
 
 	useEffect(() => {
@@ -189,9 +141,8 @@ function useAppModel() {
 		return listen(trpcClient.downloads.updates.subscribe, (payload) => {
 			setDownloads(payload.records as TrackItem[])
 			setDownloadTasks(payload.tasks)
-			if (listTitle === '已下载') setPages(payload.records as TrackItem[])
 		})
-	}, [listTitle])
+	}, [])
 
 	useEffect(() => {
 		const onKey = (event: KeyboardEvent) => {
@@ -285,8 +236,7 @@ function useAppModel() {
 		if (raw) setQuery(raw)
 		player.setError('')
 		setHits([])
-		setPages([])
-		setActivePlaylistId(null)
+		setHitsTitle('')
 		const matched = await trpcClient.player.matchSearch.query({ query: q })
 		if (matched.error) player.setError(matched.error)
 		const strategy = matched.strategy as {
@@ -298,11 +248,10 @@ function useAppModel() {
 		}
 		try {
 			if (strategy.type === 'BVID' && strategy.bvid) {
-				const video = await trpcClient.bili.video.query({ bvid: strategy.bvid })
-				setActivePlaylistId(null)
-				setListTitle(video.title)
-				setPages(video.pages)
-				void navigate({ to: '/library' })
+				void navigate({
+					to: '/library/multipage/$bvid',
+					params: { bvid: strategy.bvid },
+				})
 				return
 			}
 			if (
@@ -314,36 +263,35 @@ function useAppModel() {
 				const keyword = strategy.query || q
 				const result = await trpcClient.bili.search.query({ keyword })
 				setHits(result)
-				setListTitle(`搜索：${keyword}`)
-				void navigate({ to: '/library' })
+				setHitsTitle(`搜索：${keyword}`)
+				void navigate({ to: '/' })
 			}
 			if (strategy.type === 'FAVORITE' && strategy.id) {
-				await openFavorite(strategy.id)
+				openFavorite(strategy.id)
 				return
 			}
 			if (strategy.type === 'COLLECTION' && strategy.id) {
-				await openCollection(strategy.id)
+				openCollection(strategy.id)
 				return
 			}
 			if (strategy.type === 'UPLOADER' && strategy.mid) {
 				const result = await trpcClient.bili.uploader.query({
 					mid: strategy.mid,
 				})
-				showRemoteVideos(result.title, result.videos)
-				return
+				setHits(result.videos)
+				setHitsTitle(result.title)
+				void navigate({ to: '/' })
 			}
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
 		}
 	}
 
-	const openHit = async (hit: SearchHit) => {
-		const video = await trpcClient.bili.video.query({ bvid: hit.bvid })
-		setActivePlaylistId(null)
-		setListTitle(video.title)
-		setPages(video.pages)
-		setHits([])
-		void navigate({ to: '/library' })
+	const openHit = (hit: SearchHit) => {
+		void navigate({
+			to: '/library/multipage/$bvid',
+			params: { bvid: hit.bvid },
+		})
 	}
 
 	const persistContinuePlayingAfterClose = (value: boolean) => {
@@ -421,14 +369,15 @@ function useAppModel() {
 		const playlist = await trpcClient.library.create.mutate({ title, tracks })
 		setCreateTitle('')
 		await refreshPlaylists()
-		await openPlaylist(playlist.id)
+		bumpLibrary()
+		openPlaylist(playlist.id)
 	}
 
 	const addTrackToPlaylist = async (playlistId: string, track: TrackItem) => {
 		await trpcClient.library.addTracks.mutate({ playlistId, tracks: [track] })
 		setPickPlaylistFor(null)
 		await refreshPlaylists()
-		if (activePlaylistId === playlistId) await openPlaylist(playlistId)
+		bumpLibrary()
 	}
 
 	const deletePlaylist = async (id: string) => {
@@ -436,20 +385,14 @@ function useAppModel() {
 		if (!window.confirm(`删除「${playlist?.title ?? ''}」？`)) return
 		await trpcClient.library.delete.mutate({ id })
 		await refreshPlaylists()
-		if (activePlaylistId === id) {
-			setActivePlaylistId(null)
-			setPages([])
-			setListTitle('')
+		bumpLibrary()
+		if (pathname === `/library/playlists/${id}`) {
+			void navigate({ to: '/library' })
 		}
 	}
 
 	const openDownloads = () => {
-		setActivePlaylistId(null)
-		setHits([])
-		setPages(downloads)
-		setListTitle('已下载')
-		setDownloadQuery('')
-		void navigate({ to: '/library' })
+		void navigate({ to: '/library/downloads' })
 	}
 
 	const cycleSleep = () => {
@@ -468,8 +411,7 @@ function useAppModel() {
 		query,
 		setQuery,
 		hits,
-		pages,
-		listTitle,
+		hitsTitle,
 		continuePlayingAfterClose,
 		setContinuePlayingAfterClose: persistContinuePlayingAfterClose,
 		menuBarShowLyrics,
@@ -479,7 +421,7 @@ function useAppModel() {
 		showQueue,
 		setShowQueue,
 		playlists,
-		activePlaylistId,
+		libraryTick,
 		createTitle,
 		setCreateTitle,
 		pickPlaylistFor,
@@ -494,8 +436,6 @@ function useAppModel() {
 		setShowComments,
 		downloads,
 		downloadTasks,
-		downloadQuery,
-		setDownloadQuery,
 		account,
 		favorites,
 		collections,
@@ -503,7 +443,6 @@ function useAppModel() {
 		loginBusy,
 		loginMessage,
 		current,
-		visiblePages,
 		coverImage,
 		refreshPlaylists,
 		openFavorite,

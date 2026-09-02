@@ -11,9 +11,20 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
-import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LibraryRouteRouteImport } from './routes/library/route'
 import { Route as PlayerRouteImport } from './routes/player'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as LibraryCatalogRouteRouteImport } from './routes/library/_catalog/route'
+import { Route as LibraryDownloadsRouteImport } from './routes/library/downloads'
+import { Route as LibraryWatchLaterRouteImport } from './routes/library/watch-later'
+import { Route as LibraryCatalogIndexRouteImport } from './routes/library/_catalog/index'
+import { Route as LibraryCatalogCollectionsRouteImport } from './routes/library/_catalog/collections'
+import { Route as LibraryCatalogFavoritesRouteImport } from './routes/library/_catalog/favorites'
+import { Route as LibraryCatalogMultipageRouteImport } from './routes/library/_catalog/multipage'
+import { Route as LibraryCollectionsIdRouteImport } from './routes/library/collections.$id'
+import { Route as LibraryFavoritesIdRouteImport } from './routes/library/favorites.$id'
+import { Route as LibraryMultipageBvidRouteImport } from './routes/library/multipage.$bvid'
+import { Route as LibraryPlaylistsIdRouteImport } from './routes/library/playlists.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -25,7 +36,7 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryRoute = LibraryRouteImport.update({
+const LibraryRouteRoute = LibraryRouteRouteImport.update({
   id: '/library',
   path: '/library',
   getParentRoute: () => rootRouteImport,
@@ -40,41 +51,172 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LibraryCatalogRouteRoute = LibraryCatalogRouteRouteImport.update({
+  id: '/_catalog',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
+const LibraryDownloadsRoute = LibraryDownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
+const LibraryWatchLaterRoute = LibraryWatchLaterRouteImport.update({
+  id: '/watch-later',
+  path: '/watch-later',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
+const LibraryCatalogIndexRoute = LibraryCatalogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LibraryCatalogRouteRoute,
+} as any)
+const LibraryCatalogCollectionsRoute =
+  LibraryCatalogCollectionsRouteImport.update({
+    id: '/collections',
+    path: '/collections',
+    getParentRoute: () => LibraryCatalogRouteRoute,
+  } as any)
+const LibraryCatalogFavoritesRoute = LibraryCatalogFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => LibraryCatalogRouteRoute,
+} as any)
+const LibraryCatalogMultipageRoute = LibraryCatalogMultipageRouteImport.update({
+  id: '/multipage',
+  path: '/multipage',
+  getParentRoute: () => LibraryCatalogRouteRoute,
+} as any)
+const LibraryCollectionsIdRoute = LibraryCollectionsIdRouteImport.update({
+  id: '/collections/$id',
+  path: '/collections/$id',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
+const LibraryFavoritesIdRoute = LibraryFavoritesIdRouteImport.update({
+  id: '/favorites/$id',
+  path: '/favorites/$id',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
+const LibraryMultipageBvidRoute = LibraryMultipageBvidRouteImport.update({
+  id: '/multipage/$bvid',
+  path: '/multipage/$bvid',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
+const LibraryPlaylistsIdRoute = LibraryPlaylistsIdRouteImport.update({
+  id: '/playlists/$id',
+  path: '/playlists/$id',
+  getParentRoute: () => LibraryRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/library': typeof LibraryRouteRouteWithChildren
   '/$': typeof SplatRoute
-  '/library': typeof LibraryRoute
   '/player': typeof PlayerRoute
   '/settings': typeof SettingsRoute
+  '/library/downloads': typeof LibraryDownloadsRoute
+  '/library/watch-later': typeof LibraryWatchLaterRoute
+  '/library/collections': typeof LibraryCatalogCollectionsRoute
+  '/library/favorites': typeof LibraryCatalogFavoritesRoute
+  '/library/multipage': typeof LibraryCatalogMultipageRoute
+  '/library/collections/$id': typeof LibraryCollectionsIdRoute
+  '/library/favorites/$id': typeof LibraryFavoritesIdRoute
+  '/library/multipage/$bvid': typeof LibraryMultipageBvidRoute
+  '/library/playlists/$id': typeof LibraryPlaylistsIdRoute
+  '/library/': typeof LibraryCatalogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/library': typeof LibraryCatalogIndexRoute
   '/$': typeof SplatRoute
-  '/library': typeof LibraryRoute
   '/player': typeof PlayerRoute
   '/settings': typeof SettingsRoute
+  '/library/downloads': typeof LibraryDownloadsRoute
+  '/library/watch-later': typeof LibraryWatchLaterRoute
+  '/library/collections': typeof LibraryCatalogCollectionsRoute
+  '/library/favorites': typeof LibraryCatalogFavoritesRoute
+  '/library/multipage': typeof LibraryCatalogMultipageRoute
+  '/library/collections/$id': typeof LibraryCollectionsIdRoute
+  '/library/favorites/$id': typeof LibraryFavoritesIdRoute
+  '/library/multipage/$bvid': typeof LibraryMultipageBvidRoute
+  '/library/playlists/$id': typeof LibraryPlaylistsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/library': typeof LibraryRouteRouteWithChildren
   '/$': typeof SplatRoute
-  '/library': typeof LibraryRoute
   '/player': typeof PlayerRoute
   '/settings': typeof SettingsRoute
+  '/library/_catalog': typeof LibraryCatalogRouteRouteWithChildren
+  '/library/downloads': typeof LibraryDownloadsRoute
+  '/library/watch-later': typeof LibraryWatchLaterRoute
+  '/library/_catalog/collections': typeof LibraryCatalogCollectionsRoute
+  '/library/_catalog/favorites': typeof LibraryCatalogFavoritesRoute
+  '/library/_catalog/multipage': typeof LibraryCatalogMultipageRoute
+  '/library/collections/$id': typeof LibraryCollectionsIdRoute
+  '/library/favorites/$id': typeof LibraryFavoritesIdRoute
+  '/library/multipage/$bvid': typeof LibraryMultipageBvidRoute
+  '/library/playlists/$id': typeof LibraryPlaylistsIdRoute
+  '/library/_catalog/': typeof LibraryCatalogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/library' | '/player' | '/settings'
+  fullPaths:
+    | '/'
+    | '/library'
+    | '/$'
+    | '/player'
+    | '/settings'
+    | '/library/downloads'
+    | '/library/watch-later'
+    | '/library/collections'
+    | '/library/favorites'
+    | '/library/multipage'
+    | '/library/collections/$id'
+    | '/library/favorites/$id'
+    | '/library/multipage/$bvid'
+    | '/library/playlists/$id'
+    | '/library/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/library' | '/player' | '/settings'
-  id: '__root__' | '/' | '/$' | '/library' | '/player' | '/settings'
+  to:
+    | '/'
+    | '/library'
+    | '/$'
+    | '/player'
+    | '/settings'
+    | '/library/downloads'
+    | '/library/watch-later'
+    | '/library/collections'
+    | '/library/favorites'
+    | '/library/multipage'
+    | '/library/collections/$id'
+    | '/library/favorites/$id'
+    | '/library/multipage/$bvid'
+    | '/library/playlists/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/library'
+    | '/$'
+    | '/player'
+    | '/settings'
+    | '/library/_catalog'
+    | '/library/downloads'
+    | '/library/watch-later'
+    | '/library/_catalog/collections'
+    | '/library/_catalog/favorites'
+    | '/library/_catalog/multipage'
+    | '/library/collections/$id'
+    | '/library/favorites/$id'
+    | '/library/multipage/$bvid'
+    | '/library/playlists/$id'
+    | '/library/_catalog/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LibraryRouteRoute: typeof LibraryRouteRouteWithChildren
   SplatRoute: typeof SplatRoute
-  LibraryRoute: typeof LibraryRoute
   PlayerRoute: typeof PlayerRoute
   SettingsRoute: typeof SettingsRoute
 }
@@ -99,7 +241,7 @@ declare module '@tanstack/react-router' {
       id: '/library'
       path: '/library'
       fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
+      preLoaderRoute: typeof LibraryRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/player': {
@@ -116,13 +258,131 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/library/_catalog': {
+      id: '/library/_catalog'
+      path: ''
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryCatalogRouteRouteImport
+      parentRoute: typeof LibraryRouteRoute
+    }
+    '/library/downloads': {
+      id: '/library/downloads'
+      path: '/downloads'
+      fullPath: '/library/downloads'
+      preLoaderRoute: typeof LibraryDownloadsRouteImport
+      parentRoute: typeof LibraryRouteRoute
+    }
+    '/library/watch-later': {
+      id: '/library/watch-later'
+      path: '/watch-later'
+      fullPath: '/library/watch-later'
+      preLoaderRoute: typeof LibraryWatchLaterRouteImport
+      parentRoute: typeof LibraryRouteRoute
+    }
+    '/library/_catalog/': {
+      id: '/library/_catalog/'
+      path: '/'
+      fullPath: '/library/'
+      preLoaderRoute: typeof LibraryCatalogIndexRouteImport
+      parentRoute: typeof LibraryCatalogRouteRoute
+    }
+    '/library/_catalog/collections': {
+      id: '/library/_catalog/collections'
+      path: '/collections'
+      fullPath: '/library/collections'
+      preLoaderRoute: typeof LibraryCatalogCollectionsRouteImport
+      parentRoute: typeof LibraryCatalogRouteRoute
+    }
+    '/library/_catalog/favorites': {
+      id: '/library/_catalog/favorites'
+      path: '/favorites'
+      fullPath: '/library/favorites'
+      preLoaderRoute: typeof LibraryCatalogFavoritesRouteImport
+      parentRoute: typeof LibraryCatalogRouteRoute
+    }
+    '/library/_catalog/multipage': {
+      id: '/library/_catalog/multipage'
+      path: '/multipage'
+      fullPath: '/library/multipage'
+      preLoaderRoute: typeof LibraryCatalogMultipageRouteImport
+      parentRoute: typeof LibraryCatalogRouteRoute
+    }
+    '/library/collections/$id': {
+      id: '/library/collections/$id'
+      path: '/collections/$id'
+      fullPath: '/library/collections/$id'
+      preLoaderRoute: typeof LibraryCollectionsIdRouteImport
+      parentRoute: typeof LibraryRouteRoute
+    }
+    '/library/favorites/$id': {
+      id: '/library/favorites/$id'
+      path: '/favorites/$id'
+      fullPath: '/library/favorites/$id'
+      preLoaderRoute: typeof LibraryFavoritesIdRouteImport
+      parentRoute: typeof LibraryRouteRoute
+    }
+    '/library/multipage/$bvid': {
+      id: '/library/multipage/$bvid'
+      path: '/multipage/$bvid'
+      fullPath: '/library/multipage/$bvid'
+      preLoaderRoute: typeof LibraryMultipageBvidRouteImport
+      parentRoute: typeof LibraryRouteRoute
+    }
+    '/library/playlists/$id': {
+      id: '/library/playlists/$id'
+      path: '/playlists/$id'
+      fullPath: '/library/playlists/$id'
+      preLoaderRoute: typeof LibraryPlaylistsIdRouteImport
+      parentRoute: typeof LibraryRouteRoute
+    }
   }
 }
 
+interface LibraryCatalogRouteRouteChildren {
+  LibraryCatalogCollectionsRoute: typeof LibraryCatalogCollectionsRoute
+  LibraryCatalogFavoritesRoute: typeof LibraryCatalogFavoritesRoute
+  LibraryCatalogMultipageRoute: typeof LibraryCatalogMultipageRoute
+  LibraryCatalogIndexRoute: typeof LibraryCatalogIndexRoute
+}
+
+const LibraryCatalogRouteRouteChildren: LibraryCatalogRouteRouteChildren = {
+  LibraryCatalogCollectionsRoute: LibraryCatalogCollectionsRoute,
+  LibraryCatalogFavoritesRoute: LibraryCatalogFavoritesRoute,
+  LibraryCatalogMultipageRoute: LibraryCatalogMultipageRoute,
+  LibraryCatalogIndexRoute: LibraryCatalogIndexRoute,
+}
+
+const LibraryCatalogRouteRouteWithChildren =
+  LibraryCatalogRouteRoute._addFileChildren(LibraryCatalogRouteRouteChildren)
+
+interface LibraryRouteRouteChildren {
+  LibraryCatalogRouteRoute: typeof LibraryCatalogRouteRouteWithChildren
+  LibraryDownloadsRoute: typeof LibraryDownloadsRoute
+  LibraryWatchLaterRoute: typeof LibraryWatchLaterRoute
+  LibraryCollectionsIdRoute: typeof LibraryCollectionsIdRoute
+  LibraryFavoritesIdRoute: typeof LibraryFavoritesIdRoute
+  LibraryMultipageBvidRoute: typeof LibraryMultipageBvidRoute
+  LibraryPlaylistsIdRoute: typeof LibraryPlaylistsIdRoute
+}
+
+const LibraryRouteRouteChildren: LibraryRouteRouteChildren = {
+  LibraryCatalogRouteRoute: LibraryCatalogRouteRouteWithChildren,
+  LibraryDownloadsRoute: LibraryDownloadsRoute,
+  LibraryWatchLaterRoute: LibraryWatchLaterRoute,
+  LibraryCollectionsIdRoute: LibraryCollectionsIdRoute,
+  LibraryFavoritesIdRoute: LibraryFavoritesIdRoute,
+  LibraryMultipageBvidRoute: LibraryMultipageBvidRoute,
+  LibraryPlaylistsIdRoute: LibraryPlaylistsIdRoute,
+}
+
+const LibraryRouteRouteWithChildren = LibraryRouteRoute._addFileChildren(
+  LibraryRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LibraryRouteRoute: LibraryRouteRouteWithChildren,
   SplatRoute: SplatRoute,
-  LibraryRoute: LibraryRoute,
   PlayerRoute: PlayerRoute,
   SettingsRoute: SettingsRoute,
 }
