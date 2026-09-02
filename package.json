@@ -2,7 +2,6 @@
 	"name": "bbplayer-root",
 	"private": true,
 	"workspaces": [
-		"apps/*",
 		"packages/*"
 	],
 	"scripts": {

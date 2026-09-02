@@ -52,7 +52,6 @@ type 与默认 gitmoji：
 | `main`     | `packages/main`     |
 | `renderer` | `packages/renderer` |
 | `common`   | `packages/common`   |
-| `docs`     | `apps/docs`         |
 | `core`     | `packages/core`     |
 
 根配置、锁文件、或跨多处且无主落点 → 省略 scope。

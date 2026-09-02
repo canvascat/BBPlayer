@@ -20,7 +20,6 @@ pnpm desktop
 
 ## 项目结构
 
-- **[apps/docs](./apps/docs)**: 项目文档站点
 - **[packages/main](./packages/main)**: Electron 主进程与打包
 - **[packages/renderer](./packages/renderer)**: 渲染进程（React + Vite）
 - **[packages/common](./packages/common)**: 主进程与渲染进程共享常量

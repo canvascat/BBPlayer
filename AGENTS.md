@@ -66,10 +66,6 @@ pnpm type-check                # TypeScript type checking
 
 ## 仓库结构
 
-### /apps
-
-- docs - 文档网站
-
 ### /packages
 
 - common — 主进程与渲染进程共享的协议常量（无 Node / Electron / React）
