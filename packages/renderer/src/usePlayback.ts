@@ -1,4 +1,4 @@
-import type { AmllLyricLine } from '@bbplayer/core'
+import { generateUniqueTrackKey, type AmllLyricLine } from '@bbplayer/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { lyricClockMs, lyricSeekMs, stepLyricOffset } from './lyric-offset'
@@ -25,6 +25,8 @@ export function usePlayback() {
 	const skipRef = useRef<(delta: number) => void>(() => undefined)
 	const toggleRef = useRef<() => void>(() => undefined)
 	const restoreSeekRef = useRef(0)
+	const playGenerationRef = useRef(0)
+	const persistGenerationRef = useRef(0)
 	const playTrackRef = useRef<
 		(list: TrackItem[], start: number, seekMs?: number) => Promise<void>
 	>(async () => undefined)
@@ -81,6 +83,8 @@ export function usePlayback() {
 
 	const playTrack = useCallback(
 		async (list: TrackItem[], start: number, seekMs = 0) => {
+			const playGeneration = ++playGenerationRef.current
+			persistGenerationRef.current += 1
 			const track = list[start]
 			if (!track) return
 			setError('')
@@ -90,6 +94,7 @@ export function usePlayback() {
 			setLyricOffsetSec(0)
 			try {
 				const resolved = await trpcClient.player.resolve.mutate(track)
+				if (playGeneration !== playGenerationRef.current) return
 				const audio = audioRef.current
 				if (!audio) return
 				audio.src = resolved.playUrl
@@ -98,12 +103,14 @@ export function usePlayback() {
 				setLyrics((resolved.lyrics ?? []) as AmllLyricLine[])
 				if (seekMs > 0) {
 					const onLoaded = () => {
-						audio.currentTime = seekMs / 1000
 						audio.removeEventListener('loadedmetadata', onLoaded)
+						if (playGeneration !== playGenerationRef.current) return
+						audio.currentTime = seekMs / 1000
 					}
 					audio.addEventListener('loadedmetadata', onLoaded)
 				}
 				await audio.play()
+				if (playGeneration !== playGenerationRef.current) return
 				const bits = [
 					resolved.cached ? '已缓存' : '',
 					resolved.lyricSource === 'qqmusic'
@@ -117,6 +124,7 @@ export function usePlayback() {
 				].filter(Boolean)
 				setStatus(bits.join(' · '))
 			} catch (err) {
+				if (playGeneration !== playGenerationRef.current) return
 				setError(err instanceof Error ? err.message : String(err))
 				setStatus('')
 			}
@@ -204,14 +212,37 @@ export function usePlayback() {
 	}, [])
 
 	const persistLyricOffset = useCallback(async (next: number) => {
+		const persistGeneration = ++persistGenerationRef.current
 		setLyricOffsetSec(next)
 		const track = queueRef.current[indexRef.current]
-		if (!track?.id) return
+		if (!track) return
+		const trackId =
+			track.id ||
+			generateUniqueTrackKey({
+				bvid: track.bvid,
+				cid: track.cid,
+				isMultiPage: true,
+			})
 		try {
 			const saved = await trpcClient.player.setLyricOffset.mutate({
-				trackId: track.id,
+				trackId,
 				offsetSec: next,
 			})
+			const currentTrack = queueRef.current[indexRef.current]
+			const currentTrackId = currentTrack
+				? currentTrack.id ||
+					generateUniqueTrackKey({
+						bvid: currentTrack.bvid,
+						cid: currentTrack.cid,
+						isMultiPage: true,
+					})
+				: null
+			if (
+				persistGeneration !== persistGenerationRef.current ||
+				currentTrackId !== trackId
+			) {
+				return
+			}
 			setLyricOffsetSec(saved)
 		} catch {
 			// 本地偏移继续生效，下次再按再写
