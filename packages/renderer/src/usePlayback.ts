@@ -26,7 +26,10 @@ export function usePlayback() {
 	const toggleRef = useRef<() => void>(() => undefined)
 	const restoreSeekRef = useRef(0)
 	const playGenerationRef = useRef(0)
-	const persistGenerationRef = useRef(0)
+	const pendingLyricOffsetsRef = useRef(
+		new Map<string, { offsetSec: number; playGeneration: number }>(),
+	)
+	const persistInFlightRef = useRef(false)
 	const playTrackRef = useRef<
 		(list: TrackItem[], start: number, seekMs?: number) => Promise<void>
 	>(async () => undefined)
@@ -84,7 +87,6 @@ export function usePlayback() {
 	const playTrack = useCallback(
 		async (list: TrackItem[], start: number, seekMs = 0) => {
 			const playGeneration = ++playGenerationRef.current
-			persistGenerationRef.current += 1
 			const track = list[start]
 			if (!track) return
 			setError('')
@@ -211,47 +213,69 @@ export function usePlayback() {
 		if (audioRef.current) audioRef.current.currentTime = value / 1000
 	}, [])
 
-	const persistLyricOffset = useCallback(async (next: number) => {
-		const persistGeneration = ++persistGenerationRef.current
-		setLyricOffsetSec(next)
-		const track = queueRef.current[indexRef.current]
-		if (!track) return
-		const trackId =
-			track.id ||
-			generateUniqueTrackKey({
-				bvid: track.bvid,
-				cid: track.cid,
-				isMultiPage: true,
-			})
+	const flushLyricOffsets = useCallback(async () => {
+		if (persistInFlightRef.current) return
+		persistInFlightRef.current = true
 		try {
-			const saved = await trpcClient.player.setLyricOffset.mutate({
-				trackId,
-				offsetSec: next,
-			})
-			const currentTrack = queueRef.current[indexRef.current]
-			const currentTrackId = currentTrack
-				? currentTrack.id ||
-					generateUniqueTrackKey({
-						bvid: currentTrack.bvid,
-						cid: currentTrack.cid,
-						isMultiPage: true,
+			while (pendingLyricOffsetsRef.current.size > 0) {
+				const entry = pendingLyricOffsetsRef.current.entries().next()
+				if (entry.done) break
+				const [trackId, desired] = entry.value
+				pendingLyricOffsetsRef.current.delete(trackId)
+				try {
+					const saved = await trpcClient.player.setLyricOffset.mutate({
+						trackId,
+						offsetSec: desired.offsetSec,
 					})
-				: null
-			if (
-				persistGeneration !== persistGenerationRef.current ||
-				currentTrackId !== trackId
-			) {
-				return
+					const currentTrack = queueRef.current[indexRef.current]
+					const currentTrackId = currentTrack
+						? currentTrack.id ||
+							generateUniqueTrackKey({
+								bvid: currentTrack.bvid,
+								cid: currentTrack.cid,
+								isMultiPage: true,
+							})
+						: null
+					if (
+						!pendingLyricOffsetsRef.current.has(trackId) &&
+						currentTrackId === trackId &&
+						desired.playGeneration === playGenerationRef.current
+					) {
+						setLyricOffsetSec(saved)
+					}
+				} catch {
+					// 本地偏移继续生效，下次再按再写
+				}
 			}
-			setLyricOffsetSec(saved)
-		} catch {
-			// 本地偏移继续生效，下次再按再写
+		} finally {
+			persistInFlightRef.current = false
 		}
 	}, [])
 
+	const persistLyricOffset = useCallback(
+		(next: number) => {
+			setLyricOffsetSec(next)
+			const track = queueRef.current[indexRef.current]
+			if (!track) return
+			const trackId =
+				track.id ||
+				generateUniqueTrackKey({
+					bvid: track.bvid,
+					cid: track.cid,
+					isMultiPage: true,
+				})
+			pendingLyricOffsetsRef.current.set(trackId, {
+				offsetSec: next,
+				playGeneration: playGenerationRef.current,
+			})
+			void flushLyricOffsets()
+		},
+		[flushLyricOffsets],
+	)
+
 	const stepLyricOffsetBy = useCallback(
 		(direction: 1 | -1) => {
-			void persistLyricOffset(stepLyricOffset(lyricOffsetSec, direction))
+			persistLyricOffset(stepLyricOffset(lyricOffsetSec, direction))
 		},
 		[lyricOffsetSec, persistLyricOffset],
 	)
