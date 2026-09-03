@@ -46,6 +46,7 @@ import {
 	lyricLinesHaveRoman,
 	lyricLinesHaveTranslation,
 } from './lyric-overlay'
+import { LyricOffsetRail } from './LyricOffsetRail'
 import {
 	LYRIC_MOTION_EASE,
 	lyricsPanelTransition,
@@ -88,9 +89,11 @@ export function NowPlaying({
 	const remaining = Math.max(0, player.duration - player.currentTime)
 	const [leaving, setLeaving] = useState(false)
 	const [lyricsOpen, setLyricsOpen] = useState(true)
+	const [offsetOpen, setOffsetOpen] = useState(false)
 	const [bgKind, setBgKind] = useLyricBgRenderer()
 	const aux = useLyricAuxDisplay()
 	const lyricsVisible = lyricsPanelVisible(lyricsOpen)
+	const canAdjustOffset = lyricsOpen && player.lyrics.length > 0
 	const hasTranslation = lyricLinesHaveTranslation(player.lyrics)
 	const hasRoman = lyricLinesHaveRoman(player.lyrics)
 	const displayedLyrics = useMemo(
@@ -106,6 +109,14 @@ export function NowPlaying({
 	useEffect(() => {
 		onCloseRef.current = onClose
 	}, [onClose])
+
+	useEffect(() => {
+		setOffsetOpen(false)
+	}, [track.id])
+
+	useEffect(() => {
+		if (!lyricsOpen) setOffsetOpen(false)
+	}, [lyricsOpen])
 
 	const requestClose = useCallback(() => {
 		setLeaving(true)
@@ -225,6 +236,12 @@ export function NowPlaying({
 									<DropdownMenuItem onClick={player.cycleSpeed}>
 										倍速 {player.playbackRate}x
 									</DropdownMenuItem>
+									<DropdownMenuItem
+										disabled={!canAdjustOffset}
+										onClick={() => setOffsetOpen(true)}
+									>
+										时间轴偏移
+									</DropdownMenuItem>
 									<DropdownMenuItem onClick={onToggleComments}>
 										{commentsOpen ? '关闭评论' : '评论'}
 									</DropdownMenuItem>
@@ -325,7 +342,7 @@ export function NowPlaying({
 							<LyricPlayer
 								className='h-full min-h-0 w-full'
 								lyricLines={displayedLyrics}
-								currentTime={Math.round(player.currentTime)}
+								currentTime={Math.round(player.lyricClockMs)}
 								playing={player.playing}
 								enableBlur
 								enableScale
@@ -335,7 +352,7 @@ export function NowPlaying({
 								style={{ height: '100%', width: '100%', minHeight: 0 }}
 								onLyricLineClick={(event) => {
 									const line = player.lyrics[event.lineIndex]
-									if (line) player.seek(line.startTime)
+									if (line) player.seekLyricLine(line.startTime)
 								}}
 							/>
 						) : (
@@ -346,6 +363,13 @@ export function NowPlaying({
 					</div>
 				</div>
 			</div>
+			{offsetOpen && canAdjustOffset ? (
+				<LyricOffsetRail
+					offsetSec={player.lyricOffsetSec}
+					onStep={player.stepLyricOffsetBy}
+					onDone={() => setOffsetOpen(false)}
+				/>
+			) : null}
 			<div className='absolute right-[22px] bottom-[22px] flex gap-1'>
 				<Button
 					className={cn(lyricsOpen && 'bg-muted')}
