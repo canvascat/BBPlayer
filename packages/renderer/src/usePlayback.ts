@@ -1,6 +1,7 @@
 import type { AmllLyricLine } from '@bbplayer/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { lyricClockMs, lyricSeekMs, stepLyricOffset } from './lyric-offset'
 import { currentLyricText } from './lyric-text'
 import {
 	neighborIndex,
@@ -34,6 +35,7 @@ export function usePlayback() {
 	const [currentTime, setCurrentTime] = useState(0)
 	const [duration, setDuration] = useState(0)
 	const [lyrics, setLyrics] = useState<AmllLyricLine[]>([])
+	const [lyricOffsetSec, setLyricOffsetSec] = useState(0)
 	const [status, setStatus] = useState('')
 	const [error, setError] = useState('')
 	const [repeatMode, setRepeatMode] = useState<RepeatModeValue>(RepeatMode.OFF)
@@ -85,12 +87,14 @@ export function usePlayback() {
 			setQueue(list)
 			setIndex(start)
 			setStatus('正在获取音频…')
+			setLyricOffsetSec(0)
 			try {
 				const resolved = await trpcClient.player.resolve.mutate(track)
 				const audio = audioRef.current
 				if (!audio) return
 				audio.src = resolved.playUrl
 				audio.playbackRate = playbackRate
+				setLyricOffsetSec(resolved.lyricOffset ?? 0)
 				setLyrics((resolved.lyrics ?? []) as AmllLyricLine[])
 				if (seekMs > 0) {
 					const onLoaded = () => {
@@ -199,6 +203,35 @@ export function usePlayback() {
 		if (audioRef.current) audioRef.current.currentTime = value / 1000
 	}, [])
 
+	const persistLyricOffset = useCallback(async (next: number) => {
+		setLyricOffsetSec(next)
+		const track = queueRef.current[indexRef.current]
+		if (!track?.id) return
+		try {
+			const saved = await trpcClient.player.setLyricOffset.mutate({
+				trackId: track.id,
+				offsetSec: next,
+			})
+			setLyricOffsetSec(saved)
+		} catch {
+			// 本地偏移继续生效，下次再按再写
+		}
+	}, [])
+
+	const stepLyricOffsetBy = useCallback(
+		(direction: 1 | -1) => {
+			void persistLyricOffset(stepLyricOffset(lyricOffsetSec, direction))
+		},
+		[lyricOffsetSec, persistLyricOffset],
+	)
+
+	const seekLyricLine = useCallback(
+		(lineStartMs: number) => {
+			seek(lyricSeekMs(lineStartMs, lyricOffsetSec))
+		},
+		[lyricOffsetSec, seek],
+	)
+
 	const seekBy = useCallback((deltaMs: number) => {
 		const audio = audioRef.current
 		if (!audio?.src) return
@@ -301,7 +334,8 @@ export function usePlayback() {
 		return () => window.clearTimeout(handle)
 	}, [currentTime, index, playbackRate, queue, repeatMode, shuffle])
 
-	const lyricLine = currentLyricText(lyrics, currentTime)
+	const lyricTimeMs = lyricClockMs(currentTime, lyricOffsetSec)
+	const lyricLine = currentLyricText(lyrics, lyricTimeMs)
 
 	useEffect(() => {
 		void trpcClient.player.reportState.mutate({
@@ -357,6 +391,8 @@ export function usePlayback() {
 		currentTime,
 		duration,
 		lyrics,
+		lyricOffsetSec,
+		lyricClockMs: lyricTimeMs,
 		status,
 		error,
 		setError,
@@ -373,6 +409,8 @@ export function usePlayback() {
 		toggleShuffle,
 		cycleSpeed,
 		seek,
+		stepLyricOffsetBy,
+		seekLyricLine,
 		seekBy,
 		playNext,
 		addToEnd,
