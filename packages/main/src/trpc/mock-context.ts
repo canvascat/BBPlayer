@@ -55,7 +55,7 @@ export function mockTrpcContext(
 		exportDownloads: async () => ({ ok: true }),
 		exportBackup: async () => ({ ok: true }),
 		importBackup: async () => ({ ok: true }),
-		resolvePlay: async () => ({ playUrl: '', lyrics: [] }),
+		resolvePlay: async () => ({ playUrl: '', lyrics: [], lyricOffset: 0 }),
 		...overrides,
 	}
 }

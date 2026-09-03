@@ -68,6 +68,7 @@ export type TrpcContext = {
 		lyrics: unknown[]
 		cached?: boolean
 		lyricSource?: string
+		lyricOffset?: number
 	}>
 }
 

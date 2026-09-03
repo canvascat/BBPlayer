@@ -2,6 +2,7 @@ import { describeSearchFailure, matchSearchStrategies } from '@bbplayer/core'
 import { z } from 'zod'
 
 import { resolveB23 } from '../../bili'
+import { writeLyricOffset } from '../../lyric-offset'
 import { sameSnapshot } from '../context'
 import { liveState } from '../live-state'
 import { fromObservable } from '../observable'
@@ -39,6 +40,16 @@ export const playerRouter = router({
 	resolve: publicProcedure
 		.input(resolveTrackSchema)
 		.mutation(({ ctx, input }) => ctx.resolvePlay(input)),
+	setLyricOffset: publicProcedure
+		.input(
+			z.object({
+				trackId: z.string().min(1),
+				offsetSec: z.number(),
+			}),
+		)
+		.mutation(({ ctx, input }) =>
+			writeLyricOffset(ctx.store, input.trackId, input.offsetSec),
+		),
 	matchSearch: publicProcedure
 		.input(z.object({ query: z.string() }))
 		.query(async ({ input }) => {

@@ -3,11 +3,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-	generateUniqueTrackKey,
-	parseAndMergeLyrics,
-	splLinesToAmll,
-} from '@bbplayer/core'
+import { parseAndMergeLyrics, splLinesToAmll } from '@bbplayer/core'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import {
 	app,
@@ -50,6 +46,7 @@ import { PlayerDatabase } from './db'
 import { downloadManager } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
 import { parseLyricSource } from './lyric-match'
+import { readLyricOffset, trackIdForOffset } from './lyric-offset'
 import { fetchMatchedLyrics } from './lyrics-fetch'
 import { openGeetestWindow } from './phone-login'
 import { type AppStore } from './store'
@@ -548,13 +545,7 @@ async function resolvePlay(track: {
 	duration?: number
 }) {
 	try {
-		const id =
-			track.id ||
-			generateUniqueTrackKey({
-				bvid: track.bvid,
-				cid: track.cid,
-				isMultiPage: true,
-			})
+		const id = trackIdForOffset(track)
 		await audioProxy.start()
 		const cached = downloadManager.isComplete(id)
 			? downloadManager.list().find((item) => item.id === id)
@@ -610,7 +601,13 @@ async function resolvePlay(track: {
 				lyrics = []
 			}
 		}
-		return { playUrl, lyrics, cached: Boolean(cached), lyricSource }
+		return {
+			playUrl,
+			lyrics,
+			cached: Boolean(cached),
+			lyricSource,
+			lyricOffset: readLyricOffset(store, id),
+		}
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error)
 		if (String((error as { code?: number }).code) === '-101') {

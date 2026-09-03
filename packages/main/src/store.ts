@@ -29,6 +29,7 @@ export type PlaySession = {
 
 export type Persisted = {
 	session?: PlaySession
+	lyricOffsets?: Record<string, number>
 	playlists: LocalPlaylist[]
 	account: BiliAccount | null
 	downloads: CachedTrack[]
