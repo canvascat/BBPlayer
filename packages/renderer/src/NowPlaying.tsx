@@ -89,11 +89,15 @@ export function NowPlaying({
 	const remaining = Math.max(0, player.duration - player.currentTime)
 	const [leaving, setLeaving] = useState(false)
 	const [lyricsOpen, setLyricsOpen] = useState(true)
-	const [offsetForTrackId, setOffsetForTrackId] = useState<string | null>(null)
+	const [offsetOpen, setOffsetOpen] = useState(false)
+	const [offsetTrackId, setOffsetTrackId] = useState(track.id)
+	if (track.id !== offsetTrackId) {
+		setOffsetTrackId(track.id)
+		setOffsetOpen(false)
+	}
 	const [bgKind, setBgKind] = useLyricBgRenderer()
 	const aux = useLyricAuxDisplay()
 	const lyricsVisible = lyricsPanelVisible(lyricsOpen)
-	const offsetOpen = offsetForTrackId === track.id
 	const canAdjustOffset = lyricsOpen && player.lyrics.length > 0
 	const hasTranslation = lyricLinesHaveTranslation(player.lyrics)
 	const hasRoman = lyricLinesHaveRoman(player.lyrics)
@@ -231,7 +235,7 @@ export function NowPlaying({
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										disabled={!canAdjustOffset}
-										onClick={() => setOffsetForTrackId(track.id)}
+										onClick={() => setOffsetOpen(true)}
 									>
 										时间轴偏移
 									</DropdownMenuItem>
@@ -360,7 +364,7 @@ export function NowPlaying({
 				<LyricOffsetRail
 					offsetSec={player.lyricOffsetSec}
 					onStep={player.stepLyricOffsetBy}
-					onDone={() => setOffsetForTrackId(null)}
+					onDone={() => setOffsetOpen(false)}
 				/>
 			) : null}
 			<div className='absolute right-[22px] bottom-[22px] flex gap-1'>
@@ -373,7 +377,7 @@ export function NowPlaying({
 					aria-label='歌词'
 					aria-pressed={lyricsOpen}
 					onClick={() => {
-						if (lyricsOpen) setOffsetForTrackId(null)
+						if (lyricsOpen) setOffsetOpen(false)
 						setLyricsOpen(!lyricsOpen)
 					}}
 				>
