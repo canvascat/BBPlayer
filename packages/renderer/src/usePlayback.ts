@@ -26,9 +26,7 @@ export function usePlayback() {
 	const toggleRef = useRef<() => void>(() => undefined)
 	const restoreSeekRef = useRef(0)
 	const playGenerationRef = useRef(0)
-	const pendingLyricOffsetsRef = useRef(
-		new Map<string, { offsetSec: number; playGeneration: number }>(),
-	)
+	const pendingLyricOffsetsRef = useRef(new Map<string, number>())
 	const persistInFlightRef = useRef(false)
 	const playTrackRef = useRef<
 		(list: TrackItem[], start: number, seekMs?: number) => Promise<void>
@@ -220,12 +218,12 @@ export function usePlayback() {
 			while (pendingLyricOffsetsRef.current.size > 0) {
 				const entry = pendingLyricOffsetsRef.current.entries().next()
 				if (entry.done) break
-				const [trackId, desired] = entry.value
+				const [trackId, offsetSec] = entry.value
 				pendingLyricOffsetsRef.current.delete(trackId)
 				try {
 					const saved = await trpcClient.player.setLyricOffset.mutate({
 						trackId,
-						offsetSec: desired.offsetSec,
+						offsetSec,
 					})
 					const currentTrack = queueRef.current[indexRef.current]
 					const currentTrackId = currentTrack
@@ -238,8 +236,7 @@ export function usePlayback() {
 						: null
 					if (
 						!pendingLyricOffsetsRef.current.has(trackId) &&
-						currentTrackId === trackId &&
-						desired.playGeneration === playGenerationRef.current
+						currentTrackId === trackId
 					) {
 						setLyricOffsetSec(saved)
 					}
@@ -264,10 +261,7 @@ export function usePlayback() {
 					cid: track.cid,
 					isMultiPage: true,
 				})
-			pendingLyricOffsetsRef.current.set(trackId, {
-				offsetSec: next,
-				playGeneration: playGenerationRef.current,
-			})
+			pendingLyricOffsetsRef.current.set(trackId, next)
 			void flushLyricOffsets()
 		},
 		[flushLyricOffsets],
