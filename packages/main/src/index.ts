@@ -695,6 +695,9 @@ app.whenReady().then(async () => {
 			skin: null,
 			downloads: [],
 			lyricSource: 'netease',
+			musicAiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4/',
+			musicAiApiKey: '',
+			musicAiModel: 'glm-4-flash',
 		},
 	})
 	playerDb = PlayerDatabase.open(join(app.getPath('userData'), 'db.db'))
