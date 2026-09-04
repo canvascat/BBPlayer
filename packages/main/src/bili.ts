@@ -131,12 +131,14 @@ export async function getVideoDetails(bvid: string, cookie: string) {
 		duration: number
 		owner: { name: string; mid: number; face: string }
 		cid: number
+		tid: number
 		pages: { part: string; duration: number; cid: number; page: number }[]
 	}
 	return {
 		...data,
 		pic: coverUrl(data.pic),
 		owner: { ...data.owner, face: coverUrl(data.owner.face) },
+		tid: videoTid(data),
 	}
 }
 
@@ -154,10 +156,12 @@ export async function searchVideos(keyword: string, cookie: string) {
 			pic: string
 			author: string
 			duration: string
+			typeid?: unknown
 		}>
 	).map((item) => ({
 		...item,
 		pic: coverUrl(item.pic),
+		tid: videoTid(item),
 	}))
 }
 
@@ -259,12 +263,22 @@ export interface RemoteFolder {
 	itemCount: number
 }
 
+export function videoTid(item: {
+	tid?: unknown
+	typeid?: unknown
+}): number | undefined {
+	const n = Number(item.tid ?? item.typeid)
+	if (!Number.isFinite(n) || n <= 0) return undefined
+	return n
+}
+
 export interface RemoteVideo {
 	bvid: string
 	title: string
 	pic: string
 	author: string
 	duration: string
+	tid?: number
 }
 
 export async function getAccount(cookie: string): Promise<BiliAccount | null> {
@@ -321,6 +335,7 @@ export async function getFavoriteVideos(
 			duration: number
 			type: number
 			attr: number
+			tid?: unknown
 			upper?: { name: string }
 		}>
 		for (const item of medias) {
@@ -331,6 +346,7 @@ export async function getFavoriteVideos(
 				pic: coverUrl(item.cover),
 				author: item.upper?.name ?? '',
 				duration: formatClock(item.duration),
+				tid: videoTid(item),
 			})
 		}
 		if (!json.data?.has_more) break
@@ -388,6 +404,7 @@ export async function getCollectionVideos(
 		title: string
 		cover: string
 		duration: number
+		tid?: unknown
 		upper?: { name: string }
 	}>
 	return {
@@ -398,6 +415,7 @@ export async function getCollectionVideos(
 			pic: coverUrl(item.cover),
 			author: item.upper?.name ?? '',
 			duration: formatClock(item.duration),
+			tid: videoTid(item),
 		})),
 	}
 }
@@ -411,6 +429,7 @@ export async function getWatchLater(
 		title: string
 		pic: string
 		duration: number
+		tid?: unknown
 		owner?: { name: string }
 	}>
 	return {
@@ -422,6 +441,7 @@ export async function getWatchLater(
 			pic: coverUrl(item.pic),
 			author: item.owner?.name ?? '',
 			duration: formatClock(item.duration),
+			tid: videoTid(item),
 		})),
 	}
 }
@@ -442,6 +462,7 @@ export async function getUploaderVideos(
 		pic: string
 		author: string
 		length: string
+		typeid?: unknown
 	}>
 	return {
 		title: `UP ${mid}`,
@@ -451,6 +472,7 @@ export async function getUploaderVideos(
 			pic: coverUrl(item.pic),
 			author: item.author,
 			duration: item.length,
+			tid: videoTid(item),
 		})),
 	}
 }

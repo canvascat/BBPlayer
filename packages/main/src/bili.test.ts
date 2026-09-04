@@ -5,6 +5,7 @@ import {
 	withBiliImageCorsHeaders,
 	withBiliImageHeaders,
 } from './bili-image.ts'
+import { videoTid } from './bili.ts'
 
 test('协议相对封面地址补成 https', () => {
 	assert.equal(
@@ -48,4 +49,11 @@ test('给封面响应加上 CORS，供 WebGL 背景读取', () => {
 	})
 	assert.deepEqual(headers['Access-Control-Allow-Origin'], ['*'])
 	assert.deepEqual(headers['Content-Type'], ['image/jpeg'])
+})
+
+test('videoTid 读取 tid 或 typeid', () => {
+	assert.equal(videoTid({ tid: 31 }), 31)
+	assert.equal(videoTid({ typeid: '28' }), 28)
+	assert.equal(videoTid({}), undefined)
+	assert.equal(videoTid({ tid: 0 }), undefined)
 })

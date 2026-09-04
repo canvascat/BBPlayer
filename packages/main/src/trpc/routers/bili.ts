@@ -16,6 +16,11 @@ import {
 	searchGarbSkins,
 	searchVideos,
 } from '../../bili'
+import {
+	filterSongItems,
+	filterVideoPayload,
+	readFilterNonSongs,
+} from '../../filter-non-songs'
 import { cookieFrom } from '../context'
 import { publicProcedure, router } from '../trpc'
 
@@ -45,54 +50,75 @@ export const biliRouter = router({
 	}),
 	favorite: publicProcedure
 		.input(z.object({ id: z.string() }))
-		.query(({ ctx, input }) =>
-			getFavoriteVideos(cookieFrom(ctx.store), input.id),
-		),
+		.query(async ({ ctx, input }) => {
+			const result = await getFavoriteVideos(cookieFrom(ctx.store), input.id)
+			const enabled = readFilterNonSongs(ctx.store)
+			return { ...result, videos: filterSongItems(enabled, result.videos) }
+		}),
 	collection: publicProcedure
 		.input(z.object({ id: z.string() }))
-		.query(({ ctx, input }) =>
-			getCollectionVideos(cookieFrom(ctx.store), input.id),
-		),
-	watchLater: publicProcedure.query(({ ctx }) =>
-		getWatchLater(cookieFrom(ctx.store)),
-	),
+		.query(async ({ ctx, input }) => {
+			const result = await getCollectionVideos(cookieFrom(ctx.store), input.id)
+			const enabled = readFilterNonSongs(ctx.store)
+			return { ...result, videos: filterSongItems(enabled, result.videos) }
+		}),
+	watchLater: publicProcedure.query(async ({ ctx }) => {
+		const result = await getWatchLater(cookieFrom(ctx.store))
+		const enabled = readFilterNonSongs(ctx.store)
+		return { ...result, videos: filterSongItems(enabled, result.videos) }
+	}),
 	uploader: publicProcedure
 		.input(z.object({ mid: z.string() }))
-		.query(({ ctx, input }) =>
-			getUploaderVideos(cookieFrom(ctx.store), input.mid),
-		),
+		.query(async ({ ctx, input }) => {
+			const result = await getUploaderVideos(cookieFrom(ctx.store), input.mid)
+			const enabled = readFilterNonSongs(ctx.store)
+			return { ...result, videos: filterSongItems(enabled, result.videos) }
+		}),
 	search: publicProcedure
 		.input(z.object({ keyword: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const result = await searchVideos(input.keyword, cookieFrom(ctx.store))
-			return result.map((item) => ({
-				...item,
-				title: item.title.replace(/<[^>]+>/g, ''),
-			}))
+			const enabled = readFilterNonSongs(ctx.store)
+			return filterSongItems(
+				enabled,
+				result.map((item) => ({
+					...item,
+					title: item.title.replace(/<[^>]+>/g, ''),
+				})),
+			)
 		}),
 	video: publicProcedure
 		.input(z.object({ bvid: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const details = await getVideoDetails(input.bvid, cookieFrom(ctx.store))
+			const enabled = readFilterNonSongs(ctx.store)
+			const gate = filterVideoPayload(enabled, {
+				tid: details.tid,
+				title: details.title,
+				pages: details.pages,
+			})
 			const cover = details.pic
+			const pages = (gate.pages as typeof details.pages).map((page) => ({
+				id: generateUniqueTrackKey({
+					bvid: input.bvid,
+					cid: page.cid,
+					isMultiPage: details.pages.length > 1,
+				}),
+				bvid: input.bvid,
+				cid: page.cid,
+				title: page.part || details.title,
+				artist: details.owner.name,
+				artwork: cover,
+				duration: page.duration,
+				tid: details.tid,
+			}))
 			return {
 				bvid: details.bvid,
 				title: details.title,
 				cover,
 				owner: details.owner,
-				pages: details.pages.map((page) => ({
-					id: generateUniqueTrackKey({
-						bvid: input.bvid,
-						cid: page.cid,
-						isMultiPage: details.pages.length > 1,
-					}),
-					bvid: input.bvid,
-					cid: page.cid,
-					title: page.part || details.title,
-					artist: details.owner.name,
-					artwork: cover,
-					duration: page.duration,
-				})),
+				pages,
+				filtered: gate.filtered,
 			}
 		}),
 	comments: publicProcedure
