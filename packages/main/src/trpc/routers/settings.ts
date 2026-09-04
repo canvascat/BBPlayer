@@ -18,6 +18,9 @@ const settingsPatchSchema = z.object({
 	filterNonSongs: z.boolean().optional(),
 	skin: z.union([z.null(), skinSchema]).optional(),
 	lyricSource: z.enum(['auto', 'netease', 'qqmusic', 'kugou']).optional(),
+	musicAiBaseUrl: z.string().optional(),
+	musicAiApiKey: z.string().optional(),
+	musicAiModel: z.string().optional(),
 })
 
 export function readSettings(store: Pick<TrpcStore, 'get'>) {
@@ -30,6 +33,10 @@ export function readSettings(store: Pick<TrpcStore, 'get'>) {
 		account: store.get('account') ?? null,
 		skin: store.get('skin') ?? null,
 		lyricSource: parseLyricSource(store.get('lyricSource')),
+		musicAiBaseUrl:
+			store.get('musicAiBaseUrl') ?? 'https://open.bigmodel.cn/api/paas/v4/',
+		musicAiApiKey: store.get('musicAiApiKey') ?? '',
+		musicAiModel: store.get('musicAiModel') ?? 'glm-4-flash',
 	}
 }
 
@@ -66,6 +73,15 @@ export const settingsRouter = router({
 			}
 			if (patch.lyricSource) {
 				ctx.store.set('lyricSource', patch.lyricSource)
+			}
+			if (typeof patch.musicAiBaseUrl === 'string') {
+				ctx.store.set('musicAiBaseUrl', patch.musicAiBaseUrl)
+			}
+			if (typeof patch.musicAiApiKey === 'string') {
+				ctx.store.set('musicAiApiKey', patch.musicAiApiKey)
+			}
+			if (typeof patch.musicAiModel === 'string') {
+				ctx.store.set('musicAiModel', patch.musicAiModel)
 			}
 			return true
 		}),

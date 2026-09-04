@@ -55,3 +55,25 @@ test('settings.set 写入 filterNonSongs', async () => {
 	assert.equal(store.get('filterNonSongs'), true)
 	assert.equal((await caller.get()).filterNonSongs, true)
 })
+
+test('settings.get 默认曲目解析为空 Key 和智谱 Flash', async () => {
+	const caller = settingsRouter.createCaller(
+		mockTrpcContext({ store: memoryStore() }),
+	)
+	const result = await caller.get()
+	assert.equal(result.musicAiApiKey, '')
+	assert.equal(result.musicAiModel, 'glm-4-flash')
+	assert.equal(result.musicAiBaseUrl, 'https://open.bigmodel.cn/api/paas/v4/')
+})
+
+test('settings.set 写入曲目解析三项', async () => {
+	const store = memoryStore()
+	const caller = settingsRouter.createCaller(mockTrpcContext({ store }))
+	await caller.set({
+		musicAiApiKey: 'sk-1',
+		musicAiModel: 'glm-4.5-flash',
+		musicAiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4/',
+	})
+	assert.equal(store.get('musicAiApiKey'), 'sk-1')
+	assert.equal((await caller.get()).musicAiModel, 'glm-4.5-flash')
+})
