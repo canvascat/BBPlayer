@@ -21,12 +21,13 @@ export const Route = createFileRoute('/library/multipage/$bvid')({
 
 function MultipageDetailPage() {
 	const { bvid } = Route.useParams()
-	const { startPlay, player } = useApp()
+	const { startPlay, player, filterNonSongs } = useApp()
 	const [video, setVideo] = useState<{
 		title: string
 		cover: string
 		owner: { name: string }
 		pages: TrackItem[]
+		filtered?: boolean
 	} | null>(null)
 
 	useEffect(() => {
@@ -42,7 +43,7 @@ function MultipageDetailPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [bvid])
+	}, [bvid, filterNonSongs])
 
 	if (!video) {
 		return (
@@ -50,6 +51,19 @@ function MultipageDetailPage() {
 				<EmptyHeader>
 					<EmptyTitle>加载中</EmptyTitle>
 					<EmptyDescription>正在读取分 P。</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
+		)
+	}
+
+	if (video.filtered) {
+		return (
+			<Empty>
+				<EmptyHeader>
+					<EmptyTitle>已按设置隐藏非歌曲视频</EmptyTitle>
+					<EmptyDescription>
+						关闭设置中的「过滤非歌曲视频」后即可打开。
+					</EmptyDescription>
 				</EmptyHeader>
 			</Empty>
 		)

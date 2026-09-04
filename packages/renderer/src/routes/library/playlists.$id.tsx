@@ -31,7 +31,7 @@ function PlaylistDetailPage() {
 }
 
 function PlaylistDetail({ id }: { id: string }) {
-	const { startPlay } = useApp()
+	const { startPlay, filterNonSongs } = useApp()
 	const [playlist, setPlaylist] = useState<{
 		id: string
 		title: string
@@ -53,7 +53,7 @@ function PlaylistDetail({ id }: { id: string }) {
 		return () => {
 			cancelled = true
 		}
-	}, [id])
+	}, [id, filterNonSongs])
 
 	if (missing) throw notFound()
 
@@ -63,6 +63,19 @@ function PlaylistDetail({ id }: { id: string }) {
 				<EmptyHeader>
 					<EmptyTitle>加载中</EmptyTitle>
 					<EmptyDescription>正在读取本地歌单。</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
+		)
+	}
+
+	if (playlist.tracks.length === 0) {
+		return (
+			<Empty>
+				<EmptyHeader>
+					<EmptyTitle>没有歌曲</EmptyTitle>
+					<EmptyDescription>
+						{filterNonSongs ? '已按设置隐藏非歌曲视频' : '这个列表还是空的。'}
+					</EmptyDescription>
 				</EmptyHeader>
 			</Empty>
 		)

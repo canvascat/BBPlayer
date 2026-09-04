@@ -20,7 +20,7 @@ export const Route = createFileRoute('/library/favorites/$id')({
 
 function FavoriteDetailPage() {
 	const { id } = Route.useParams()
-	const { startPlay, player, createLocalPlaylist } = useApp()
+	const { startPlay, player, createLocalPlaylist, filterNonSongs } = useApp()
 	const [title, setTitle] = useState('收藏夹')
 	const [videos, setVideos] = useState<SearchHit[] | null>(null)
 
@@ -39,7 +39,7 @@ function FavoriteDetailPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [id])
+	}, [id, filterNonSongs])
 
 	const playAll = async () => {
 		const first = videos?.[0]
@@ -69,6 +69,19 @@ function FavoriteDetailPage() {
 				<EmptyHeader>
 					<EmptyTitle>加载中</EmptyTitle>
 					<EmptyDescription>正在读取收藏夹。</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
+		)
+	}
+
+	if (videos.length === 0) {
+		return (
+			<Empty>
+				<EmptyHeader>
+					<EmptyTitle>没有歌曲</EmptyTitle>
+					<EmptyDescription>
+						{filterNonSongs ? '已按设置隐藏非歌曲视频' : '这个列表还是空的。'}
+					</EmptyDescription>
 				</EmptyHeader>
 			</Empty>
 		)
