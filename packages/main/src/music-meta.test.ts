@@ -177,6 +177,7 @@ test('缓存命中且 hash 相同不打模型', async () => {
 		musicMeta: {
 			'bilibili::BV1': {
 				musicTitle: '缓存歌',
+				musicArtist: '缓存人',
 				sourceHash: musicSourceHash({
 					title: '稿',
 					desc: '',
@@ -204,6 +205,7 @@ test('缓存命中且 hash 相同不打模型', async () => {
 	)
 	assert.equal(called, 0)
 	assert.equal(result[0]?.musicTitle, '缓存歌')
+	assert.equal(result[0]?.musicArtist, '缓存人')
 })
 
 test('无 Key 时即使用规则缺歌手也不调用 complete', async () => {
@@ -228,6 +230,36 @@ test('无 Key 时即使用规则缺歌手也不调用 complete', async () => {
 	assert.equal(called, 0)
 	assert.equal(result[0]?.musicTitle, '晴天')
 	assert.equal(result[0]?.musicArtist, undefined)
+})
+
+test('无 Key 后再补上 Key，同一 hash 仍会调用 complete', async () => {
+	const store = memoryStore()
+	const input = {
+		bvid: 'BV1',
+		title: '稿',
+		pages: [{ id: 'bilibili::BV1', part: '《晴天》' }],
+		ownerName: 'UP',
+		isMultiPage: false,
+	}
+	let called = 0
+	const complete = async () => {
+		called += 1
+		return [
+			{
+				index: 1,
+				title: '晴天',
+				artist: '周杰伦',
+				confidence: 'high' as const,
+				kind: 'cover' as const,
+			},
+		]
+	}
+	await fillMusicFields(input, { store, complete })
+	assert.equal(called, 0)
+	store.set('musicAiApiKey', 'sk')
+	const result = await fillMusicFields(input, { store, complete })
+	assert.equal(called, 1)
+	assert.equal(result[0]?.musicArtist, '周杰伦')
 })
 
 test('有 Key 且缺字段时调用一次并把结果写入缓存', async () => {

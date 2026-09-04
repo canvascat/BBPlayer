@@ -147,19 +147,25 @@ test('waiter 排队时插入迟到的第四个调用，并发 fetch 仍不超过
 			else laterHolds.push(resolve)
 		})
 		current -= 1
-		const response = new Response(okBody, { status: 200 })
-		if (!isFirst) return response
-		const origJson = response.json.bind(response)
-		response.json = () =>
-			origJson().then((data) => {
+		if (!isFirst) {
+			return {
+				ok: true,
+				status: 200,
+				json: async () => JSON.parse(okBody),
+			} as Response
+		}
+		return {
+			ok: true,
+			status: 200,
+			json: async () => {
 				queueMicrotask(() => {
 					queueMicrotask(() => {
 						fourth ??= completeMusicAi(input, config, fetchImpl)
 					})
 				})
-				return data
-			})
-		return response
+				return JSON.parse(okBody)
+			},
+		} as Response
 	}
 
 	const firstCall = completeMusicAi(input, config, fetchImpl)

@@ -151,11 +151,15 @@ export async function fillMusicFields(
 		parts: input.pages.map((page) => page.part),
 	})
 
+	const apiKey = deps.store.get('musicAiApiKey')?.trim()
 	const cached = input.pages.map((page) => readMusicMeta(deps.store, page.id))
-	if (
+	const hashMatched =
 		cached.length === input.pages.length &&
 		cached.every((entry) => entry?.sourceHash === hash)
-	) {
+	const fieldsComplete = cached.every(
+		(entry) => entry?.musicTitle && entry?.musicArtist,
+	)
+	if (hashMatched && (fieldsComplete || !apiKey)) {
 		return input.pages.map((page, index) => {
 			const entry = cached[index]!
 			const result: {
@@ -176,7 +180,6 @@ export async function fillMusicFields(
 			desc,
 		}),
 	)
-	const apiKey = deps.store.get('musicAiApiKey')?.trim()
 	const needsAi = rules.some((rule) => !rule.title || !rule.artist)
 	let tracks: MusicAiTrack[] | null | undefined
 
@@ -210,9 +213,12 @@ export async function fillMusicFields(
 
 	const aiByIndex = new Map((tracks ?? []).map((track) => [track.index, track]))
 
+	const persist = !(needsAi && !apiKey)
 	return input.pages.map((page, index) => {
 		const merged = mergePageMeta(rules[index], aiByIndex.get(index + 1))
-		writeMusicMeta(deps.store, page.id, { ...merged, sourceHash: hash })
+		if (persist) {
+			writeMusicMeta(deps.store, page.id, { ...merged, sourceHash: hash })
+		}
 		return { id: page.id, ...merged }
 	})
 }

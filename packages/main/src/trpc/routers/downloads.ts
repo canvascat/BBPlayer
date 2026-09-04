@@ -57,9 +57,16 @@ export const downloadsRouter = router({
 			ctx.events.downloads$.pipe(
 				map((payload) => ({
 					...payload,
-					records: filterSongItems(
-						readFilterNonSongs(ctx.store),
-						payload.records as Array<{ title: string; tid?: number | null }>,
+					records: overlayMusicMeta(
+						ctx.store,
+						filterSongItems(
+							readFilterNonSongs(ctx.store),
+							payload.records as Array<{
+								id: string
+								title: string
+								tid?: number | null
+							}>,
+						),
 					),
 				})),
 			),
