@@ -1,8 +1,14 @@
 import { createHash } from 'node:crypto'
 
 import { preciseMusicNameFromBgm } from './lyric-match.ts'
+import { readMusicMeta, writeMusicMeta } from './music-meta-store.ts'
+import type { TrpcStore } from './trpc/context.ts'
 
 export const DESC_LIMIT = 2000
+export const DEFAULT_MUSIC_AI_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/'
+export const DEFAULT_MUSIC_AI_MODEL = 'glm-4-flash'
+
+export type MusicPageInput = { id: string; part: string }
 
 export type MusicAiTrack = {
 	index: number
@@ -44,12 +50,14 @@ export function ruleGuess(input: {
 	videoTitle: string
 	desc: string
 }): { title?: string; artist?: string } {
+	const fromDesc = extractFromDescription(input.desc)
 	const title =
-		extractBracketTitle(input.part) ?? extractBracketTitle(input.videoTitle)
-	const { artist } = extractFromDescription(input.desc)
+		extractBracketTitle(input.part) ??
+		extractBracketTitle(input.videoTitle) ??
+		fromDesc.title
 	const result: { title?: string; artist?: string } = {}
 	if (title) result.title = title
-	if (artist) result.artist = artist
+	if (fromDesc.artist) result.artist = fromDesc.artist
 	return result
 }
 
@@ -94,28 +102,119 @@ export function parseMusicAiPayload(raw: string): MusicAiTrack[] | null {
 	return tracks
 }
 
+function aiUsable(ai: MusicAiTrack | undefined): ai is MusicAiTrack {
+	return !!ai && ai.confidence === 'high' && ai.kind !== 'not_music'
+}
+
 export function mergePageMeta(
 	rule: { title?: string; artist?: string },
 	ai: MusicAiTrack | undefined,
 ): { musicTitle?: string; musicArtist?: string } {
 	const result: { musicTitle?: string; musicArtist?: string } = {}
+	const usable = aiUsable(ai)
 
 	if (rule.title) {
 		result.musicTitle = rule.title
-	} else if (
-		ai &&
-		ai.confidence === 'high' &&
-		ai.kind !== 'not_music' &&
-		ai.title
-	) {
+	} else if (usable && ai.title) {
 		result.musicTitle = ai.title
 	}
 
-	if (ai && ai.confidence === 'high' && ai.kind !== 'not_music' && ai.artist) {
+	if (usable && ai.artist) {
 		result.musicArtist = ai.artist
+	} else if (rule.artist) {
+		result.musicArtist = rule.artist
 	}
 
 	return result
+}
+
+type CompleteMusicAi = typeof import('./music-ai.ts').completeMusicAi
+
+export async function fillMusicFields(
+	input: {
+		bvid: string
+		title: string
+		desc?: string
+		ownerName: string
+		pages: MusicPageInput[]
+		isMultiPage: boolean
+	},
+	deps: {
+		store: Pick<TrpcStore, 'get' | 'set'>
+		complete?: CompleteMusicAi
+	},
+): Promise<Array<{ id: string; musicTitle?: string; musicArtist?: string }>> {
+	const desc = truncateDesc(input.desc)
+	const hash = musicSourceHash({
+		title: input.title,
+		desc,
+		parts: input.pages.map((page) => page.part),
+	})
+
+	const cached = input.pages.map((page) => readMusicMeta(deps.store, page.id))
+	if (
+		cached.length === input.pages.length &&
+		cached.every((entry) => entry?.sourceHash === hash)
+	) {
+		return input.pages.map((page, index) => {
+			const entry = cached[index]!
+			const result: {
+				id: string
+				musicTitle?: string
+				musicArtist?: string
+			} = { id: page.id }
+			if (entry.musicTitle) result.musicTitle = entry.musicTitle
+			if (entry.musicArtist) result.musicArtist = entry.musicArtist
+			return result
+		})
+	}
+
+	const rules = input.pages.map((page) =>
+		ruleGuess({
+			part: page.part,
+			videoTitle: input.title,
+			desc,
+		}),
+	)
+	const apiKey = deps.store.get('musicAiApiKey')?.trim()
+	const needsAi = rules.some((rule) => !rule.title || !rule.artist)
+	let tracks: MusicAiTrack[] | null | undefined
+
+	if (needsAi && apiKey) {
+		const complete =
+			deps.complete ?? (await import('./music-ai.ts')).completeMusicAi
+		try {
+			tracks = await complete(
+				{
+					title: input.title,
+					desc,
+					ownerName: input.ownerName,
+					pages: input.pages.map((page, index) => ({
+						index: index + 1,
+						part: page.part,
+					})),
+				},
+				{
+					baseUrl:
+						deps.store.get('musicAiBaseUrl')?.trim() ||
+						DEFAULT_MUSIC_AI_BASE_URL,
+					apiKey,
+					model:
+						deps.store.get('musicAiModel')?.trim() || DEFAULT_MUSIC_AI_MODEL,
+				},
+			)
+		} catch {
+			tracks = undefined
+		}
+	}
+
+	const aiByIndex = new Map((tracks ?? []).map((track) => [track.index, track]))
+
+	return input.pages.map((page, index) => {
+		const merged = mergePageMeta(rules[index], aiByIndex.get(index + 1))
+		writeMusicMeta(deps.store, page.id, { ...merged, sourceHash: hash })
+		return { id: page.id, ...merged }
+	})
 }
 
 export function lyricSearchInput(
