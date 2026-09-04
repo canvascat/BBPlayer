@@ -1,4 +1,9 @@
-import { generateUniqueTrackKey, type AmllLyricLine } from '@bbplayer/core'
+import {
+	displayArtist,
+	displayTitle,
+	generateUniqueTrackKey,
+	type AmllLyricLine,
+} from '@bbplayer/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { applyFilterSessionView } from './filter-session'
@@ -414,8 +419,8 @@ export function usePlayback() {
 
 	useEffect(() => {
 		void trpcClient.player.reportState.mutate({
-			title: current?.title ?? '',
-			artist: current?.artist ?? '',
+			title: current ? displayTitle(current) : '',
+			artist: current ? displayArtist(current) : '',
 			playing,
 			lyric: lyricLine,
 			artwork: current?.artwork ?? '',
@@ -429,8 +434,8 @@ export function usePlayback() {
 			return
 		}
 		navigator.mediaSession.metadata = new MediaMetadata({
-			title: current.title,
-			artist: current.artist,
+			title: displayTitle(current),
+			artist: displayArtist(current),
 			artwork: current.artwork
 				? [{ src: current.artwork, sizes: '512x512', type: 'image/jpeg' }]
 				: [],

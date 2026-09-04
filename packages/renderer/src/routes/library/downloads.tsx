@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { pageTitleClass } from '@/cover-ui'
+import { trackMatchesQuery } from '@/music-track-text'
 import { trpcClient } from '@/trpc'
 
 export const Route = createFileRoute('/library/downloads')({
@@ -24,11 +25,7 @@ function DownloadsPage() {
 	const q = query.trim().toLowerCase()
 	const tracks = useMemo(() => {
 		if (!q) return downloads
-		return downloads.filter(
-			(item) =>
-				item.title.toLowerCase().includes(q) ||
-				item.artist.toLowerCase().includes(q),
-		)
+		return downloads.filter((item) => trackMatchesQuery(item, q))
 	}, [downloads, q])
 
 	useEffect(() => {

@@ -6,6 +6,7 @@ import {
 	MeshGradientRenderer,
 	PixiRenderer,
 } from '@applemusic-like-lyrics/react'
+import { displayArtist, displayTitle } from '@bbplayer/core'
 import {
 	CaptionsIcon,
 	ChevronDownIcon,
@@ -200,15 +201,15 @@ export function NowPlaying({
 						<div className='w-full min-w-0 text-center'>
 							<h1
 								className='truncate text-3xl font-semibold tracking-tight'
-								title={track.title}
+								title={displayTitle(track)}
 							>
-								{track.title}
+								{displayTitle(track)}
 							</h1>
 							<p
 								className='text-muted-foreground mt-1 truncate text-base'
-								title={track.artist}
+								title={displayArtist(track)}
 							>
-								{track.artist}
+								{displayArtist(track)}
 							</p>
 						</div>
 						<DropdownMenu>

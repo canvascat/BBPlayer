@@ -1,3 +1,5 @@
+import { displayArtist, displayTitle } from '@bbplayer/core'
+
 import { useApp } from '@/app-context'
 import { Button } from '@/components/ui/button'
 import {
@@ -56,10 +58,10 @@ export function LibraryTrackList({
 								alt=''
 							/>
 							<div className='min-w-0 text-left'>
-								<OverflowText text={page.title} />
+								<OverflowText text={displayTitle(page)} />
 								<OverflowText
 									className='text-muted-foreground text-xs'
-									text={page.artist}
+									text={displayArtist(page)}
 								/>
 							</div>
 							<span className='text-muted-foreground text-xs'>

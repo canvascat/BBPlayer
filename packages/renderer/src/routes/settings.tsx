@@ -15,8 +15,12 @@ import {
 	Field,
 	FieldContent,
 	FieldDescription,
+	FieldGroup,
 	FieldLabel,
+	FieldLegend,
+	FieldSet,
 } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { pageTitleClass } from '@/cover-ui'
 import { parseLyricBgRenderer } from '@/lyric-bg-renderer'
@@ -45,6 +49,12 @@ function SettingsPage() {
 		setFilterNonSongs,
 		lyricSource,
 		setLyricSource,
+		musicAiBaseUrl,
+		setMusicAiBaseUrl,
+		musicAiApiKey,
+		setMusicAiApiKey,
+		musicAiModel,
+		setMusicAiModel,
 		exportCached,
 		refreshPlaylists,
 		setSaved,
@@ -157,6 +167,39 @@ function SettingsPage() {
 							<ToggleGroupItem value='auto'>自动</ToggleGroupItem>
 						</ToggleGroup>
 					</Field>
+					<FieldSet>
+						<FieldLegend variant='label'>曲目解析</FieldLegend>
+						<FieldDescription>
+							未填 Key 时不请求模型；默认智谱 GLM-4-Flash。
+						</FieldDescription>
+						<FieldGroup>
+							<Field>
+								<FieldLabel htmlFor='music-ai-base-url'>Base URL</FieldLabel>
+								<Input
+									id='music-ai-base-url'
+									value={musicAiBaseUrl}
+									onChange={(event) => setMusicAiBaseUrl(event.target.value)}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor='music-ai-api-key'>API Key</FieldLabel>
+								<Input
+									id='music-ai-api-key'
+									type='password'
+									value={musicAiApiKey}
+									onChange={(event) => setMusicAiApiKey(event.target.value)}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor='music-ai-model'>模型</FieldLabel>
+								<Input
+									id='music-ai-model'
+									value={musicAiModel}
+									onChange={(event) => setMusicAiModel(event.target.value)}
+								/>
+							</Field>
+						</FieldGroup>
+					</FieldSet>
 					<Field orientation='horizontal'>
 						<FieldContent>
 							<FieldLabel id='lyric-bg-renderer'>播放页动态背景</FieldLabel>

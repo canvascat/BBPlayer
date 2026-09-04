@@ -1,3 +1,4 @@
+import { displayArtist, displayTitle } from '@bbplayer/core'
 import { createFileRoute } from '@tanstack/react-router'
 import { MusicIcon } from 'lucide-react'
 
@@ -107,11 +108,11 @@ function HomePage() {
 								</div>
 								<OverflowText
 									className='text-base'
-									text={current.title}
+									text={displayTitle(current)}
 								/>
 								<OverflowText
 									className='text-muted-foreground'
-									text={current.artist}
+									text={displayArtist(current)}
 								/>
 								<div className='flex flex-wrap gap-2'>
 									<Button
@@ -196,8 +197,8 @@ function HomePage() {
 									fallback='♪'
 								/>
 								<CoverMeta
-									title={track.title}
-									subtitle={track.artist}
+									title={displayTitle(track)}
+									subtitle={displayArtist(track)}
 									active={current?.id === track.id}
 								/>
 							</Button>
