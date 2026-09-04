@@ -1,8 +1,21 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { test, assert } from 'vitest'
 
 import { memoryStore, mockTrpcContext } from '../mock-context'
 
 import { authRouter } from './auth'
+
+test('auth router 不从 phone-login 引入 electron', () => {
+	const source = readFileSync(
+		join(dirname(fileURLToPath(import.meta.url)), 'auth.ts'),
+		'utf8',
+	)
+	assert.equal(source.includes("from '../../phone-login'"), false)
+	assert.equal(source.includes("from '../../phone-sms'"), true)
+})
 
 test('webStart 把网页登录 Cookie 写入 store 并刷新账号', async () => {
 	const store = memoryStore()

@@ -1,0 +1,22 @@
+{
+	"name": "@bbplayer/trpc-dev",
+	"version": "0.1.0",
+	"private": true,
+	"description": "BBPlayer Node tRPC 开发服务与调试 Panel",
+	"license": "AGPL-3.0-only",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx src/index.ts",
+		"test": "vp test"
+	},
+	"dependencies": {
+		"@ajayche/trpc-panel": "2.1.0",
+		"@bbplayer/main": "workspace:*",
+		"@trpc/server": "^11.18.0",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@types/node": "^25.2.3",
+		"tsx": "^4.23.13"
+	}
+}

@@ -9,7 +9,12 @@
 	"main": "dist/main.mjs",
 	"exports": {
 		"./router": {
-			"types": "./src/trpc/router.ts"
+			"types": "./src/trpc/router.ts",
+			"default": "./src/trpc/router.ts"
+		},
+		"./trpc/node-context": {
+			"types": "./src/trpc/node-context.ts",
+			"default": "./src/trpc/node-context.ts"
 		},
 		"./preload": {
 			"types": "./src/preload.ts"

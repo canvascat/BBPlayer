@@ -31,3 +31,4 @@ packageExtensions:
 # pnpm >= 11 用 allowBuilds 取代了已移除的 onlyBuiltDependencies
 allowBuilds:
   electron: true
+  esbuild: true

@@ -4,6 +4,7 @@
 	"scripts": {
 		"check": "vp check",
 		"desktop": "vp run @bbplayer/main#dev",
+		"trpc-dev": "vp run @bbplayer/trpc-dev#dev",
 		"format": "vp fmt --write .",
 		"lint": "vp lint",
 		"lint:fix": "vp lint --fix",
