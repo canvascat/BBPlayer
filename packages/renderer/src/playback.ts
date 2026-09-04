@@ -44,6 +44,20 @@ export function formatClock(ms: number) {
 	return `${m}:${String(s).padStart(2, '0')}`
 }
 
+/** 进度条用毫秒时长：优先音频元数据，未就绪时回退曲目秒数。 */
+export function progressDurationMs(
+	audioDurationMs: number,
+	trackDurationSec = 0,
+) {
+	if (Number.isFinite(audioDurationMs) && audioDurationMs > 0) {
+		return audioDurationMs
+	}
+	if (Number.isFinite(trackDurationSec) && trackDurationSec > 0) {
+		return trackDurationSec * 1000
+	}
+	return 0
+}
+
 export function shuffleOrder(length: number, current: number) {
 	if (length <= 0) return []
 	const start = Math.min(Math.max(current, 0), length - 1)

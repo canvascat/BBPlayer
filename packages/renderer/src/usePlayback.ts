@@ -6,6 +6,7 @@ import { currentLyricText } from './lyric-text'
 import {
 	neighborIndex,
 	nextRepeatMode,
+	progressDurationMs,
 	RepeatMode,
 	shuffleOrder,
 	type RepeatMode as RepeatModeValue,
@@ -385,6 +386,7 @@ export function usePlayback() {
 
 	const lyricTimeMs = lyricClockMs(currentTime, lyricOffsetSec)
 	const lyricLine = currentLyricText(lyrics, lyricTimeMs)
+	const progressMs = progressDurationMs(duration, current?.duration)
 
 	useEffect(() => {
 		void trpcClient.player.reportState.mutate({
@@ -412,8 +414,8 @@ export function usePlayback() {
 		navigator.mediaSession.playbackState = playing ? 'playing' : 'paused'
 		try {
 			navigator.mediaSession.setPositionState({
-				duration: Math.max(duration / 1000, 0),
-				position: Math.min(currentTime / 1000, Math.max(duration / 1000, 0)),
+				duration: Math.max(progressMs / 1000, 0),
+				position: Math.min(currentTime / 1000, Math.max(progressMs / 1000, 0)),
 				playbackRate,
 			})
 		} catch {
@@ -429,7 +431,7 @@ export function usePlayback() {
 		)
 		navigator.mediaSession.setActionHandler('seekbackward', () => seekBy(-5000))
 		navigator.mediaSession.setActionHandler('seekforward', () => seekBy(5000))
-	}, [current, currentTime, duration, playbackRate, playing, seekBy])
+	}, [current, currentTime, playbackRate, playing, progressMs, seekBy])
 
 	return {
 		audioRef,
@@ -438,7 +440,7 @@ export function usePlayback() {
 		current,
 		playing,
 		currentTime,
-		duration,
+		duration: progressMs,
 		lyrics,
 		lyricOffsetSec,
 		lyricClockMs: lyricTimeMs,
