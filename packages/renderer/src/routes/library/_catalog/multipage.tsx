@@ -60,7 +60,7 @@ function MultipageVideos({
 }: {
 	folder: { id: string; title: string }
 }) {
-	const { player } = useApp()
+	const { player, filterNonSongs } = useApp()
 	const [videos, setVideos] = useState<SearchHit[] | null>(null)
 
 	useEffect(() => {
@@ -76,7 +76,7 @@ function MultipageVideos({
 		return () => {
 			cancelled = true
 		}
-	}, [folder.id])
+	}, [folder.id, filterNonSongs])
 
 	return (
 		<>
@@ -117,9 +117,9 @@ function MultipageVideos({
 			) : (
 				<Empty className='border'>
 					<EmptyHeader>
-						<EmptyTitle>没有分 P 视频</EmptyTitle>
+						<EmptyTitle>没有歌曲</EmptyTitle>
 						<EmptyDescription>
-							把视频加进「{folder.title}」后会出现在这里。
+							{filterNonSongs ? '已按设置隐藏非歌曲视频' : '这个列表还是空的。'}
 						</EmptyDescription>
 					</EmptyHeader>
 				</Empty>

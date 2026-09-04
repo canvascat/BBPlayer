@@ -232,6 +232,41 @@ function useAppModel() {
 		void player.playTrack(list, start)
 	}
 
+	type MatchStrategy = {
+		type: string
+		bvid?: string
+		query?: string
+		id?: string
+		mid?: string
+	}
+
+	const applySearchOrUploaderHits = async (
+		strategy: MatchStrategy,
+		q: string,
+	) => {
+		if (
+			strategy.type === 'SEARCH' ||
+			strategy.type === 'B23_RESOLVE_ERROR' ||
+			strategy.type === 'B23_NO_BVID_ERROR' ||
+			strategy.type === 'AV_PARSE_ERROR'
+		) {
+			const keyword = strategy.query || q
+			const result = await trpcClient.bili.search.query({ keyword })
+			setHits(result)
+			setHitsTitle(`搜索：${keyword}`)
+			return true
+		}
+		if (strategy.type === 'UPLOADER' && strategy.mid) {
+			const result = await trpcClient.bili.uploader.query({
+				mid: strategy.mid,
+			})
+			setHits(result.videos)
+			setHitsTitle(result.title)
+			return true
+		}
+		return false
+	}
+
 	const submitSearch = async (raw?: string) => {
 		const q = (raw ?? query).trim()
 		if (!q) return
@@ -241,13 +276,7 @@ function useAppModel() {
 		setHitsTitle('')
 		const matched = await trpcClient.player.matchSearch.query({ query: q })
 		if (matched.error) player.setError(matched.error)
-		const strategy = matched.strategy as {
-			type: string
-			bvid?: string
-			query?: string
-			id?: string
-			mid?: string
-		}
+		const strategy = matched.strategy as MatchStrategy
 		try {
 			if (strategy.type === 'BVID' && strategy.bvid) {
 				void navigate({
@@ -256,17 +285,9 @@ function useAppModel() {
 				})
 				return
 			}
-			if (
-				strategy.type === 'SEARCH' ||
-				strategy.type === 'B23_RESOLVE_ERROR' ||
-				strategy.type === 'B23_NO_BVID_ERROR' ||
-				strategy.type === 'AV_PARSE_ERROR'
-			) {
-				const keyword = strategy.query || q
-				const result = await trpcClient.bili.search.query({ keyword })
-				setHits(result)
-				setHitsTitle(`搜索：${keyword}`)
+			if (await applySearchOrUploaderHits(strategy, q)) {
 				void navigate({ to: '/' })
+				return
 			}
 			if (strategy.type === 'FAVORITE' && strategy.id) {
 				openFavorite(strategy.id)
@@ -275,14 +296,6 @@ function useAppModel() {
 			if (strategy.type === 'COLLECTION' && strategy.id) {
 				openCollection(strategy.id)
 				return
-			}
-			if (strategy.type === 'UPLOADER' && strategy.mid) {
-				const result = await trpcClient.bili.uploader.query({
-					mid: strategy.mid,
-				})
-				setHits(result.videos)
-				setHitsTitle(result.title)
-				void navigate({ to: '/' })
 			}
 		} catch (err) {
 			player.setError(err instanceof Error ? err.message : String(err))
@@ -324,7 +337,17 @@ function useAppModel() {
 			bumpLibrary()
 			await loadRemoteLibrary()
 			setDownloads(await trpcClient.downloads.list.query())
-			if (query.trim()) await submitSearch(query)
+			const q = query.trim()
+			if (!q) return
+			try {
+				const matched = await trpcClient.player.matchSearch.query({
+					query: q,
+				})
+				if (matched.error) player.setError(matched.error)
+				await applySearchOrUploaderHits(matched.strategy, q)
+			} catch (err) {
+				player.setError(err instanceof Error ? err.message : String(err))
+			}
 		})()
 	}
 

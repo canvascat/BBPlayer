@@ -63,22 +63,35 @@ export function mergePlaySessionSet(
 	if (!enabled) return incoming
 	if (!stored) return incoming
 
+	if (incoming.queue.length === 0) {
+		return {
+			...incoming,
+			queue: stored.queue,
+			index: incoming.index,
+		}
+	}
+
 	const storedIds = new Set(stored.queue.map((item) => item.id))
-	const isSubset = incoming.queue.every((item) => storedIds.has(item.id))
-	if (!isSubset) return incoming
+	const hasOverlap = incoming.queue.some((item) => storedIds.has(item.id))
+	if (!hasOverlap) return incoming
+
+	const incomingIds = new Set(incoming.queue.map((item) => item.id))
+	const kept = stored.queue.filter(
+		(item) => !isSongVideo(item) || incomingIds.has(item.id),
+	)
+	const appended = incoming.queue.filter((item) => !storedIds.has(item.id))
+	const queue = [...kept, ...appended]
 
 	const incomingCurrent = incoming.queue[incoming.index]
 	let index = stored.index
 	if (incomingCurrent) {
-		const mapped = stored.queue.findIndex(
-			(item) => item.id === incomingCurrent.id,
-		)
+		const mapped = queue.findIndex((item) => item.id === incomingCurrent.id)
 		if (mapped >= 0) index = mapped
 	}
 
 	return {
 		...incoming,
-		queue: stored.queue,
+		queue,
 		index,
 	}
 }

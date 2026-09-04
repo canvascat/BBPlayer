@@ -11,6 +11,12 @@ import {
 	CardTitle,
 } from '@/components/ui/card'
 import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle,
+} from '@/components/ui/empty'
+import {
 	CoverFace,
 	CoverMeta,
 	coverButtonClass,
@@ -35,6 +41,7 @@ function HomePage() {
 		submitSearch,
 		hits,
 		hitsTitle,
+		filterNonSongs,
 		openHit,
 	} = useApp()
 
@@ -160,6 +167,15 @@ function HomePage() {
 						))}
 					</div>
 				</div>
+			) : hitsTitle ? (
+				<Empty>
+					<EmptyHeader>
+						<EmptyTitle>没有歌曲</EmptyTitle>
+						<EmptyDescription>
+							{filterNonSongs ? '已按设置隐藏非歌曲视频' : '这个列表还是空的。'}
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			) : null}
 			{player.queue.length > 0 && (
 				<div className='flex flex-col gap-6'>

@@ -127,3 +127,39 @@ test('set 换了一轮队列则整份覆盖', () => {
 		['x'],
 	)
 })
+
+test('set 过滤开启时追加新歌曲并保留隐藏曲', () => {
+	const stored = session([talk, song], 0)
+	const extra = { ...song, id: 's2', bvid: 'BV1s2' }
+	const incoming = session([song, extra], 1)
+	const merged = mergePlaySessionSet(true, stored, incoming)
+	assert.deepEqual(
+		merged.queue.map((item) => item.id),
+		['t', 's', 's2'],
+	)
+	assert.equal(merged.queue[merged.index]?.id, 's2')
+})
+
+test('set 过滤开启时从可见子集删歌并保留隐藏曲', () => {
+	const extra = { ...song, id: 's2', bvid: 'BV1s2' }
+	const stored = session([talk, song, extra], 0)
+	const incoming = session([song], 0)
+	const merged = mergePlaySessionSet(true, stored, incoming)
+	assert.deepEqual(
+		merged.queue.map((item) => item.id),
+		['t', 's'],
+	)
+	assert.equal(merged.queue[merged.index]?.id, 's')
+})
+
+test('set 过滤开启且上报空队列则保留已存队列', () => {
+	const stored = session([talk, song], 1)
+	const incoming = session([], 0)
+	const merged = mergePlaySessionSet(true, stored, incoming)
+	assert.deepEqual(
+		merged.queue.map((item) => item.id),
+		['t', 's'],
+	)
+	assert.equal(merged.positionMs, incoming.positionMs)
+	assert.equal(merged.index, 0)
+})
