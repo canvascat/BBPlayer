@@ -7,6 +7,7 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import { OverflowText } from '@/cover-ui'
 import { cn } from '@/lib/utils'
 import { formatMs, type TrackItem } from '@/playback'
 import { trpcClient } from '@/trpc'
@@ -55,10 +56,11 @@ export function LibraryTrackList({
 								alt=''
 							/>
 							<div className='min-w-0 text-left'>
-								<div className='truncate'>{page.title}</div>
-								<div className='text-muted-foreground truncate text-xs'>
-									{page.artist}
-								</div>
+								<OverflowText text={page.title} />
+								<OverflowText
+									className='text-muted-foreground text-xs'
+									text={page.artist}
+								/>
 							</div>
 							<span className='text-muted-foreground text-xs'>
 								{statusLabel

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { CoverFace, pageTitleClass } from '@/cover-ui'
+import { CoverFace, OverflowText, pageTitleClass } from '@/cover-ui'
 
 export function LibraryDetailChrome({
 	back,
@@ -21,18 +21,30 @@ export function LibraryDetailChrome({
 }) {
 	return (
 		<>
-			<div className='flex flex-col gap-3'>
-				<h1 className={pageTitleClass}>{title}</h1>
+			<div className='flex min-w-0 flex-col gap-3'>
+				<OverflowText
+					as='h1'
+					className={pageTitleClass}
+					text={title}
+				/>
 				{back}
 			</div>
-			<div className='flex items-center gap-5'>
-				<CoverFace
-					src={coverSrc}
-					fallback={coverFallback}
-				/>
+			<div className='flex min-w-0 items-center gap-5'>
+				<div className='shrink-0'>
+					<CoverFace
+						src={coverSrc}
+						fallback={coverFallback}
+					/>
+				</div>
 				<div className='flex min-w-0 flex-col gap-2'>
-					<div className='text-3xl font-semibold tracking-tight'>{title}</div>
-					<div className='text-muted-foreground text-sm'>{subtitle}</div>
+					<OverflowText
+						className='text-3xl font-semibold tracking-tight'
+						text={title}
+					/>
+					<OverflowText
+						className='text-muted-foreground text-sm'
+						text={subtitle}
+					/>
 					<div className='flex items-center gap-2'>{actions}</div>
 				</div>
 			</div>

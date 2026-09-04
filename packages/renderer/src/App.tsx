@@ -32,7 +32,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { navLabelClass } from '@/cover-ui'
+import { navLabelClass, OverflowText } from '@/cover-ui'
 import { cn } from '@/lib/utils'
 import { isLibraryPath } from '@/library-nav'
 
@@ -155,13 +155,17 @@ export default function App() {
 						</Button>
 						<div className='flex-1' />
 						<Button
-							className='h-9 w-full justify-start px-2'
+							className='h-9 w-full min-w-0 justify-start px-2'
 							nativeButton={false}
 							render={<Link to='/settings' />}
 							variant='ghost'
 						>
 							<UserIcon data-icon='inline-start' />
-							{account?.name ?? '未登录'}
+							<OverflowText
+								as='span'
+								className='flex-1'
+								text={account?.name ?? '未登录'}
+							/>
 						</Button>
 					</aside>
 					<Separator orientation='vertical' />
@@ -192,12 +196,14 @@ export default function App() {
 								</div>
 							)}
 							<div className='min-w-0 text-left'>
-								<div className='truncate text-sm'>
-									{current?.title ?? '未在播放'}
-								</div>
-								<div className='text-muted-foreground truncate text-xs'>
-									{current?.artist || '从搜索开始'}
-								</div>
+								<OverflowText
+									className='text-sm'
+									text={current?.title ?? '未在播放'}
+								/>
+								<OverflowText
+									className='text-muted-foreground text-xs'
+									text={current?.artist || '从搜索开始'}
+								/>
 							</div>
 						</Button>
 						<div className='flex items-center justify-center gap-2'>
@@ -353,10 +359,11 @@ export default function App() {
 											alt=''
 										/>
 										<div className='min-w-0 text-left'>
-											<div className='truncate'>{item.title}</div>
-											<div className='text-muted-foreground truncate text-xs'>
-												{item.artist}
-											</div>
+											<OverflowText text={item.title} />
+											<OverflowText
+												className='text-muted-foreground text-xs'
+												text={item.artist}
+											/>
 										</div>
 									</Button>
 									<Button

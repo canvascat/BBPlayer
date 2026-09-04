@@ -1,6 +1,7 @@
 import type { SearchHit } from '@/app-context'
 import { useApp } from '@/app-context'
 import { Button } from '@/components/ui/button'
+import { OverflowText } from '@/cover-ui'
 import { trpcClient } from '@/trpc'
 
 export function LibraryVideoList({ videos }: { videos: SearchHit[] }) {
@@ -36,10 +37,11 @@ export function LibraryVideoList({ videos }: { videos: SearchHit[] }) {
 						alt=''
 					/>
 					<div className='min-w-0 text-left'>
-						<div className='truncate'>{video.title}</div>
-						<div className='text-muted-foreground truncate text-xs'>
-							{video.author}
-						</div>
+						<OverflowText text={video.title} />
+						<OverflowText
+							className='text-muted-foreground text-xs'
+							text={video.author}
+						/>
 					</div>
 					<span className='text-muted-foreground text-xs'>
 						{video.duration}

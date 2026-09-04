@@ -1,5 +1,24 @@
 import { cn } from '@/lib/utils'
 
+export function OverflowText({
+	text,
+	className,
+	as: Tag = 'div',
+}: {
+	text: string
+	className?: string
+	as?: 'div' | 'h1' | 'p' | 'span'
+}) {
+	return (
+		<Tag
+			className={cn('min-w-0 truncate', className)}
+			title={text}
+		>
+			{text}
+		</Tag>
+	)
+}
+
 export function greeting() {
 	const hour = new Date().getHours()
 	if (hour < 6) return '凌晨好'
@@ -59,10 +78,14 @@ export function CoverMeta({
 					'line-clamp-2 text-left text-sm',
 					active && 'text-primary',
 				)}
+				title={title}
 			>
 				{title}
 			</span>
-			<span className='text-muted-foreground line-clamp-1 text-left text-xs'>
+			<span
+				className='text-muted-foreground line-clamp-1 text-left text-xs'
+				title={subtitle}
+			>
 				{subtitle}
 			</span>
 		</>

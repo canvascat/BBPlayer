@@ -16,6 +16,7 @@ import {
 	coverButtonClass,
 	coverGridClass,
 	greeting,
+	OverflowText,
 	pageTitleClass,
 	stripHtml,
 } from '@/cover-ui'
@@ -97,10 +98,14 @@ function HomePage() {
 								<div className='text-muted-foreground text-xs'>
 									队列 {player.queue.length} 首
 								</div>
-								<div className='truncate text-base'>{current.title}</div>
-								<div className='text-muted-foreground truncate'>
-									{current.artist}
-								</div>
+								<OverflowText
+									className='text-base'
+									text={current.title}
+								/>
+								<OverflowText
+									className='text-muted-foreground'
+									text={current.artist}
+								/>
 								<div className='flex flex-wrap gap-2'>
 									<Button
 										type='button'
