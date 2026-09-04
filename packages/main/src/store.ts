@@ -2,6 +2,7 @@ import type { BiliAccount } from './bili'
 import type { LibraryTrack, LocalPlaylist } from './db'
 import type { CachedTrack } from './downloads'
 import type { LyricSource } from './lyric-match'
+import type { MusicMetaEntry } from './music-meta-store'
 
 export type SkinTheme = {
 	name: string
@@ -17,6 +18,9 @@ export type Settings = {
 	filterNonSongs: boolean
 	skin: SkinTheme | null
 	lyricSource: LyricSource
+	musicAiBaseUrl: string
+	musicAiApiKey: string
+	musicAiModel: string
 }
 
 export type PlaySession = {
@@ -31,6 +35,7 @@ export type PlaySession = {
 export type Persisted = {
 	session?: PlaySession
 	lyricOffsets?: Record<string, number>
+	musicMeta?: Record<string, MusicMetaEntry>
 	playlists: LocalPlaylist[]
 	account: BiliAccount | null
 	downloads: CachedTrack[]
