@@ -114,3 +114,80 @@ test('同时最多两个请求', async () => {
 	])
 	assert.equal(max, 2)
 })
+
+test('waiter 排队时插入迟到的第四个调用，并发 fetch 仍不超过 2', async () => {
+	let current = 0
+	let max = 0
+	let started = 0
+	let first = true
+	let releaseFirst: (() => void) | undefined
+	const laterHolds: Array<() => void> = []
+	const config = { baseUrl: 'https://x/v4/', apiKey: 'k', model: 'm' }
+	let fourth: ReturnType<typeof completeMusicAi> | undefined
+
+	const okBody = JSON.stringify({
+		choices: [
+			{
+				message: {
+					content:
+						'{"tracks":[{"index":1,"title":"a","artist":"b","confidence":"high","kind":"cover"}]}',
+				},
+			},
+		],
+	})
+
+	const fetchImpl: typeof fetch = async () => {
+		const isFirst = first
+		first = false
+		current += 1
+		started += 1
+		max = Math.max(max, current)
+		await new Promise<void>((resolve) => {
+			if (isFirst) releaseFirst = resolve
+			else laterHolds.push(resolve)
+		})
+		current -= 1
+		const response = new Response(okBody, { status: 200 })
+		if (!isFirst) return response
+		const origJson = response.json.bind(response)
+		response.json = () =>
+			origJson().then((data) => {
+				queueMicrotask(() => {
+					queueMicrotask(() => {
+						fourth ??= completeMusicAi(input, config, fetchImpl)
+					})
+				})
+				return data
+			})
+		return response
+	}
+
+	const firstCall = completeMusicAi(input, config, fetchImpl)
+	const secondCall = completeMusicAi(input, config, fetchImpl)
+	for (let i = 0; i < 20; i++) {
+		if (started >= 2) break
+		await Promise.resolve()
+	}
+	assert.equal(started, 2)
+
+	const thirdCall = completeMusicAi(input, config, fetchImpl)
+	await Promise.resolve()
+	await Promise.resolve()
+	assert.equal(started, 2)
+
+	releaseFirst!()
+	await firstCall
+	for (let i = 0; i < 40; i++) {
+		if (fourth && started >= 3) break
+		await Promise.resolve()
+	}
+	assert.ok(fourth)
+	assert.ok(max <= 2)
+
+	for (let i = 0; i < 30; i++) {
+		while (laterHolds.length > 0) laterHolds.shift()!()
+		await Promise.resolve()
+	}
+	await Promise.all([secondCall, thirdCall, fourth])
+	assert.equal(max, 2)
+})
