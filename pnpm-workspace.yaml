@@ -1,9 +1,33 @@
 packages:
   - packages/*
 
-onlyBuiltDependencies:
-  - electron
-  - electron-winstaller
-  - esbuild
-  - sharp
-  - unrs-resolver
+# pnpm 设置集中在此文件（pnpm >= 11 只从 pnpm-workspace.yaml 读取，.npmrc 仅剩 registry/auth）
+# 键名一律用 camelCase
+nodeLinker: hoisted
+shamefullyHoist: true
+autoInstallPeers: false
+
+# vite / vite-plus 统一走 catalog，避免根与子包各自漂移
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@0.3.0
+  vite-plus: 0.3.0
+
+overrides:
+  vite: 'catalog:'
+
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: '*'
+
+# 本仓库只打 macOS，不装 Windows Squirrel
+packageExtensions:
+  app-builder-lib:
+    peerDependenciesMeta:
+      electron-builder-squirrel-windows:
+        optional: true
+
+# pnpm >= 11 用 allowBuilds 取代了已移除的 onlyBuiltDependencies
+allowBuilds:
+  electron: true
