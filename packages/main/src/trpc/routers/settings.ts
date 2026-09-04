@@ -15,6 +15,7 @@ const settingsPatchSchema = z.object({
 	continuePlayingAfterClose: z.boolean().optional(),
 	menuBarShowLyrics: z.boolean().optional(),
 	autoCache: z.boolean().optional(),
+	filterNonSongs: z.boolean().optional(),
 	skin: z.union([z.null(), skinSchema]).optional(),
 	lyricSource: z.enum(['auto', 'netease', 'qqmusic', 'kugou']).optional(),
 })
@@ -25,6 +26,7 @@ export function readSettings(store: Pick<TrpcStore, 'get'>) {
 		continuePlayingAfterClose: store.get('continuePlayingAfterClose') ?? true,
 		menuBarShowLyrics: store.get('menuBarShowLyrics') ?? false,
 		autoCache: store.get('autoCache') ?? true,
+		filterNonSongs: store.get('filterNonSongs') ?? false,
 		account: store.get('account') ?? null,
 		skin: store.get('skin') ?? null,
 		lyricSource: parseLyricSource(store.get('lyricSource')),
@@ -52,6 +54,9 @@ export const settingsRouter = router({
 			}
 			if (typeof patch.autoCache === 'boolean') {
 				ctx.store.set('autoCache', patch.autoCache)
+			}
+			if (typeof patch.filterNonSongs === 'boolean') {
+				ctx.store.set('filterNonSongs', patch.filterNonSongs)
 			}
 			if (
 				patch.skin === null ||

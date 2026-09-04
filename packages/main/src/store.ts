@@ -14,6 +14,7 @@ export type Settings = {
 	continuePlayingAfterClose: boolean
 	menuBarShowLyrics: boolean
 	autoCache: boolean
+	filterNonSongs: boolean
 	skin: SkinTheme | null
 	lyricSource: LyricSource
 }

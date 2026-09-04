@@ -40,3 +40,18 @@ test('settings.set 写入歌词源', async () => {
 	assert.equal(store.get('lyricSource'), 'auto')
 	assert.equal((await caller.get()).lyricSource, 'auto')
 })
+
+test('settings.get 默认 filterNonSongs 为 false', async () => {
+	const caller = settingsRouter.createCaller(
+		mockTrpcContext({ store: memoryStore() }),
+	)
+	assert.equal((await caller.get()).filterNonSongs, false)
+})
+
+test('settings.set 写入 filterNonSongs', async () => {
+	const store = memoryStore()
+	const caller = settingsRouter.createCaller(mockTrpcContext({ store }))
+	await caller.set({ filterNonSongs: true })
+	assert.equal(store.get('filterNonSongs'), true)
+	assert.equal((await caller.get()).filterNonSongs, true)
+})
