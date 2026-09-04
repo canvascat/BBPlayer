@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { getAudioStream } from '../../bili'
 import { downloadManager } from '../../downloads'
 import { filterSongItems, readFilterNonSongs } from '../../filter-non-songs'
+import { overlayMusicMeta } from '../../music-meta-store'
 import { cookieFrom } from '../context'
 import { fromObservable } from '../observable'
 import { publicProcedure, router } from '../trpc'
@@ -17,11 +18,16 @@ const trackSchema = z.object({
 	artwork: z.string(),
 	duration: z.number(),
 	tid: z.number().optional(),
+	musicTitle: z.string().optional(),
+	musicArtist: z.string().optional(),
 })
 
 export const downloadsRouter = router({
 	list: publicProcedure.query(({ ctx }) =>
-		filterSongItems(readFilterNonSongs(ctx.store), downloadManager.list()),
+		overlayMusicMeta(
+			ctx.store,
+			filterSongItems(readFilterNonSongs(ctx.store), downloadManager.list()),
+		),
 	),
 	status: publicProcedure.query(() => downloadManager.statusMap()),
 	start: publicProcedure.input(trackSchema).mutation(async ({ ctx, input }) => {

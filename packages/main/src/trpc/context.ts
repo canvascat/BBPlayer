@@ -12,6 +12,7 @@ export type ResolveTrack = {
 	artist?: string
 	artwork?: string
 	duration?: number
+	musicTitle?: string
 }
 
 export type GeetestResult = {

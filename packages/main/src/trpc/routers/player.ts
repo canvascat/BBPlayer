@@ -24,6 +24,8 @@ const resolveTrackSchema = z.object({
 	artist: z.string().optional(),
 	artwork: z.string().optional(),
 	duration: z.number().optional(),
+	musicTitle: z.string().optional(),
+	musicArtist: z.string().optional(),
 })
 
 export const playerRouter = router({

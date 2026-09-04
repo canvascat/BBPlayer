@@ -48,6 +48,7 @@ import { exportCachedTracks, exportSummary } from './export-audio'
 import { parseLyricSource } from './lyric-match'
 import { readLyricOffset, trackIdForOffset } from './lyric-offset'
 import { fetchMatchedLyrics } from './lyrics-fetch'
+import { lyricSearchInput } from './music-meta'
 import { openGeetestWindow } from './phone-login'
 import { type AppStore } from './store'
 import { createTRPCContext } from './trpc/context'
@@ -543,6 +544,7 @@ async function resolvePlay(track: {
 	artist?: string
 	artwork?: string
 	duration?: number
+	musicTitle?: string
 }) {
 	try {
 		const id = trackIdForOffset(track)
@@ -586,11 +588,15 @@ async function resolvePlay(track: {
 					track.cid,
 					cookie(),
 				)
+				const search = lyricSearchInput(
+					{ title: track.title, musicTitle: track.musicTitle },
+					preciseKeyword,
+				)
 				const raw = await fetchMatchedLyrics({
-					title: track.title,
+					title: search.title,
 					durationSec: track.duration ?? 0,
 					source: parseLyricSource(store.get('lyricSource')),
-					preciseKeyword,
+					preciseKeyword: search.preciseKeyword,
 				})
 				if (raw?.lrc) {
 					lyrics = splLinesToAmll(parseAndMergeLyrics(raw))
