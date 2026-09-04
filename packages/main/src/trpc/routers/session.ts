@@ -1,5 +1,10 @@
 import { z } from 'zod'
 
+import {
+	filterPlaySession,
+	mergePlaySessionSet,
+	readFilterNonSongs,
+} from '../../filter-non-songs.ts'
 import { publicProcedure, router } from '../trpc'
 
 const libraryTrackSchema = z.object({
@@ -10,6 +15,7 @@ const libraryTrackSchema = z.object({
 	artist: z.string(),
 	artwork: z.string(),
 	duration: z.number(),
+	tid: z.number().optional(),
 })
 
 const playSessionSchema = z.object({
@@ -22,12 +28,26 @@ const playSessionSchema = z.object({
 })
 
 export const sessionRouter = router({
-	get: publicProcedure.query(({ ctx }) => ctx.store.get('session') ?? null),
+	get: publicProcedure.query(({ ctx }) => {
+		const session = ctx.store.get('session')
+		if (!session) return null
+		return filterPlaySession(readFilterNonSongs(ctx.store), session)
+	}),
 	set: publicProcedure
 		.input(z.union([playSessionSchema, z.null()]))
-		.mutation(({ ctx, input: session }) => {
-			if (session) ctx.store.set('session', session)
-			else ctx.store.delete('session')
+		.mutation(({ ctx, input }) => {
+			if (!input) {
+				ctx.store.delete('session')
+				return true
+			}
+			ctx.store.set(
+				'session',
+				mergePlaySessionSet(
+					readFilterNonSongs(ctx.store),
+					ctx.store.get('session'),
+					input,
+				),
+			)
 			return true
 		}),
 })
