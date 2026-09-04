@@ -132,6 +132,7 @@ export async function getVideoDetails(bvid: string, cookie: string) {
 		owner: { name: string; mid: number; face: string }
 		cid: number
 		tid: number
+		desc?: string
 		pages: { part: string; duration: number; cid: number; page: number }[]
 	}
 	return {

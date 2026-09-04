@@ -2,6 +2,7 @@ import { isSongVideo } from '@bbplayer/core'
 import { z } from 'zod'
 
 import { filterSongItems, readFilterNonSongs } from '../../filter-non-songs.ts'
+import { overlayMusicMeta } from '../../music-meta-store.ts'
 import { publicProcedure, router } from '../trpc'
 
 const libraryTrackSchema = z.object({
@@ -13,6 +14,8 @@ const libraryTrackSchema = z.object({
 	artwork: z.string(),
 	duration: z.number(),
 	tid: z.number().optional(),
+	musicTitle: z.string().optional(),
+	musicArtist: z.string().optional(),
 })
 
 export const libraryRouter = router({
@@ -31,8 +34,11 @@ export const libraryRouter = router({
 		.input(z.object({ id: z.string() }))
 		.query(({ ctx, input }) => {
 			const playlist = ctx.playerDb.get(input.id)
-			if (!playlist || !readFilterNonSongs(ctx.store)) return playlist
-			return { ...playlist, tracks: filterSongItems(true, playlist.tracks) }
+			if (!playlist) return playlist
+			const tracks = readFilterNonSongs(ctx.store)
+				? filterSongItems(true, playlist.tracks)
+				: playlist.tracks
+			return { ...playlist, tracks: overlayMusicMeta(ctx.store, tracks) }
 		}),
 	create: publicProcedure
 		.input(

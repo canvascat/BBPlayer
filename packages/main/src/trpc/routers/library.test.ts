@@ -82,3 +82,29 @@ test('library.get 在过滤开启时去掉非歌曲', async () => {
 		['s'],
 	)
 })
+
+test('library.get 叠上 musicMeta 缓存', async () => {
+	const playerDb = {
+		...mockTrpcContext().playerDb,
+		get: () => playlist,
+	}
+	const caller = libraryRouter.createCaller(
+		mockTrpcContext({
+			store: memoryStore({
+				musicMeta: {
+					s: {
+						musicTitle: '夜に駆ける',
+						musicArtist: 'YOASOBI',
+						sourceHash: 'x',
+					},
+				},
+			}),
+			playerDb,
+		}),
+	)
+	const result = await caller.get({ id: '1' })
+	const song = result?.tracks.find((item) => item.id === 's')
+	assert.equal(song?.title, '【翻唱】夜')
+	assert.equal(song?.musicTitle, '夜に駆ける')
+	assert.equal(song?.musicArtist, 'YOASOBI')
+})

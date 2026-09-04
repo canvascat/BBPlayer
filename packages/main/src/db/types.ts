@@ -7,6 +7,8 @@ export interface LibraryTrack {
 	artwork: string
 	duration: number
 	tid?: number
+	musicTitle?: string
+	musicArtist?: string
 }
 
 export type ShareRole = 'owner' | 'editor' | 'subscriber'

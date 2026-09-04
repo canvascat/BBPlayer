@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 
+import { displayArtist, displayTitle } from '@bbplayer/core'
+
 import type { CachedTrack } from './downloads'
 
 const execFileAsync = promisify(execFile)
@@ -138,7 +140,7 @@ export async function exportCachedTracks(options: {
 			continue
 		}
 		try {
-			const base = safeExportName(track.artist, track.title)
+			const base = safeExportName(displayArtist(track), displayTitle(track))
 			await embedCover({
 				source,
 				dest: uniquePath(options.directory, base, '.m4a'),

@@ -21,6 +21,7 @@ import {
 	filterVideoPayload,
 	readFilterNonSongs,
 } from '../../filter-non-songs'
+import { fillMusicFields } from '../../music-meta'
 import { cookieFrom } from '../context'
 import { publicProcedure, router } from '../trpc'
 
@@ -112,12 +113,41 @@ export const biliRouter = router({
 				duration: page.duration,
 				tid: details.tid,
 			}))
+			if (pages.length === 0) {
+				return {
+					bvid: details.bvid,
+					title: details.title,
+					cover,
+					owner: details.owner,
+					pages,
+					filtered: gate.filtered,
+				}
+			}
+			const filled = await fillMusicFields(
+				{
+					bvid: input.bvid,
+					title: details.title,
+					desc: details.desc,
+					ownerName: details.owner.name,
+					pages: pages.map((page, index) => ({
+						id: page.id,
+						part: details.pages[index]?.part || page.title,
+					})),
+					isMultiPage: details.pages.length > 1,
+				},
+				{ store: ctx.store },
+			)
+			const filledMap = new Map(filled.map((item) => [item.id, item]))
+			const withMusic = pages.map((page) => ({
+				...page,
+				...filledMap.get(page.id),
+			}))
 			return {
 				bvid: details.bvid,
 				title: details.title,
 				cover,
 				owner: details.owner,
-				pages,
+				pages: withMusic,
 				filtered: gate.filtered,
 			}
 		}),

@@ -5,6 +5,7 @@ import {
 	mergePlaySessionSet,
 	readFilterNonSongs,
 } from '../../filter-non-songs.ts'
+import { overlayMusicMeta } from '../../music-meta-store.ts'
 import { publicProcedure, router } from '../trpc'
 
 const libraryTrackSchema = z.object({
@@ -16,6 +17,8 @@ const libraryTrackSchema = z.object({
 	artwork: z.string(),
 	duration: z.number(),
 	tid: z.number().optional(),
+	musicTitle: z.string().optional(),
+	musicArtist: z.string().optional(),
 })
 
 const playSessionSchema = z.object({
@@ -31,7 +34,11 @@ export const sessionRouter = router({
 	get: publicProcedure.query(({ ctx }) => {
 		const session = ctx.store.get('session')
 		if (!session) return null
-		return filterPlaySession(readFilterNonSongs(ctx.store), session)
+		const filtered = filterPlaySession(readFilterNonSongs(ctx.store), session)
+		return {
+			...filtered,
+			queue: overlayMusicMeta(ctx.store, filtered.queue),
+		}
 	}),
 	set: publicProcedure
 		.input(z.union([playSessionSchema, z.null()]))
