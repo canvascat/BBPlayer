@@ -4,6 +4,7 @@
 		{ "path": "./packages/core/tsconfig.json" },
 		{ "path": "./packages/common/tsconfig.json" },
 		{ "path": "./packages/main/tsconfig.json" },
+		{ "path": "./packages/trpc-dev/tsconfig.json" },
 		{ "path": "./packages/renderer/tsconfig.json" }
 	],
 	"compilerOptions": {

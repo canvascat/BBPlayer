@@ -8,7 +8,7 @@ import {
 	getPhoneLoginCaptcha,
 	loginWithPhoneSms,
 	sendPhoneLoginSms,
-} from '../../phone-login'
+} from '../../phone-sms'
 import { cookieFrom } from '../context'
 import type { QrUpdate } from '../events'
 import { fromObservable } from '../observable'
