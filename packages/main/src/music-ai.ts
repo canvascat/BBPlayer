@@ -23,7 +23,8 @@ let active = 0
 const waiters: Array<() => void> = []
 
 async function acquire(): Promise<void> {
-	if (active >= MUSIC_AI_CONCURRENCY) {
+	// eslint-disable-next-line no-unmodified-loop-condition -- `active` changes in release() during await
+	while (active >= MUSIC_AI_CONCURRENCY) {
 		await new Promise<void>((resolve) => {
 			waiters.push(resolve)
 		})
