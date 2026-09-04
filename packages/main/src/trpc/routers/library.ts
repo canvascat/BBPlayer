@@ -1,5 +1,7 @@
+import { isSongVideo } from '@bbplayer/core'
 import { z } from 'zod'
 
+import { filterSongItems, readFilterNonSongs } from '../../filter-non-songs.ts'
 import { publicProcedure, router } from '../trpc'
 
 const libraryTrackSchema = z.object({
@@ -10,13 +12,28 @@ const libraryTrackSchema = z.object({
 	artist: z.string(),
 	artwork: z.string(),
 	duration: z.number(),
+	tid: z.number().optional(),
 })
 
 export const libraryRouter = router({
-	list: publicProcedure.query(({ ctx }) => ctx.playerDb.list()),
+	list: publicProcedure.query(({ ctx }) => {
+		const list = ctx.playerDb.list()
+		if (!readFilterNonSongs(ctx.store)) return list
+		return list.map((item) => {
+			const playlist = ctx.playerDb.get(item.id)
+			const itemCount = playlist
+				? playlist.tracks.filter((track) => isSongVideo(track)).length
+				: 0
+			return { ...item, itemCount }
+		})
+	}),
 	get: publicProcedure
 		.input(z.object({ id: z.string() }))
-		.query(({ ctx, input }) => ctx.playerDb.get(input.id)),
+		.query(({ ctx, input }) => {
+			const playlist = ctx.playerDb.get(input.id)
+			if (!playlist || !readFilterNonSongs(ctx.store)) return playlist
+			return { ...playlist, tracks: filterSongItems(true, playlist.tracks) }
+		}),
 	create: publicProcedure
 		.input(
 			z.object({

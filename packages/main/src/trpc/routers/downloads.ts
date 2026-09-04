@@ -1,7 +1,9 @@
+import { map } from 'rxjs'
 import { z } from 'zod'
 
 import { getAudioStream } from '../../bili'
 import { downloadManager } from '../../downloads'
+import { filterSongItems, readFilterNonSongs } from '../../filter-non-songs'
 import { cookieFrom } from '../context'
 import { fromObservable } from '../observable'
 import { publicProcedure, router } from '../trpc'
@@ -14,10 +16,13 @@ const trackSchema = z.object({
 	artist: z.string(),
 	artwork: z.string(),
 	duration: z.number(),
+	tid: z.number().optional(),
 })
 
 export const downloadsRouter = router({
-	list: publicProcedure.query(() => downloadManager.list()),
+	list: publicProcedure.query(({ ctx }) =>
+		filterSongItems(readFilterNonSongs(ctx.store), downloadManager.list()),
+	),
 	status: publicProcedure.query(() => downloadManager.statusMap()),
 	start: publicProcedure.input(trackSchema).mutation(async ({ ctx, input }) => {
 		const stream = await getAudioStream(
@@ -42,7 +47,17 @@ export const downloadsRouter = router({
 		.input(z.object({ ids: z.array(z.string()).optional() }).optional())
 		.mutation(({ ctx, input }) => ctx.exportDownloads(input?.ids)),
 	updates: publicProcedure.subscription(({ ctx }) =>
-		fromObservable(ctx.events.downloads$),
+		fromObservable(
+			ctx.events.downloads$.pipe(
+				map((payload) => ({
+					...payload,
+					records: filterSongItems(
+						readFilterNonSongs(ctx.store),
+						payload.records as Array<{ title: string; tid?: number | null }>,
+					),
+				})),
+			),
+		),
 	),
 })
 
