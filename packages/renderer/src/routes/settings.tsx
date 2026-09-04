@@ -41,6 +41,8 @@ function SettingsPage() {
 		setMenuBarShowLyrics,
 		autoCache,
 		setAutoCache,
+		filterNonSongs,
+		setFilterNonSongs,
 		lyricSource,
 		setLyricSource,
 		exportCached,
@@ -115,6 +117,13 @@ function SettingsPage() {
 						label='播放时自动缓存音频'
 						checked={autoCache}
 						onCheckedChange={setAutoCache}
+					/>
+					<SettingSwitch
+						id='filter-non-songs'
+						label='过滤非歌曲视频'
+						description='按分区和标题隐藏非歌曲，不删除已保存内容。'
+						checked={filterNonSongs}
+						onCheckedChange={setFilterNonSongs}
 					/>
 					<Field orientation='horizontal'>
 						<FieldContent>

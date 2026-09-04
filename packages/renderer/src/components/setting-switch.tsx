@@ -1,14 +1,21 @@
-import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
+import {
+	Field,
+	FieldContent,
+	FieldDescription,
+	FieldLabel,
+} from '@/components/ui/field'
 import { Switch } from '@/components/ui/switch'
 
 export function SettingSwitch({
 	id,
 	label,
+	description,
 	checked,
 	onCheckedChange,
 }: {
 	id: string
 	label: string
+	description?: string
 	checked: boolean
 	onCheckedChange: (checked: boolean) => void
 }) {
@@ -16,6 +23,9 @@ export function SettingSwitch({
 		<Field orientation='horizontal'>
 			<FieldContent>
 				<FieldLabel htmlFor={id}>{label}</FieldLabel>
+				{description ? (
+					<FieldDescription>{description}</FieldDescription>
+				) : null}
 			</FieldContent>
 			<Switch
 				id={id}

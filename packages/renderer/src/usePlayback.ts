@@ -1,6 +1,7 @@
 import { generateUniqueTrackKey, type AmllLyricLine } from '@bbplayer/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { applyFilterSessionView } from './filter-session'
 import { lyricClockMs, lyricSeekMs, stepLyricOffset } from './lyric-offset'
 import { currentLyricText } from './lyric-text'
 import {
@@ -357,18 +358,41 @@ export function usePlayback() {
 		return () => window.clearInterval(timer)
 	}, [sleepUntil])
 
+	const applySessionQueue = useCallback(
+		(session: { queue: TrackItem[]; index: number }) => {
+			const prevCurrentId = queueRef.current[indexRef.current]?.id
+			const result = applyFilterSessionView(prevCurrentId, session)
+			if (result.action === 'play') {
+				void playTrackRef.current(result.queue, result.index)
+				return
+			}
+			setQueue(result.queue)
+			setIndex(result.index)
+			if (result.action === 'stop') {
+				playGenerationRef.current += 1
+				const audio = audioRef.current
+				audio?.pause()
+				if (audio) audio.src = ''
+				setLyrics([])
+			}
+		},
+		[],
+	)
+
 	useEffect(() => {
 		void trpcClient.session.get.query().then((session) => {
-			if (!session?.queue?.length) return
-			setQueue(session.queue)
-			setIndex(session.index)
+			if (!session) return
+			applySessionQueue({
+				queue: session.queue ?? [],
+				index: session.index ?? 0,
+			})
 			setRepeatMode(session.repeatMode)
 			setShuffle(session.shuffle)
 			setPlaybackRate(session.playbackRate || 1)
 			restoreSeekRef.current = session.positionMs || 0
 			setCurrentTime(session.positionMs || 0)
 		})
-	}, [])
+	}, [applySessionQueue])
 
 	useEffect(() => {
 		const handle = window.setTimeout(() => {
@@ -453,6 +477,7 @@ export function usePlayback() {
 		sleepLeft,
 		lyricLine,
 		playTrack,
+		applySessionQueue,
 		skip,
 		toggle,
 		cycleRepeat,

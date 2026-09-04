@@ -64,6 +64,7 @@ function useAppModel() {
 	const [createTitle, setCreateTitle] = useState('')
 	const [pickPlaylistFor, setPickPlaylistFor] = useState<TrackItem | null>(null)
 	const [autoCache, setAutoCache] = useState(true)
+	const [filterNonSongs, setFilterNonSongs] = useState(false)
 	const [lyricSource, setLyricSource] = useState<
 		'auto' | 'netease' | 'qqmusic' | 'kugou'
 	>('netease')
@@ -127,6 +128,7 @@ function useAppModel() {
 			setContinuePlayingAfterClose(settings.continuePlayingAfterClose)
 			setMenuBarShowLyrics(settings.menuBarShowLyrics)
 			setAutoCache(settings.autoCache ?? true)
+			setFilterNonSongs(settings.filterNonSongs ?? false)
 			setLyricSource(settings.lyricSource ?? 'netease')
 			setSkin(settings.skin ?? null)
 			setAccount(settings.account)
@@ -309,6 +311,23 @@ function useAppModel() {
 		void trpcClient.settings.set.mutate({ autoCache: value })
 	}
 
+	const persistFilterNonSongs = (value: boolean) => {
+		setFilterNonSongs(value)
+		void (async () => {
+			await trpcClient.settings.set.mutate({ filterNonSongs: value })
+			const session = await trpcClient.session.get.query()
+			player.applySessionQueue({
+				queue: session?.queue ?? [],
+				index: session?.index ?? 0,
+			})
+			await refreshPlaylists()
+			bumpLibrary()
+			await loadRemoteLibrary()
+			setDownloads(await trpcClient.downloads.list.query())
+			if (query.trim()) await submitSearch(query)
+		})()
+	}
+
 	const persistLyricSource = (
 		value: 'auto' | 'netease' | 'qqmusic' | 'kugou',
 	) => {
@@ -428,6 +447,8 @@ function useAppModel() {
 		setPickPlaylistFor,
 		autoCache,
 		setAutoCache: persistAutoCache,
+		filterNonSongs,
+		setFilterNonSongs: persistFilterNonSongs,
 		lyricSource,
 		setLyricSource: persistLyricSource,
 		skin,

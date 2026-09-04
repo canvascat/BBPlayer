@@ -689,6 +689,7 @@ app.whenReady().then(async () => {
 			continuePlayingAfterClose: true,
 			menuBarShowLyrics: false,
 			autoCache: true,
+			filterNonSongs: false,
 			playlists: [],
 			account: null,
 			skin: null,

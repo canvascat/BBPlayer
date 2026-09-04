@@ -6,6 +6,7 @@ export interface TrackItem {
 	artist: string
 	artwork: string
 	duration: number
+	tid?: number
 }
 
 export type RepeatMode = 0 | 1 | 2
