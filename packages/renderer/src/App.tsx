@@ -1,3 +1,4 @@
+import { displayArtist, displayTitle } from '@bbplayer/core'
 import { Link, Outlet } from '@tanstack/react-router'
 import {
 	ChevronsUpDownIcon,
@@ -198,11 +199,11 @@ export default function App() {
 							<div className='min-w-0 text-left'>
 								<OverflowText
 									className='text-sm'
-									text={current?.title ?? '未在播放'}
+									text={current ? displayTitle(current) : '未在播放'}
 								/>
 								<OverflowText
 									className='text-muted-foreground text-xs'
-									text={current?.artist || '从搜索开始'}
+									text={(current && displayArtist(current)) || '从搜索开始'}
 								/>
 							</div>
 						</Button>
@@ -359,10 +360,10 @@ export default function App() {
 											alt=''
 										/>
 										<div className='min-w-0 text-left'>
-											<OverflowText text={item.title} />
+											<OverflowText text={displayTitle(item)} />
 											<OverflowText
 												className='text-muted-foreground text-xs'
-												text={item.artist}
+												text={displayArtist(item)}
 											/>
 										</div>
 									</Button>

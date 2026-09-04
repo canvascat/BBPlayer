@@ -68,6 +68,11 @@ function useAppModel() {
 	const [lyricSource, setLyricSource] = useState<
 		'auto' | 'netease' | 'qqmusic' | 'kugou'
 	>('netease')
+	const [musicAiBaseUrl, setMusicAiBaseUrl] = useState(
+		'https://open.bigmodel.cn/api/paas/v4/',
+	)
+	const [musicAiApiKey, setMusicAiApiKey] = useState('')
+	const [musicAiModel, setMusicAiModel] = useState('glm-4-flash')
 	const [skin, setSkin] = useState<SkinTheme | null>(null)
 	const [showComments, setShowComments] = useState(false)
 	const [downloads, setDownloads] = useState<TrackItem[]>([])
@@ -130,6 +135,11 @@ function useAppModel() {
 			setAutoCache(settings.autoCache ?? true)
 			setFilterNonSongs(settings.filterNonSongs ?? false)
 			setLyricSource(settings.lyricSource ?? 'netease')
+			setMusicAiBaseUrl(
+				settings.musicAiBaseUrl ?? 'https://open.bigmodel.cn/api/paas/v4/',
+			)
+			setMusicAiApiKey(settings.musicAiApiKey ?? '')
+			setMusicAiModel(settings.musicAiModel ?? 'glm-4-flash')
 			setSkin(settings.skin ?? null)
 			setAccount(settings.account)
 		})
@@ -358,6 +368,21 @@ function useAppModel() {
 		void trpcClient.settings.set.mutate({ lyricSource: value })
 	}
 
+	const persistMusicAiBaseUrl = (value: string) => {
+		setMusicAiBaseUrl(value)
+		void trpcClient.settings.set.mutate({ musicAiBaseUrl: value })
+	}
+
+	const persistMusicAiApiKey = (value: string) => {
+		setMusicAiApiKey(value)
+		void trpcClient.settings.set.mutate({ musicAiApiKey: value })
+	}
+
+	const persistMusicAiModel = (value: string) => {
+		setMusicAiModel(value)
+		void trpcClient.settings.set.mutate({ musicAiModel: value })
+	}
+
 	const persistSkin = (value: SkinTheme | null) => {
 		setSkin(value)
 		void trpcClient.settings.set.mutate({ skin: value })
@@ -474,6 +499,12 @@ function useAppModel() {
 		setFilterNonSongs: persistFilterNonSongs,
 		lyricSource,
 		setLyricSource: persistLyricSource,
+		musicAiBaseUrl,
+		setMusicAiBaseUrl: persistMusicAiBaseUrl,
+		musicAiApiKey,
+		setMusicAiApiKey: persistMusicAiApiKey,
+		musicAiModel,
+		setMusicAiModel: persistMusicAiModel,
 		skin,
 		setSkin: persistSkin,
 		showComments,
