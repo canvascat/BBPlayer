@@ -49,6 +49,7 @@ import { parseLyricSource } from './lyric-match'
 import { readLyricOffset, trackIdForOffset } from './lyric-offset'
 import { fetchMatchedLyrics } from './lyrics-fetch'
 import { lyricSearchInput } from './music-meta'
+import { overlayMusicMeta } from './music-meta-store'
 import { openGeetestWindow } from './phone-login'
 import { type AppStore } from './store'
 import { createTRPCContext } from './trpc/context'
@@ -403,9 +404,12 @@ function registerShortcuts() {
 }
 
 async function exportDownloads(ids?: string[], notify = false) {
-	const records = downloadManager
-		.list()
-		.filter((item) => !ids?.length || ids.includes(item.id))
+	const records = overlayMusicMeta(
+		store,
+		downloadManager
+			.list()
+			.filter((item) => !ids?.length || ids.includes(item.id)),
+	)
 	if (!records.length) {
 		if (notify) {
 			await dialog.showMessageBox({
