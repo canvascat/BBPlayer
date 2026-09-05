@@ -52,6 +52,7 @@ export type TrpcContext = {
 	} | null>
 	refreshShell: () => void
 	openExternal: (url: string) => void | Promise<void>
+	openLogsFolder: () => void | Promise<void>
 	copyText: (text: string) => void
 	checkUpdate: () => Promise<UpdateCheck>
 	showMain: () => void

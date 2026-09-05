@@ -1,11 +1,35 @@
+import { execFile } from 'node:child_process'
+import { mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { promisify } from 'node:util'
+
 import { TRPCError } from '@trpc/server'
 
 import { clearWbiCache, getAccount } from '../bili'
 import { PlayerDatabase } from '../db'
+import { getLogFilePath } from '../logger/runtime.ts'
 
 import { cookieFrom, type TrpcContext } from './context'
 import { createDesktopEvents } from './events'
 import { memoryStore } from './mock-context'
+
+const execFileAsync = promisify(execFile)
+
+async function openLogsFolder() {
+	const dir = dirname(getLogFilePath())
+	mkdirSync(dir, { recursive: true })
+	try {
+		if (process.platform === 'darwin') await execFileAsync('open', [dir])
+		else if (process.platform === 'win32')
+			await execFileAsync('explorer', [dir])
+		else await execFileAsync('xdg-open', [dir])
+	} catch {
+		throw new TRPCError({
+			code: 'PRECONDITION_FAILED',
+			message: '当前是 Node 开发服务，无法打开日志目录',
+		})
+	}
+}
 
 export const NODE_DESKTOP_METHODS = [
 	'refreshShell',
@@ -68,6 +92,7 @@ export function createNodeTrpcRuntime(
 			refreshAccount,
 			refreshShell: unsupported('refreshShell'),
 			openExternal: unsupported('openExternal'),
+			openLogsFolder,
 			copyText: unsupported('copyText'),
 			checkUpdate: unsupported('checkUpdate'),
 			showMain: unsupported('showMain'),

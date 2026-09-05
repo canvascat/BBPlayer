@@ -36,6 +36,7 @@ export function mockTrpcContext(
 		refreshAccount: async () => null,
 		refreshShell: () => undefined,
 		openExternal: async () => undefined,
+		openLogsFolder: async () => undefined,
 		copyText: () => undefined,
 		checkUpdate: async () => ({
 			status: 'latest',

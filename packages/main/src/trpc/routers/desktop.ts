@@ -1,6 +1,8 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
+import { redact } from '../../logger/redact.ts'
+import { getLogger } from '../../logger/runtime.ts'
 import { publicProcedure, router } from '../trpc'
 
 export const desktopRouter = router({
@@ -24,4 +26,23 @@ export const desktopRouter = router({
 			return true
 		}),
 	checkUpdate: publicProcedure.mutation(({ ctx }) => ctx.checkUpdate()),
+	reportLog: publicProcedure
+		.input(
+			z.object({
+				level: z.enum(['error', 'warn', 'info', 'debug', 'trace']),
+				message: z.string(),
+				context: z.record(z.string(), z.unknown()).optional(),
+				stack: z.string().optional(),
+			}),
+		)
+		.mutation(({ input }) => {
+			const payload = redact({
+				...input.context,
+				stack: input.stack,
+			}) as Record<string, unknown>
+			getLogger('renderer')[input.level](payload, input.message)
+		}),
+	openLogsFolder: publicProcedure.mutation(async ({ ctx }) => {
+		await ctx.openLogsFolder()
+	}),
 })
