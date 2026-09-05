@@ -61,6 +61,9 @@ function SettingsPage() {
 		skin,
 		setSkin,
 		saved,
+		logLevel,
+		logPath,
+		setLogLevel,
 	} = useApp()
 	const [bgKind, setBgKind] = useLyricBgRenderer()
 
@@ -220,6 +223,44 @@ function SettingsPage() {
 							<ToggleGroupItem value='pixi'>Pixi</ToggleGroupItem>
 						</ToggleGroup>
 					</Field>
+					<FieldSet>
+						<FieldLegend variant='label'>诊断</FieldLegend>
+						<FieldDescription>
+							启动时设置了 BBPLAYER_LOG_LEVEL 则以环境变量为准。
+						</FieldDescription>
+						<Field orientation='horizontal'>
+							<FieldContent>
+								<FieldLabel id='log-level'>日志级别</FieldLabel>
+							</FieldContent>
+							<ToggleGroup
+								value={[logLevel]}
+								onValueChange={(value) => {
+									const next = value[0]
+									if (
+										next === 'error' ||
+										next === 'warn' ||
+										next === 'info' ||
+										next === 'debug'
+									) {
+										setLogLevel(next)
+									}
+								}}
+								variant='outline'
+								size='sm'
+								spacing={0}
+								aria-labelledby='log-level'
+							>
+								<ToggleGroupItem value='error'>error</ToggleGroupItem>
+								<ToggleGroupItem value='warn'>warn</ToggleGroupItem>
+								<ToggleGroupItem value='info'>info</ToggleGroupItem>
+								<ToggleGroupItem value='debug'>debug</ToggleGroupItem>
+							</ToggleGroup>
+						</Field>
+						<Field>
+							<FieldLabel>日志路径</FieldLabel>
+							<FieldDescription>{logPath || '尚未就绪'}</FieldDescription>
+						</Field>
+					</FieldSet>
 					<div className='flex flex-wrap gap-2'>
 						<Button
 							type='button'
@@ -252,6 +293,16 @@ function SettingsPage() {
 							}}
 						>
 							导出备份
+						</Button>
+						<Button
+							type='button'
+							variant='outline'
+							onClick={async () => {
+								await trpcClient.desktop.openLogsFolder.mutate()
+								setSaved('已打开日志目录')
+							}}
+						>
+							在文件夹中显示
 						</Button>
 						<Button
 							type='button'

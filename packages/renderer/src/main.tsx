@@ -5,10 +5,13 @@ import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
+import { installRendererErrorHandlers } from './logger'
 import { createAppRouter } from './router'
 import { queryClient } from './trpc'
 
 const router = createAppRouter()
+
+installRendererErrorHandlers()
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>

@@ -83,6 +83,10 @@ function useAppModel() {
 	const [watchLaterCount, setWatchLaterCount] = useState(0)
 	const [loginBusy, setLoginBusy] = useState(false)
 	const [loginMessage, setLoginMessage] = useState('')
+	const [logLevel, setLogLevelState] = useState<
+		'error' | 'warn' | 'info' | 'debug'
+	>('warn')
+	const [logPath, setLogPath] = useState('')
 
 	const current = player.current
 	const isPlayer = pathname === '/player'
@@ -142,6 +146,8 @@ function useAppModel() {
 			setMusicAiModel(settings.musicAiModel ?? 'glm-4-flash')
 			setSkin(settings.skin ?? null)
 			setAccount(settings.account)
+			setLogLevelState(settings.logLevel ?? 'warn')
+			setLogPath(settings.logPath ?? '')
 		})
 		void refreshPlaylists()
 		void loadRemoteLibrary()
@@ -388,6 +394,11 @@ function useAppModel() {
 		void trpcClient.settings.set.mutate({ skin: value })
 	}
 
+	const persistLogLevel = (value: 'error' | 'warn' | 'info' | 'debug') => {
+		setLogLevelState(value)
+		void trpcClient.settings.set.mutate({ logLevel: value })
+	}
+
 	const exportCached = async (ids?: string[]) => {
 		const result = (await trpcClient.downloads.export.mutate({ ids })) as {
 			message: string
@@ -517,6 +528,9 @@ function useAppModel() {
 		watchLaterCount,
 		loginBusy,
 		loginMessage,
+		logLevel,
+		logPath,
+		setLogLevel: persistLogLevel,
 		current,
 		coverImage,
 		refreshPlaylists,
