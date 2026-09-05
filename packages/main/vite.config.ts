@@ -20,7 +20,7 @@ const packShared = {
 	failOnWarn: false,
 	deps: {
 		neverBundle: external,
-		alwaysBundle: ['@bbplayer/core', '@bbplayer/common'],
+		alwaysBundle: ['@bbplayer/core', '@bbplayer/common', 'pino', 'pino-pretty'],
 	},
 }
 

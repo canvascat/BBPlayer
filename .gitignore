@@ -51,3 +51,5 @@ codedb.snapshot
 .worktrees/
 .superpowers/
 .workbuddy/
+
+.data/
