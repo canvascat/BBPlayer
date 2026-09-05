@@ -40,3 +40,18 @@ test('为日志文件创建父目录', () => {
 	log.error('mkdir-ok')
 	assert.ok(readFileSync(file, 'utf8').includes('mkdir-ok'))
 })
+
+test('写入时脱敏 cookie', async () => {
+	tempDir = mkdtempSync(path.join(tmpdir(), 'bbplayer-log-'))
+	const file = path.join(tempDir, 'logs', 'bbplayer.log')
+	const log = createLogger({
+		level: 'warn',
+		defaultFilePath: file,
+		env: { NODE_ENV: 'production', BBPLAYER_LOG_LEVEL: 'warn' },
+	})
+	log.warn({ cookie: 'SESSDATA=abc' }, 'x')
+	await new Promise((r) => setTimeout(r, 20))
+	const body = readFileSync(file, 'utf8')
+	assert.ok(!body.includes('SESSDATA=abc'))
+	assert.ok(body.includes('[redacted]'))
+})

@@ -71,7 +71,7 @@ export class PlayerDatabase {
 		try {
 			this.db.close()
 		} catch (error) {
-			getLogger('database').warn({ err: error }, 'close skipped')
+			getLogger('database').debug({ err: error }, 'close skipped')
 			// already closed
 		}
 	}

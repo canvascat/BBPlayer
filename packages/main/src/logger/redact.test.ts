@@ -27,3 +27,20 @@ test('字符串里的 Cookie 片段被替换', () => {
 	assert.ok(String(out).includes('other=1'))
 	assert.ok(!String(out).includes('secret'))
 })
+
+test('Error.stack 中的 Cookie 被替换', () => {
+	const err = new Error('oops')
+	err.stack = 'Error: oops\n    at foo (SESSDATA=secret)'
+	const out = redact(err)
+	assert.ok(out instanceof Error)
+	assert.ok(String(out.stack).includes('SESSDATA=[redacted]'))
+	assert.ok(!String(out.stack).includes('SESSDATA=secret'))
+})
+
+test('循环引用对象不抛错', () => {
+	const obj: Record<string, unknown> = { title: '歌' }
+	obj.self = obj
+	const out = redact(obj) as Record<string, unknown>
+	assert.equal(out.title, '歌')
+	assert.equal(out.self, '[Circular]')
+})

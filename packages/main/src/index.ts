@@ -664,6 +664,7 @@ const log = getLogger('desktop')
 
 process.on('uncaughtException', (error) => {
 	log.fatal({ err: error }, 'uncaughtException')
+	app.quit()
 })
 process.on('unhandledRejection', (reason) => {
 	log.error({ err: reason }, 'unhandledRejection')
@@ -785,6 +786,7 @@ app
 	})
 	.catch((error) => {
 		log.fatal({ err: error }, 'whenReady')
+		app.quit()
 	})
 
 app.on('before-quit', () => {

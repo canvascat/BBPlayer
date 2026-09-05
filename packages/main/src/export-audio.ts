@@ -45,7 +45,7 @@ export async function findFfmpeg() {
 			const found = stdout.trim()
 			if (found) return found
 		} catch (error) {
-			getLogger('export-audio').warn({ err: error }, 'ffmpeg lookup skipped')
+			getLogger('export-audio').debug({ err: error }, 'ffmpeg lookup skipped')
 			// try next
 		}
 	}

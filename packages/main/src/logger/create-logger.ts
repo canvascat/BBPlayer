@@ -9,6 +9,7 @@ import pretty from 'pino-pretty'
 
 import { resolveLogSinks } from './destination.ts'
 import { resolveLogLevel } from './env.ts'
+import { redact } from './redact.ts'
 
 export type CreateLoggerOptions = {
 	name?: string
@@ -58,8 +59,15 @@ export function createLogger(options: CreateLoggerOptions = {}): Logger {
 
 	return pino(
 		{
-			name: options.name ?? 'bbplayer',
+			...(options.name !== undefined ? { name: options.name } : {}),
+			base: { app: 'bbplayer' },
 			level,
+			hooks: {
+				logMethod(inputArgs, method) {
+					const args = inputArgs.map((arg) => redact(arg)) as typeof inputArgs
+					return method.apply(this, args)
+				},
+			},
 		},
 		pino.multistream(streams),
 	)

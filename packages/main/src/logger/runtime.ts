@@ -23,7 +23,6 @@ function fallbackOptions(): InitLoggerOptions {
 export function initLogger(next: InitLoggerOptions): Logger {
 	options = next
 	root = createLogger({
-		name: 'bbplayer',
 		defaultFilePath: next.defaultFilePath,
 		isPackaged: next.isPackaged,
 		level: next.level ?? resolveLogLevel(next.env),

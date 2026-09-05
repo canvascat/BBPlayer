@@ -6,10 +6,16 @@ import { defineConfig } from 'vite-plus'
 import pkg from './package.json' with { type: 'json' }
 
 const mainRoot = dirname(fileURLToPath(import.meta.url))
+const alwaysBundle = [
+	'@bbplayer/core',
+	'@bbplayer/common',
+	'pino',
+	'pino-pretty',
+]
 const external = [
 	'electron',
 	...Object.keys(pkg.dependencies).filter(
-		(name) => !name.startsWith('@bbplayer/'),
+		(name) => !name.startsWith('@bbplayer/') && !alwaysBundle.includes(name),
 	),
 ]
 
@@ -20,7 +26,7 @@ const packShared = {
 	failOnWarn: false,
 	deps: {
 		neverBundle: external,
-		alwaysBundle: ['@bbplayer/core', '@bbplayer/common', 'pino', 'pino-pretty'],
+		alwaysBundle,
 	},
 }
 
