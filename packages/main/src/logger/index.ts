@@ -15,3 +15,13 @@ export {
 	type LogDestination,
 	type ResolvedLogSinks,
 } from './destination.ts'
+export { redact } from './redact.ts'
+export {
+	getDefaultLogFilePath,
+	getLogFilePath,
+	getLogger,
+	getRootLogger,
+	initLogger,
+	setLogLevel,
+	type InitLoggerOptions,
+} from './runtime.ts'
