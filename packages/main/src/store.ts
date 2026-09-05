@@ -21,6 +21,7 @@ export type Settings = {
 	musicAiBaseUrl: string
 	musicAiApiKey: string
 	musicAiModel: string
+	logLevel: 'error' | 'warn' | 'info' | 'debug'
 }
 
 export type PlaySession = {

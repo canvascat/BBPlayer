@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { getLogFilePath, setLogLevel } from '../../logger/runtime.ts'
 import { parseLyricSource } from '../../lyric-match'
 import type { TrpcStore } from '../context'
 import { publicProcedure, router } from '../trpc'
@@ -21,6 +22,7 @@ const settingsPatchSchema = z.object({
 	musicAiBaseUrl: z.string().optional(),
 	musicAiApiKey: z.string().optional(),
 	musicAiModel: z.string().optional(),
+	logLevel: z.enum(['error', 'warn', 'info', 'debug']).optional(),
 })
 
 export function readSettings(store: Pick<TrpcStore, 'get'>) {
@@ -37,6 +39,8 @@ export function readSettings(store: Pick<TrpcStore, 'get'>) {
 			store.get('musicAiBaseUrl') ?? 'https://open.bigmodel.cn/api/paas/v4/',
 		musicAiApiKey: store.get('musicAiApiKey') ?? '',
 		musicAiModel: store.get('musicAiModel') ?? 'glm-4-flash',
+		logLevel: store.get('logLevel') ?? 'warn',
+		logPath: getLogFilePath(),
 	}
 }
 
@@ -82,6 +86,12 @@ export const settingsRouter = router({
 			}
 			if (typeof patch.musicAiModel === 'string') {
 				ctx.store.set('musicAiModel', patch.musicAiModel)
+			}
+			if (patch.logLevel) {
+				ctx.store.set('logLevel', patch.logLevel)
+				if (!process.env.BBPLAYER_LOG_LEVEL?.trim()) {
+					setLogLevel(patch.logLevel)
+				}
 			}
 			return true
 		}),

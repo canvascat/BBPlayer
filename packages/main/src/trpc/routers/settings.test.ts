@@ -77,3 +77,21 @@ test('settings.set 写入曲目解析三项', async () => {
 	assert.equal(store.get('musicAiApiKey'), 'sk-1')
 	assert.equal((await caller.get()).musicAiModel, 'glm-4.5-flash')
 })
+
+test('settings.get 默认 logLevel 为 warn 且带 logPath', async () => {
+	const caller = settingsRouter.createCaller(
+		mockTrpcContext({ store: memoryStore() }),
+	)
+	const result = await caller.get()
+	assert.equal(result.logLevel, 'warn')
+	assert.equal(typeof result.logPath, 'string')
+	assert.ok(result.logPath.endsWith('bbplayer.log'))
+})
+
+test('settings.set 写入 logLevel', async () => {
+	const store = memoryStore()
+	const caller = settingsRouter.createCaller(mockTrpcContext({ store }))
+	await caller.set({ logLevel: 'debug' })
+	assert.equal(store.get('logLevel'), 'debug')
+	assert.equal((await caller.get()).logLevel, 'debug')
+})
