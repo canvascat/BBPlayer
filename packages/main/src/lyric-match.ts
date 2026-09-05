@@ -1,5 +1,7 @@
 import { parseYrc } from '@bbplayer/core'
 
+import { getLogger } from './logger/runtime.ts'
+
 export type LyricSource = 'auto' | 'netease' | 'qqmusic' | 'kugou'
 export type LyricProviderName = 'netease' | 'qqmusic' | 'kugou'
 
@@ -95,7 +97,8 @@ export async function raceLyricProviders(
 	)
 	try {
 		return await Promise.any(tasks)
-	} catch {
+	} catch (error) {
+		getLogger('lyric-match').warn({ err: error }, 'lyric providers failed')
 		return null
 	}
 }

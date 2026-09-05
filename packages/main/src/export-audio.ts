@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import { displayArtist, displayTitle } from '@bbplayer/core'
 
 import type { CachedTrack } from './downloads'
+import { getLogger } from './logger/runtime.ts'
 
 const execFileAsync = promisify(execFile)
 
@@ -43,7 +44,8 @@ export async function findFfmpeg() {
 			const { stdout } = await execFileAsync('/usr/bin/which', [candidate])
 			const found = stdout.trim()
 			if (found) return found
-		} catch {
+		} catch (error) {
+			getLogger('export-audio').warn({ err: error }, 'ffmpeg lookup skipped')
 			// try next
 		}
 	}
@@ -77,7 +79,8 @@ export async function embedCover(options: {
 	let coverBytes: Buffer
 	try {
 		coverBytes = await downloadCover(options.coverUrl)
-	} catch {
+	} catch (error) {
+		getLogger('export-audio').warn({ err: error }, 'download cover failed')
 		copyFileSync(options.source, options.dest)
 		return { embedded: false }
 	}
@@ -113,7 +116,8 @@ export async function embedCover(options: {
 			options.dest,
 		])
 		return { embedded: true }
-	} catch {
+	} catch (error) {
+		getLogger('export-audio').warn({ err: error }, 'embed cover failed')
 		copyFileSync(options.source, options.dest)
 		writeFileSync(
 			uniquePath(options.sidecarDir, options.base, '.jpg'),
@@ -164,7 +168,8 @@ export async function exportCachedTracks(options: {
 				)
 			}
 			exported += 1
-		} catch {
+		} catch (error) {
+			getLogger('export-audio').warn({ err: error }, 'export track failed')
 			failed.push(track.title)
 		}
 	}

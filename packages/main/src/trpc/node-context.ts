@@ -7,7 +7,7 @@ import { TRPCError } from '@trpc/server'
 
 import { clearWbiCache, getAccount } from '../bili'
 import { PlayerDatabase } from '../db'
-import { getLogFilePath } from '../logger/runtime.ts'
+import { getLogFilePath, getLogger } from '../logger/runtime.ts'
 
 import { cookieFrom, type TrpcContext } from './context'
 import { createDesktopEvents } from './events'
@@ -23,7 +23,8 @@ async function openLogsFolder() {
 		else if (process.platform === 'win32')
 			await execFileAsync('explorer', [dir])
 		else await execFileAsync('xdg-open', [dir])
-	} catch {
+	} catch (error) {
+		getLogger('node-context').warn({ err: error }, 'open logs folder failed')
 		throw new TRPCError({
 			code: 'PRECONDITION_FAILED',
 			message: '当前是 Node 开发服务，无法打开日志目录',
@@ -78,7 +79,8 @@ export function createNodeTrpcRuntime(
 			const account = await getAccount(cookieFrom(store))
 			store.set('account', account)
 			return account
-		} catch {
+		} catch (error) {
+			getLogger('node-context').warn({ err: error }, 'refreshAccount failed')
 			store.set('account', null)
 			return null
 		}

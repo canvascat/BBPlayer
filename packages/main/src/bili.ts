@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { bv2av } from '@bbplayer/core'
 
 import { coverUrl } from './bili-image.ts'
+import { getLogger } from './logger/runtime.ts'
 import { preciseMusicNameFromBgm } from './lyric-match.ts'
 
 export { coverUrl } from './bili-image.ts'
@@ -217,7 +218,8 @@ export async function getPreciseMusicNameOnBilibiliVideo(
 			json.data as { bgm_info?: { music_title?: string } } | undefined
 		)?.bgm_info?.music_title
 		return preciseMusicNameFromBgm(title)
-	} catch {
+	} catch (error) {
+		getLogger('bili').warn({ err: error }, 'fetch precise music name failed')
 		return undefined
 	}
 }

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 
+import { getLogger } from './logger/runtime.ts'
 import { preciseMusicNameFromBgm } from './lyric-match.ts'
 import { readMusicMeta, writeMusicMeta } from './music-meta-store.ts'
 import type { TrpcStore } from './trpc/context.ts'
@@ -92,7 +93,11 @@ export function parseMusicAiPayload(raw: string): MusicAiTrack[] | null {
 	let parsed: unknown
 	try {
 		parsed = JSON.parse(raw)
-	} catch {
+	} catch (error) {
+		getLogger('music-meta').warn(
+			{ err: error },
+			'parse music ai payload failed',
+		)
 		return null
 	}
 	if (!parsed || typeof parsed !== 'object') return null
@@ -206,7 +211,8 @@ export async function fillMusicFields(
 						deps.store.get('musicAiModel')?.trim() || DEFAULT_MUSIC_AI_MODEL,
 				},
 			)
-		} catch {
+		} catch (error) {
+			getLogger('music-meta').warn({ err: error }, 'complete music ai failed')
 			tracks = undefined
 		}
 	}

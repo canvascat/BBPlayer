@@ -4,6 +4,8 @@ import http from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { Readable } from 'node:stream'
 
+import { getLogger } from './logger/runtime.ts'
+
 const UA =
 	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
 
@@ -96,7 +98,8 @@ export class AudioProxy {
 				return
 			}
 			Readable.fromWeb(upstream.body as never).pipe(res)
-		} catch {
+		} catch (error) {
+			getLogger('audio-proxy').warn({ err: error }, 'proxy stream failed')
 			if (!res.headersSent) res.writeHead(502)
 			res.end()
 		}

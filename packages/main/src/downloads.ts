@@ -10,6 +10,8 @@ import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 
+import { getLogger } from './logger/runtime.ts'
+
 export type DownloadTaskState =
 	| 'queued'
 	| 'downloading'
@@ -178,7 +180,8 @@ export class DownloadManager {
 				...this.records.filter((item) => item.id !== next.id),
 			]
 			this.tasks.set(job.track.id, 'completed')
-		} catch {
+		} catch (error) {
+			getLogger('downloads').warn({ err: error }, 'download task failed')
 			if (existsSync(part)) unlinkSync(part)
 			this.tasks.set(job.track.id, 'failed')
 		}

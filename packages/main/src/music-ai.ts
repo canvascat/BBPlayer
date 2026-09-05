@@ -1,3 +1,4 @@
+import { getLogger } from './logger/runtime.ts'
 import { parseMusicAiPayload, type MusicAiTrack } from './music-meta.ts'
 
 export const MUSIC_AI_TIMEOUT_MS = 8000
@@ -78,7 +79,8 @@ export async function completeMusicAi(
 		const content = payload.choices?.[0]?.message?.content
 		if (typeof content !== 'string') return null
 		return parseMusicAiPayload(content)
-	} catch {
+	} catch (error) {
+		getLogger('music-ai').warn({ err: error }, 'complete music ai failed')
 		return null
 	} finally {
 		release()

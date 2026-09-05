@@ -4,6 +4,8 @@ import { DatabaseSync } from 'node:sqlite'
 
 import { generateKeyBetween } from 'fractional-indexing'
 
+import { getLogger } from '../logger/runtime.ts'
+
 import { DRIZZLE_MIGRATION_TIMES, SCHEMA_SQL } from './schema.ts'
 import type {
 	LibraryTrack,
@@ -68,7 +70,8 @@ export class PlayerDatabase {
 	close() {
 		try {
 			this.db.close()
-		} catch {
+		} catch (error) {
+			getLogger('database').warn({ err: error }, 'close skipped')
 			// already closed
 		}
 	}
@@ -87,7 +90,8 @@ export class PlayerDatabase {
 		}
 		try {
 			this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)')
-		} catch {
+		} catch (error) {
+			getLogger('database').warn({ err: error }, 'wal checkpoint skipped')
 			// ignore
 		}
 		this.close()
@@ -106,7 +110,8 @@ export class PlayerDatabase {
 	clearSyncQueue() {
 		try {
 			this.db.exec('DELETE FROM playlist_sync_queue')
-		} catch {
+		} catch (error) {
+			getLogger('database').warn({ err: error }, 'clear sync queue skipped')
 			// 旧库可能没有这张表
 		}
 	}

@@ -11,6 +11,8 @@ import {
 	type RendererPage,
 } from '@bbplayer/common'
 
+import { getLogger } from './logger/runtime.ts'
+
 export { APP_ORIGIN, APP_SCHEME, rendererUrl, type RendererPage }
 
 const electronRequire = createRequire(import.meta.url)
@@ -32,7 +34,8 @@ export function resolveRendererFile(pathname: string, rendererDist: string) {
 	let decoded: string
 	try {
 		decoded = decodeURIComponent(pathname)
-	} catch {
+	} catch (error) {
+		getLogger('protocol').debug({ err: error }, 'decode pathname failed')
 		return null
 	}
 	const relativePath =
@@ -53,7 +56,8 @@ export function resolveAppRequest(
 	let url: URL
 	try {
 		url = new URL(requestUrl)
-	} catch {
+	} catch (error) {
+		getLogger('protocol').debug({ err: error }, 'parse request url failed')
 		return { type: 'error', status: 404 }
 	}
 	if (url.pathname === TRPC_PATH || url.pathname.startsWith(`${TRPC_PATH}/`)) {
@@ -100,20 +104,28 @@ export function installAppProtocolHandler({
 	fetch?: (input: string) => Promise<Response>
 	isFile?: (absPath: string) => boolean
 }) {
-	handleScheme(APP_SCHEME, async (request) => {
-		const route = resolveAppRequest(request.url, request.method, {
-			rendererDist,
+	try {
+		handleScheme(APP_SCHEME, async (request) => {
+			const route = resolveAppRequest(request.url, request.method, {
+				rendererDist,
+			})
+			switch (route.type) {
+				case 'trpc':
+					return handleTrpc(request)
+				case 'error':
+					return new Response(null, { status: route.status })
+				case 'file':
+					if (!isFile(route.absPath)) {
+						return new Response(null, { status: 404 })
+					}
+					return fetchAsset(pathToFileURL(route.absPath).href)
+			}
 		})
-		switch (route.type) {
-			case 'trpc':
-				return handleTrpc(request)
-			case 'error':
-				return new Response(null, { status: route.status })
-			case 'file':
-				if (!isFile(route.absPath)) {
-					return new Response(null, { status: 404 })
-				}
-				return fetchAsset(pathToFileURL(route.absPath).href)
-		}
-	})
+	} catch (error) {
+		getLogger('protocol').warn(
+			{ err: error },
+			'install protocol handler failed',
+		)
+		throw error
+	}
 }

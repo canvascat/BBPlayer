@@ -43,8 +43,10 @@ import {
 	withBiliImageHeaders,
 } from './bili-image'
 import { PlayerDatabase } from './db'
+import { initDesktopLogger, openDesktopLogsFolder } from './desktop-logger'
 import { downloadManager } from './downloads'
 import { exportCachedTracks, exportSummary } from './export-audio'
+import { getLogger, setLogLevel } from './logger/runtime.ts'
 import { parseLyricSource } from './lyric-match'
 import { readLyricOffset, trackIdForOffset } from './lyric-offset'
 import { fetchMatchedLyrics } from './lyrics-fetch'
@@ -83,7 +85,8 @@ async function refreshAccount() {
 		const account = await getAccount(cookie())
 		store.set('account', account)
 		return account
-	} catch {
+	} catch (error) {
+		getLogger('desktop').warn({ err: error }, 'refreshAccount failed')
 		store.set('account', null)
 		return null
 	}
@@ -381,6 +384,12 @@ function createMenu() {
 						void checkUpdates(true)
 					},
 				},
+				{
+					label: '在文件夹中显示日志',
+					click: () => {
+						void openDesktopLogsFolder()
+					},
+				},
 			],
 		},
 	]
@@ -397,7 +406,8 @@ function registerShortcuts() {
 	for (const [accelerator, command] of bindings) {
 		try {
 			globalShortcut.register(accelerator, () => sendCommand(command))
-		} catch {
+		} catch (error) {
+			getLogger('desktop').warn({ err: error }, 'shortcut register skipped')
 			// 部分系统由 Media Session 接管
 		}
 	}
@@ -490,7 +500,8 @@ async function checkUpdates(notify = false) {
 			update?.updateInfo.version,
 			notesFromRelease(update?.updateInfo.releaseNotes),
 		)
-	} catch {
+	} catch (error) {
+		getLogger('updater').warn({ err: error }, 'checkForUpdates failed')
 		result = interpretUpdate(app.getVersion())
 	}
 	if (!notify) return result
@@ -512,7 +523,8 @@ async function checkUpdates(notify = false) {
 		}
 		try {
 			await autoUpdater.downloadUpdate()
-		} catch {
+		} catch (error) {
+			getLogger('updater').warn({ err: error }, 'downloadUpdate failed')
 			await dialog.showMessageBox({
 				type: 'error',
 				message: '检查更新失败',
@@ -607,7 +619,8 @@ async function resolvePlay(track: {
 					lyricSource = raw.source
 					downloadManager.saveLyrics(id, raw)
 				}
-			} catch {
+			} catch (error) {
+				getLogger('desktop').warn({ err: error }, 'fetch lyrics failed')
 				lyrics = []
 			}
 		}
@@ -646,6 +659,15 @@ function openBiliWebLogin() {
 }
 
 app.setName('BBPlayer')
+initDesktopLogger()
+const log = getLogger('desktop')
+
+process.on('uncaughtException', (error) => {
+	log.fatal({ err: error }, 'uncaughtException')
+})
+process.on('unhandledRejection', (reason) => {
+	log.error({ err: reason }, 'unhandledRejection')
+})
 
 if (process.defaultApp) {
 	if (process.argv.length >= 2) {
@@ -662,98 +684,108 @@ app.on('open-url', (event) => {
 	showMain()
 })
 
-app.whenReady().then(async () => {
-	installAppProtocolHandler({
-		rendererDist: RENDERER_DIST,
-		handleTrpc: (req) =>
-			fetchRequestHandler({
-				endpoint: '/trpc',
-				req,
-				router: appRouter,
-				createContext: () =>
-					createTRPCContext({
-						events,
-						store,
-						playerDb,
-						refreshAccount,
-						refreshShell,
-						openExternal: (url) => shell.openExternal(url),
-						copyText: (text) => {
-							clipboard.writeText(text)
-						},
-						checkUpdate: () => checkUpdates(true),
-						showMain,
-						openGeetest,
-						openWebLogin: openBiliWebLogin,
-						clearBiliLoginSession,
-						exportDownloads: (ids) => exportDownloads(ids, false),
-						exportBackup: () => exportBackup(true),
-						importBackup: () => importBackup(true),
-						resolvePlay,
-					}),
-			}),
+app
+	.whenReady()
+	.then(async () => {
+		installAppProtocolHandler({
+			rendererDist: RENDERER_DIST,
+			handleTrpc: (req) =>
+				fetchRequestHandler({
+					endpoint: '/trpc',
+					req,
+					router: appRouter,
+					createContext: () =>
+						createTRPCContext({
+							events,
+							store,
+							playerDb,
+							refreshAccount,
+							refreshShell,
+							openExternal: (url) => shell.openExternal(url),
+							copyText: (text) => {
+								clipboard.writeText(text)
+							},
+							checkUpdate: () => checkUpdates(true),
+							showMain,
+							openGeetest,
+							openWebLogin: openBiliWebLogin,
+							clearBiliLoginSession,
+							exportDownloads: (ids) => exportDownloads(ids, false),
+							exportBackup: () => exportBackup(true),
+							importBackup: () => importBackup(true),
+							resolvePlay,
+							openLogsFolder: openDesktopLogsFolder,
+						}),
+				}),
+		})
+		store = new Store<AppStore>({
+			defaults: {
+				cookie: '',
+				continuePlayingAfterClose: true,
+				menuBarShowLyrics: false,
+				autoCache: true,
+				filterNonSongs: false,
+				playlists: [],
+				account: null,
+				skin: null,
+				downloads: [],
+				lyricSource: 'netease',
+				musicAiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4/',
+				musicAiApiKey: '',
+				musicAiModel: 'glm-4-flash',
+				logLevel: 'warn',
+			},
+		})
+		if (!process.env.BBPLAYER_LOG_LEVEL?.trim()) {
+			setLogLevel(store.get('logLevel') ?? 'warn')
+		}
+		playerDb = PlayerDatabase.open(join(app.getPath('userData'), 'db.db'))
+		const legacy = store.get('playlists') ?? []
+		if (legacy.length) {
+			playerDb.importPlaylists(legacy)
+			store.set('playlists', [])
+		}
+		downloadManager.configure({
+			dir: join(app.getPath('userData'), 'downloads'),
+			records: store.get('downloads') ?? [],
+			onChange: (records, tasks) => {
+				store.set('downloads', records)
+				events.downloads$.next({ records, tasks })
+			},
+		})
+		await audioProxy.start()
+		session.defaultSession.webRequest.onBeforeSendHeaders(
+			{ urls: BILI_IMAGE_URL_FILTER },
+			(details, callback) => {
+				callback({
+					requestHeaders: withBiliImageHeaders(details.requestHeaders),
+				})
+			},
+		)
+		session.defaultSession.webRequest.onHeadersReceived(
+			{ urls: BILI_IMAGE_URL_FILTER },
+			(details, callback) => {
+				callback({
+					responseHeaders: withBiliImageCorsHeaders(
+						details.responseHeaders ?? {},
+					),
+				})
+			},
+		)
+		autoUpdater.autoDownload = false
+		autoUpdater.autoInstallOnAppQuit = true
+		if (!app.isPackaged) autoUpdater.forceDevUpdateConfig = true
+		createMenu()
+		createWindow()
+		createTray()
+		registerShortcuts()
+		void refreshAccount()
+		if (process.argv.some((item) => item.startsWith('bbplayer://'))) showMain()
+		app.on('activate', () => showMain())
 	})
-	store = new Store<AppStore>({
-		defaults: {
-			cookie: '',
-			continuePlayingAfterClose: true,
-			menuBarShowLyrics: false,
-			autoCache: true,
-			filterNonSongs: false,
-			playlists: [],
-			account: null,
-			skin: null,
-			downloads: [],
-			lyricSource: 'netease',
-			musicAiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4/',
-			musicAiApiKey: '',
-			musicAiModel: 'glm-4-flash',
-		},
+	.catch((error) => {
+		log.fatal({ err: error }, 'whenReady')
 	})
-	playerDb = PlayerDatabase.open(join(app.getPath('userData'), 'db.db'))
-	const legacy = store.get('playlists') ?? []
-	if (legacy.length) {
-		playerDb.importPlaylists(legacy)
-		store.set('playlists', [])
-	}
-	downloadManager.configure({
-		dir: join(app.getPath('userData'), 'downloads'),
-		records: store.get('downloads') ?? [],
-		onChange: (records, tasks) => {
-			store.set('downloads', records)
-			events.downloads$.next({ records, tasks })
-		},
-	})
-	await audioProxy.start()
-	session.defaultSession.webRequest.onBeforeSendHeaders(
-		{ urls: BILI_IMAGE_URL_FILTER },
-		(details, callback) => {
-			callback({
-				requestHeaders: withBiliImageHeaders(details.requestHeaders),
-			})
-		},
-	)
-	session.defaultSession.webRequest.onHeadersReceived(
-		{ urls: BILI_IMAGE_URL_FILTER },
-		(details, callback) => {
-			callback({
-				responseHeaders: withBiliImageCorsHeaders(
-					details.responseHeaders ?? {},
-				),
-			})
-		},
-	)
-	autoUpdater.autoDownload = false
-	autoUpdater.autoInstallOnAppQuit = true
-	if (!app.isPackaged) autoUpdater.forceDevUpdateConfig = true
-	createMenu()
-	createWindow()
-	createTray()
-	registerShortcuts()
-	void refreshAccount()
-	if (process.argv.some((item) => item.startsWith('bbplayer://'))) showMain()
-	app.on('activate', () => showMain())
-})
 
 app.on('before-quit', () => {
 	stopQrLogin()

@@ -1,3 +1,5 @@
+import { getLogger } from './logger/runtime.ts'
+
 export type CookieLike = {
 	name: string
 	value: string
@@ -64,7 +66,11 @@ export function isAllowedLoginPopupUrl(url: string) {
 			host === 'weibo.com' ||
 			host.endsWith('.weibo.com')
 		)
-	} catch {
+	} catch (error) {
+		getLogger('web-login-cookies').warn(
+			{ err: error },
+			'parse login popup url failed',
+		)
 		return false
 	}
 }
