@@ -49,7 +49,7 @@ function useAppModel() {
 	const pathname = useRouterState({
 		select: (state) => state.location.pathname,
 	})
-	const player = usePlayback()
+	const { audioRef, skipRef, toggleRef, ...player } = usePlayback()
 	const searchRef = useRef<HTMLInputElement>(null)
 	const [query, setQuery] = useState('')
 	const [hits, setHits] = useState<SearchHit[]>([])
@@ -149,8 +149,20 @@ function useAppModel() {
 			setLogLevelState(settings.logLevel ?? 'warn')
 			setLogPath(settings.logPath ?? '')
 		})
-		void refreshPlaylists()
-		void loadRemoteLibrary()
+		void trpcClient.library.list.query().then(setPlaylists)
+		void trpcClient.bili.library
+			.query()
+			.then((remote) => {
+				setAccount(remote.account)
+				setFavorites(remote.favorites)
+				setCollections(remote.collections)
+				setWatchLaterCount(remote.watchLater)
+			})
+			.catch(() => {
+				setFavorites([])
+				setCollections([])
+				setWatchLaterCount(0)
+			})
 		void trpcClient.downloads.list.query().then(setDownloads)
 		void trpcClient.downloads.status.query().then(setDownloadTasks)
 	}, [])
@@ -178,7 +190,7 @@ function useAppModel() {
 			if (typing) return
 			if (event.code === 'Space') {
 				event.preventDefault()
-				player.toggleRef.current()
+				toggleRef.current()
 			}
 			if (event.code === 'ArrowLeft' && event.shiftKey) {
 				event.preventDefault()
@@ -188,10 +200,10 @@ function useAppModel() {
 				player.seekBy(5000)
 			} else if (event.code === 'ArrowLeft') {
 				event.preventDefault()
-				player.skipRef.current(-1)
+				skipRef.current(-1)
 			} else if (event.code === 'ArrowRight') {
 				event.preventDefault()
-				player.skipRef.current(1)
+				skipRef.current(1)
 			}
 		}
 		window.addEventListener('keydown', onKey)
@@ -206,10 +218,10 @@ function useAppModel() {
 
 	useEffect(() => {
 		return listen(trpcClient.player.commands.subscribe, (command) => {
-			if (command === 'playpause') player.toggleRef.current()
-			if (command === 'pause') player.audioRef.current?.pause()
-			if (command === 'prev') player.skipRef.current(-1)
-			if (command === 'next') player.skipRef.current(1)
+			if (command === 'playpause') toggleRef.current()
+			if (command === 'pause') audioRef.current?.pause()
+			if (command === 'prev') skipRef.current(-1)
+			if (command === 'next') skipRef.current(1)
 			if (command === 'repeat-off') player.setRepeat(0)
 			if (command === 'repeat-track') player.setRepeat(1)
 			if (command === 'repeat-queue') player.setRepeat(2)
@@ -485,6 +497,7 @@ function useAppModel() {
 		pathname,
 		isPlayer,
 		player,
+		audioRef,
 		searchRef,
 		query,
 		setQuery,

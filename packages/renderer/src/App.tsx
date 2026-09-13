@@ -47,6 +47,7 @@ export default function App() {
 		pathname,
 		isPlayer,
 		player,
+		audioRef,
 		searchRef,
 		query,
 		setQuery,
@@ -401,7 +402,7 @@ export default function App() {
 					</NowPlaying>
 				)}
 				<audio
-					ref={player.audioRef}
+					ref={audioRef}
 					preload='auto'
 				/>
 				<Dialog

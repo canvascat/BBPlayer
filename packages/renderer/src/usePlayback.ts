@@ -55,10 +55,6 @@ export function usePlayback() {
 	const [sleepLeft, setSleepLeft] = useState(0)
 
 	const current = queue[index]
-	queueRef.current = queue
-	indexRef.current = index
-	repeatRef.current = repeatMode
-	shuffleRef.current = shuffle
 
 	useEffect(() => {
 		const audio = audioRef.current
@@ -172,9 +168,15 @@ export function usePlayback() {
 		else audio.pause()
 	}, [])
 
-	playTrackRef.current = playTrack
-	skipRef.current = skip
-	toggleRef.current = toggle
+	useEffect(() => {
+		queueRef.current = queue
+		indexRef.current = index
+		repeatRef.current = repeatMode
+		shuffleRef.current = shuffle
+		playTrackRef.current = playTrack
+		skipRef.current = skip
+		toggleRef.current = toggle
+	})
 
 	const cycleRepeat = useCallback(() => {
 		setRepeatMode((mode) => nextRepeatMode(mode))
@@ -464,6 +466,8 @@ export function usePlayback() {
 
 	return {
 		audioRef,
+		skipRef,
+		toggleRef,
 		queue,
 		index,
 		current,
@@ -497,7 +501,10 @@ export function usePlayback() {
 		addToEnd,
 		removeFromQueue,
 		startSleep,
-		skipRef,
-		toggleRef,
 	}
 }
+
+export type Playback = Omit<
+	ReturnType<typeof usePlayback>,
+	'audioRef' | 'skipRef' | 'toggleRef'
+>

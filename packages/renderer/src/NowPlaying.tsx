@@ -59,9 +59,7 @@ import {
 import { formatClock, formatMs, repeatLabel, type TrackItem } from './playback'
 import { useLyricAuxDisplay } from './useLyricAuxDisplay'
 import { useLyricBgRenderer } from './useLyricBgRenderer'
-import type { usePlayback } from './usePlayback'
-
-type Playback = ReturnType<typeof usePlayback>
+import type { Playback } from './usePlayback'
 
 const ENTER_MS = 320
 const EXIT_MS = 240

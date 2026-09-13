@@ -96,32 +96,58 @@ function CommentRow({
 	)
 }
 
-export function CommentsPanel({
+function CommentsThread({
 	bvid,
+	mode,
 	onClose,
+	onModeChange,
 }: {
 	bvid: string
+	mode: 2 | 3
 	onClose: () => void
+	onModeChange: (mode: 2 | 3) => void
 }) {
-	const [mode, setMode] = useState<2 | 3>(3)
 	const [items, setItems] = useState<CommentItem[]>([])
 	const [next, setNext] = useState(0)
 	const [isEnd, setIsEnd] = useState(false)
 	const [count, setCount] = useState(0)
 	const [error, setError] = useState('')
-	const [loading, setLoading] = useState(false)
+	const [loading, setLoading] = useState(true)
 
-	const load = async (reset: boolean) => {
+	useEffect(() => {
+		let cancelled = false
+		void trpcClient.bili.comments
+			.query({ bvid, next: 0, mode })
+			.then((page) => {
+				if (cancelled) return
+				setItems(page.replies)
+				setNext(page.next)
+				setIsEnd(page.isEnd)
+				setCount(page.allCount)
+			})
+			.catch((err) => {
+				if (cancelled) return
+				setError(err instanceof Error ? err.message : String(err))
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false)
+			})
+		return () => {
+			cancelled = true
+		}
+	}, [bvid, mode])
+
+	const loadMore = async () => {
 		if (loading) return
 		setLoading(true)
 		setError('')
 		try {
 			const page = await trpcClient.bili.comments.query({
 				bvid,
-				next: reset ? 0 : next,
+				next,
 				mode,
 			})
-			setItems((prev) => (reset ? page.replies : [...prev, ...page.replies]))
+			setItems((prev) => [...prev, ...page.replies])
 			setNext(page.next)
 			setIsEnd(page.isEnd)
 			setCount(page.allCount)
@@ -131,13 +157,6 @@ export function CommentsPanel({
 			setLoading(false)
 		}
 	}
-
-	useEffect(() => {
-		setItems([])
-		setNext(0)
-		setIsEnd(false)
-		void load(true)
-	}, [bvid, mode])
 
 	const like = async (item: CommentItem) => {
 		try {
@@ -196,8 +215,8 @@ export function CommentsPanel({
 			<ToggleGroup
 				value={[String(mode)]}
 				onValueChange={(value) => {
-					if (value[0] === '2') setMode(2)
-					if (value[0] === '3') setMode(3)
+					if (value[0] === '2') onModeChange(2)
+					if (value[0] === '3') onModeChange(3)
 				}}
 				variant='outline'
 				spacing={0}
@@ -232,11 +251,31 @@ export function CommentsPanel({
 					type='button'
 					variant='outline'
 					disabled={loading}
-					onClick={() => void load(false)}
+					onClick={() => void loadMore()}
 				>
 					{loading ? '加载中…' : '加载更多'}
 				</Button>
 			)}
 		</aside>
+	)
+}
+
+export function CommentsPanel({
+	bvid,
+	onClose,
+}: {
+	bvid: string
+	onClose: () => void
+}) {
+	const [mode, setMode] = useState<2 | 3>(3)
+
+	return (
+		<CommentsThread
+			key={`${bvid}:${mode}`}
+			bvid={bvid}
+			mode={mode}
+			onClose={onClose}
+			onModeChange={setMode}
+		/>
 	)
 }
