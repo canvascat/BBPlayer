@@ -20,6 +20,8 @@ peerDependencyRules:
     - vite
   allowedVersions:
     vite: '*'
+    # plugin-react 6.1.x 仍声明 ^0.145.0，自身测试已用 0.147+；0.x caret 卡死次版本
+    oxc-transform-react: '>=0.145.0'
 
 # 本仓库只打 macOS，不装 Windows Squirrel
 packageExtensions:

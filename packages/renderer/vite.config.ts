@@ -20,7 +20,7 @@ export default defineConfig({
 			semicolons: false,
 		}),
 		tailwindcss(),
-		react(),
+		react({ compiler: true }),
 	],
 	clearScreen: false,
 })
