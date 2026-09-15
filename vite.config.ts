@@ -85,7 +85,7 @@ export default defineConfig({
 		},
 		settings: {
 			react: {
-				version: '19.2',
+				version: '19.3',
 			},
 		},
 		overrides: [
