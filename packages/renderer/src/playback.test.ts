@@ -8,6 +8,7 @@ import {
 	formatClock,
 	neighborIndex,
 	nextRepeatMode,
+	playTrackLatch,
 	progressDurationMs,
 	RepeatMode,
 	shuffleOrder,
@@ -165,4 +166,26 @@ test('单曲循环章末回起点且不闩锁', () => {
 		}),
 		{ latched: false, action: 'repeat-track' },
 	)
+})
+
+test('已闩锁且时间仍在新更早章节 clipEnd 之后时不二次 skip', () => {
+	const earlier = { clipStartSec: 10, clipEndSec: 100 }
+	assert.deepEqual(
+		clipAdvanceDecision({
+			latched: true,
+			audioTimeSec: 400,
+			track: earlier,
+			hasNeighbor: true,
+			repeat: RepeatMode.OFF,
+		}),
+		{ latched: true, action: 'none' },
+	)
+})
+
+test('playTrack 闩锁在切曲完成 seek 前保持，窗口内才回臂', () => {
+	assert.equal(playTrackLatch('enter'), true)
+	assert.equal(playTrackLatch('before-seek'), true)
+	assert.equal(playTrackLatch('after-seek-in-window'), false)
+	assert.equal(playTrackLatch('after-seek-past-end'), true)
+	assert.equal(playTrackLatch('catch'), false)
 })

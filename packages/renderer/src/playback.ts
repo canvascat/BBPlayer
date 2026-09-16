@@ -123,6 +123,21 @@ export function clipAdvanceDecision({
 	return { latched: true, action: 'skip' }
 }
 
+export type PlayTrackLatchPhase =
+	| 'enter'
+	| 'before-seek'
+	| 'after-seek-in-window'
+	| 'after-seek-past-end'
+	| 'catch'
+
+export function playTrackLatch(phase: PlayTrackLatchPhase): boolean {
+	return (
+		phase === 'enter' ||
+		phase === 'before-seek' ||
+		phase === 'after-seek-past-end'
+	)
+}
+
 export function shouldKeepAudioSrc(
 	previous: { bvid: string; cid: number } | undefined,
 	next: { bvid: string; cid: number },

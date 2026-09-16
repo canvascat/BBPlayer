@@ -16,6 +16,7 @@ import {
 	clipStartSecOf,
 	neighborIndex,
 	nextRepeatMode,
+	playTrackLatch,
 	progressDurationMs,
 	RepeatMode,
 	shuffleOrder,
@@ -131,13 +132,13 @@ export function usePlayback() {
 			setIndex(start)
 			setStatus('正在获取音频…')
 			setLyricOffsetSec(0)
-			clipAdvanceRef.current = false
+			clipAdvanceRef.current = playTrackLatch('enter')
 			try {
 				const resolved = await trpcClient.player.resolve.mutate(track)
 				if (playGeneration !== playGenerationRef.current) return
 				const audio = audioRef.current
 				if (!audio) return
-				clipAdvanceRef.current = false
+				clipAdvanceRef.current = playTrackLatch('before-seek')
 				const keepSrc = shouldKeepAudioSrc(previous, track, Boolean(audio.src))
 				if (!keepSrc) {
 					audio.src = resolved.playUrl
@@ -147,6 +148,11 @@ export function usePlayback() {
 				setLyrics((resolved.lyrics ?? []) as AmllLyricLine[])
 				const applySeek = () => {
 					audio.currentTime = audioTimeSec(seekMs, track)
+					clipAdvanceRef.current = playTrackLatch(
+						!hasClipWindow(track) || audio.currentTime < track.clipEndSec!
+							? 'after-seek-in-window'
+							: 'after-seek-past-end',
+					)
 				}
 				if (keepSrc || audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
 					applySeek()
@@ -174,7 +180,7 @@ export function usePlayback() {
 				setStatus(bits.join(' · '))
 			} catch (err) {
 				if (playGeneration !== playGenerationRef.current) return
-				clipAdvanceRef.current = false
+				clipAdvanceRef.current = playTrackLatch('catch')
 				setError(err instanceof Error ? err.message : String(err))
 				setStatus('')
 			}
