@@ -133,3 +133,26 @@ test('replaceFromBytes 会换成新的库文件', () => {
 	target.close()
 	rmSync(dir, { recursive: true, force: true })
 })
+
+test('章节 unique_key 读回后带 clip 窗口', () => {
+	const db = PlayerDatabase.open(':memory:')
+	const created = db.create({ title: '专辑' })
+	db.addTracks(created.id, [
+		{
+			id: 'bilibili::BV1xx::9::0::195',
+			bvid: 'BV1xx',
+			cid: 9,
+			title: '跨时代',
+			artist: 'UP',
+			artwork: '',
+			duration: 195,
+			clipStartSec: 0,
+			clipEndSec: 195,
+		},
+	])
+	const loaded = db.get(created.id)
+	assert.equal(loaded?.tracks[0]?.clipStartSec, 0)
+	assert.equal(loaded?.tracks[0]?.clipEndSec, 195)
+	assert.equal(loaded?.tracks[0]?.duration, 195)
+	db.close()
+})

@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
+import { parseBilibiliTrackKey } from '@bbplayer/core'
 import { generateKeyBetween } from 'fractional-indexing'
 
 import { getLogger } from '../logger/runtime.ts'
@@ -46,6 +47,32 @@ function trackKey(track: LibraryTrack) {
 	return track.cid
 		? `bilibili::${track.bvid}::${track.cid}`
 		: `bilibili::${track.bvid}`
+}
+
+interface TrackRow {
+	unique_key: string
+	title: string
+	cover_url: string | null
+	duration: number | null
+	artist: string | null
+	bvid: string | null
+	cid: number | null
+}
+
+function trackFromRow(item: TrackRow): LibraryTrack {
+	const clip = parseBilibiliTrackKey(item.unique_key)
+	return {
+		id: item.unique_key,
+		bvid: item.bvid as string,
+		cid: Number(item.cid ?? 0),
+		title: item.title,
+		artist: item.artist ?? '',
+		artwork: item.cover_url ?? '',
+		duration: Number(item.duration ?? 0),
+		...(clip && clip.clipStartSec != null && clip.clipEndSec != null
+			? { clipStartSec: clip.clipStartSec, clipEndSec: clip.clipEndSec }
+			: {}),
+	}
 }
 
 export class PlayerDatabase {
@@ -279,15 +306,7 @@ export class PlayerDatabase {
          WHERE pt.playlist_id = ?
          ORDER BY pt.sort_key`,
 			)
-			.all(id) as Array<{
-			unique_key: string
-			title: string
-			cover_url: string | null
-			duration: number | null
-			artist: string | null
-			bvid: string | null
-			cid: number | null
-		}>
+			.all(id) as unknown as TrackRow[]
 		return {
 			id: String(row.id),
 			title: row.title,
@@ -300,17 +319,7 @@ export class PlayerDatabase {
 			lastShareSyncAt: row.last_share_sync_at
 				? Number(row.last_share_sync_at)
 				: null,
-			tracks: tracks
-				.filter((item) => item.bvid)
-				.map((item) => ({
-					id: item.unique_key,
-					bvid: item.bvid as string,
-					cid: Number(item.cid ?? 0),
-					title: item.title,
-					artist: item.artist ?? '',
-					artwork: item.cover_url ?? '',
-					duration: Number(item.duration ?? 0),
-				})),
+			tracks: tracks.filter((item) => item.bvid).map(trackFromRow),
 		}
 	}
 
