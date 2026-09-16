@@ -90,6 +90,19 @@ export function clipEnded(
 	return hasClipWindow(track) && audioTimeSec >= track.clipEndSec!
 }
 
+export function shouldKeepAudioSrc(
+	previous: { bvid: string; cid: number } | undefined,
+	next: { bvid: string; cid: number },
+	hasSrc: boolean,
+): boolean {
+	return Boolean(
+		hasSrc &&
+		previous &&
+		previous.bvid === next.bvid &&
+		previous.cid === next.cid,
+	)
+}
+
 export function formatMs(ms: number) {
 	if (!Number.isFinite(ms) || ms < 0) return '00:00'
 	const total = Math.floor(ms / 1000)

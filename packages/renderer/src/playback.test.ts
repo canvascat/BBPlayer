@@ -10,6 +10,7 @@ import {
 	progressDurationMs,
 	RepeatMode,
 	shuffleOrder,
+	shouldKeepAudioSrc,
 	uiDurationMs,
 	uiTimeMs,
 } from './playback.ts'
@@ -75,4 +76,19 @@ test('无窗口时音频时间原样进出', () => {
 	assert.equal(uiTimeMs(12, {}), 12_000)
 	assert.equal(audioTimeSec(12_000, {}), 12)
 	assert.equal(clipEnded(12, {}), false)
+})
+
+test('同 cid 且已有 src 时保留', () => {
+	assert.equal(
+		shouldKeepAudioSrc({ bvid: 'BV1', cid: 1 }, { bvid: 'BV1', cid: 1 }, true),
+		true,
+	)
+	assert.equal(
+		shouldKeepAudioSrc({ bvid: 'BV1', cid: 1 }, { bvid: 'BV1', cid: 2 }, true),
+		false,
+	)
+	assert.equal(
+		shouldKeepAudioSrc(undefined, { bvid: 'BV1', cid: 1 }, true),
+		false,
+	)
 })

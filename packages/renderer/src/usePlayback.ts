@@ -2,6 +2,7 @@ import {
 	displayArtist,
 	displayTitle,
 	generateUniqueTrackKey,
+	hasClipWindow,
 	type AmllLyricLine,
 } from '@bbplayer/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -10,11 +11,17 @@ import { applyFilterSessionView } from './filter-session'
 import { lyricClockMs, lyricSeekMs, stepLyricOffset } from './lyric-offset'
 import { currentLyricText } from './lyric-text'
 import {
+	audioTimeSec,
+	clipEnded,
+	clipStartSecOf,
 	neighborIndex,
 	nextRepeatMode,
 	progressDurationMs,
 	RepeatMode,
 	shuffleOrder,
+	shouldKeepAudioSrc,
+	uiDurationMs,
+	uiTimeMs,
 	type RepeatMode as RepeatModeValue,
 	type TrackItem,
 } from './playback'
@@ -35,6 +42,7 @@ export function usePlayback() {
 	const playGenerationRef = useRef(0)
 	const pendingLyricOffsetsRef = useRef(new Map<string, number>())
 	const persistInFlightRef = useRef(false)
+	const clipAdvanceRef = useRef(false)
 	const playTrackRef = useRef<
 		(list: TrackItem[], start: number, seekMs?: number) => Promise<void>
 	>(async () => undefined)
@@ -60,12 +68,26 @@ export function usePlayback() {
 		const audio = audioRef.current
 		if (!audio) return
 		const onTime = () => {
-			setCurrentTime(Math.round(audio.currentTime * 1000))
-			setDuration(audio.duration * 1000 || 0)
+			const current = queueRef.current[indexRef.current]
+			if (current && clipEnded(audio.currentTime, current)) {
+				if (!clipAdvanceRef.current) {
+					clipAdvanceRef.current = true
+					if (repeatRef.current === RepeatMode.TRACK) {
+						audio.currentTime = clipStartSecOf(current)
+						clipAdvanceRef.current = false
+					} else {
+						skipRef.current(1)
+					}
+				}
+			}
+			setCurrentTime(uiTimeMs(audio.currentTime, current ?? {}))
+			setDuration(uiDurationMs(current ?? {}, audio.duration))
 		}
 		const onPlay = () => setPlaying(true)
 		const onPause = () => setPlaying(false)
 		const onEnded = () => {
+			const current = queueRef.current[indexRef.current]
+			if (current && hasClipWindow(current)) return
 			if (repeatRef.current === RepeatMode.TRACK) {
 				audio.currentTime = 0
 				void audio.play()
@@ -90,6 +112,7 @@ export function usePlayback() {
 			const playGeneration = ++playGenerationRef.current
 			const track = list[start]
 			if (!track) return
+			const previous = queueRef.current[indexRef.current]
 			setError('')
 			setQueue(list)
 			setIndex(start)
@@ -100,15 +123,24 @@ export function usePlayback() {
 				if (playGeneration !== playGenerationRef.current) return
 				const audio = audioRef.current
 				if (!audio) return
-				audio.src = resolved.playUrl
+				clipAdvanceRef.current = false
+				const keepSrc = shouldKeepAudioSrc(previous, track, Boolean(audio.src))
+				if (!keepSrc) {
+					audio.src = resolved.playUrl
+				}
 				audio.playbackRate = playbackRate
 				setLyricOffsetSec(resolved.lyricOffset ?? 0)
 				setLyrics((resolved.lyrics ?? []) as AmllLyricLine[])
-				if (seekMs > 0) {
+				const applySeek = () => {
+					audio.currentTime = audioTimeSec(seekMs, track)
+				}
+				if (keepSrc || audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+					applySeek()
+				} else {
 					const onLoaded = () => {
 						audio.removeEventListener('loadedmetadata', onLoaded)
 						if (playGeneration !== playGenerationRef.current) return
-						audio.currentTime = seekMs / 1000
+						applySeek()
 					}
 					audio.addEventListener('loadedmetadata', onLoaded)
 				}
@@ -217,7 +249,12 @@ export function usePlayback() {
 
 	const seek = useCallback((value: number) => {
 		setCurrentTime(value)
-		if (audioRef.current) audioRef.current.currentTime = value / 1000
+		if (audioRef.current) {
+			audioRef.current.currentTime = audioTimeSec(
+				value,
+				queueRef.current[indexRef.current] ?? {},
+			)
+		}
 	}, [])
 
 	const flushLyricOffsets = useCallback(async () => {
@@ -293,9 +330,10 @@ export function usePlayback() {
 	const seekBy = useCallback((deltaMs: number) => {
 		const audio = audioRef.current
 		if (!audio?.src) return
-		const next = Math.max(0, audio.currentTime + deltaMs / 1000)
-		audio.currentTime = next
-		setCurrentTime(Math.round(next * 1000))
+		const track = queueRef.current[indexRef.current] ?? {}
+		const ui = uiTimeMs(audio.currentTime, track)
+		audio.currentTime = audioTimeSec(ui + deltaMs, track)
+		setCurrentTime(uiTimeMs(audio.currentTime, track))
 	}, [])
 
 	const playNext = useCallback((track: TrackItem) => {
