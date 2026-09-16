@@ -20,6 +20,10 @@ const trackSchema = z.object({
 	tid: z.number().optional(),
 	musicTitle: z.string().optional(),
 	musicArtist: z.string().optional(),
+	clipStartSec: z.number().optional(),
+	clipEndSec: z.number().optional(),
+	videoTitle: z.string().optional(),
+	sourceDuration: z.number().optional(),
 })
 
 export const downloadsRouter = router({

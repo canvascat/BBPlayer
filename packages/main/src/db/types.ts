@@ -9,6 +9,10 @@ export interface LibraryTrack {
 	tid?: number
 	musicTitle?: string
 	musicArtist?: string
+	clipStartSec?: number
+	clipEndSec?: number
+	videoTitle?: string
+	sourceDuration?: number
 }
 
 export type ShareRole = 'owner' | 'editor' | 'subscriber'

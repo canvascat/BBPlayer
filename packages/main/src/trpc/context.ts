@@ -13,6 +13,10 @@ export type ResolveTrack = {
 	artwork?: string
 	duration?: number
 	musicTitle?: string
+	clipStartSec?: number
+	clipEndSec?: number
+	videoTitle?: string
+	sourceDuration?: number
 }
 
 export type GeetestResult = {
