@@ -3,7 +3,12 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { parseAndMergeLyrics, splLinesToAmll } from '@bbplayer/core'
+import {
+	audioCacheKey,
+	hasClipWindow,
+	parseAndMergeLyrics,
+	splLinesToAmll,
+} from '@bbplayer/core'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import {
 	app,
@@ -54,7 +59,12 @@ import { lyricSearchInput } from './music-meta'
 import { overlayMusicMeta } from './music-meta-store'
 import { openGeetestWindow } from './phone-login'
 import { type AppStore } from './store'
-import { createTRPCContext } from './trpc/context'
+import {
+	readTrackLyrics,
+	type TrackLyricsPayload,
+	writeTrackLyrics,
+} from './track-lyrics-store'
+import { createTRPCContext, type ResolveTrack } from './trpc/context'
 import { createDesktopEvents } from './trpc/events'
 import { liveState } from './trpc/live-state'
 import { appRouter } from './trpc/router'
@@ -552,38 +562,37 @@ async function checkUpdates(notify = false) {
 	return result
 }
 
-async function resolvePlay(track: {
-	id?: string
-	bvid: string
-	cid: number
-	title: string
-	artist?: string
-	artwork?: string
-	duration?: number
-	musicTitle?: string
-}) {
+async function resolvePlay(track: ResolveTrack) {
 	try {
 		const id = trackIdForOffset(track)
+		const fileId = hasClipWindow(track)
+			? audioCacheKey({
+					bvid: track.bvid,
+					cid: track.cid,
+					clipStartSec: track.clipStartSec,
+					clipEndSec: track.clipEndSec,
+				})
+			: id
 		await audioProxy.start()
-		const cached = downloadManager.isComplete(id)
-			? downloadManager.list().find((item) => item.id === id)
+		const cachedFile = downloadManager.isComplete(fileId)
+			? downloadManager.list().find((item) => item.id === fileId)
 			: undefined
 		let playUrl: string
-		if (cached) {
-			playUrl = audioProxy.setFile(downloadManager.filePath(id))
+		if (cachedFile) {
+			playUrl = audioProxy.setFile(downloadManager.filePath(fileId))
 		} else {
 			const stream = await getAudioStream(track.bvid, track.cid, cookie())
 			playUrl = audioProxy.setSource(stream.url, cookie())
 			if (store.get('autoCache') ?? true) {
 				downloadManager.enqueue({
 					track: {
-						id,
+						id: fileId,
 						bvid: track.bvid,
 						cid: track.cid,
-						title: track.title,
+						title: track.videoTitle ?? track.title,
 						artist: track.artist ?? '',
 						artwork: track.artwork ?? '',
-						duration: track.duration ?? 0,
+						duration: track.sourceDuration ?? track.duration ?? 0,
 						size: 0,
 						cachedAt: 0,
 					},
@@ -594,16 +603,21 @@ async function resolvePlay(track: {
 		}
 		let lyrics: ReturnType<typeof splLinesToAmll> = []
 		let lyricSource: string | undefined
-		if (cached?.lyrics?.lrc) {
-			lyrics = splLinesToAmll(parseAndMergeLyrics(cached.lyrics))
-			lyricSource = 'cache'
+		const storedLyrics: TrackLyricsPayload | undefined =
+			readTrackLyrics(store, id) ??
+			(id === fileId ? cachedFile?.lyrics : undefined)
+		if (storedLyrics?.lrc) {
+			lyrics = splLinesToAmll(parseAndMergeLyrics(storedLyrics))
+			lyricSource = storedLyrics.source ?? 'cache'
 		} else {
 			try {
-				const preciseKeyword = await getPreciseMusicNameOnBilibiliVideo(
-					track.bvid,
-					track.cid,
-					cookie(),
-				)
+				const preciseKeyword = hasClipWindow(track)
+					? undefined
+					: await getPreciseMusicNameOnBilibiliVideo(
+							track.bvid,
+							track.cid,
+							cookie(),
+						)
 				const search = lyricSearchInput(
 					{ title: track.title, musicTitle: track.musicTitle },
 					preciseKeyword,
@@ -617,7 +631,8 @@ async function resolvePlay(track: {
 				if (raw?.lrc) {
 					lyrics = splLinesToAmll(parseAndMergeLyrics(raw))
 					lyricSource = raw.source
-					downloadManager.saveLyrics(id, raw)
+					writeTrackLyrics(store, id, raw)
+					if (id === fileId) downloadManager.saveLyrics(fileId, raw)
 				}
 			} catch (error) {
 				getLogger('desktop').warn({ err: error }, 'fetch lyrics failed')
@@ -627,7 +642,7 @@ async function resolvePlay(track: {
 		return {
 			playUrl,
 			lyrics,
-			cached: Boolean(cached),
+			cached: Boolean(cachedFile),
 			lyricSource,
 			lyricOffset: readLyricOffset(store, id),
 		}

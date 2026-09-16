@@ -3,6 +3,7 @@ import { test, assert } from 'vitest'
 import {
 	parseLyricSource,
 	parseNeteaseLyrics,
+	preciseKeywordForTrack,
 	preciseMusicNameFromBgm,
 	providersForLyricSource,
 	raceLyricProviders,
@@ -27,6 +28,14 @@ test('B 站 bgm 标题优先抽出书名号里的歌名', () => {
 	assert.equal(preciseMusicNameFromBgm('起风了'), '起风了')
 	assert.equal(preciseMusicNameFromBgm(undefined), undefined)
 	assert.equal(preciseMusicNameFromBgm(''), undefined)
+})
+
+test('有窗口时忽略 BGM', () => {
+	assert.equal(
+		preciseKeywordForTrack({ clipStartSec: 0, clipEndSec: 10 }, '《跨时代》'),
+		undefined,
+	)
+	assert.equal(preciseKeywordForTrack({}, '《跨时代》'), '跨时代')
 })
 
 test('歌词源缺省或非法时默认网易云', () => {

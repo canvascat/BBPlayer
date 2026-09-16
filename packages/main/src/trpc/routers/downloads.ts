@@ -1,3 +1,4 @@
+import { audioCacheKey, hasClipWindow } from '@bbplayer/core'
 import { map } from 'rxjs'
 import { z } from 'zod'
 
@@ -40,8 +41,18 @@ export const downloadsRouter = router({
 			input.cid,
 			cookieFrom(ctx.store),
 		)
+		const track = hasClipWindow(input)
+			? {
+					...input,
+					id: audioCacheKey(input),
+					title: input.videoTitle ?? input.title,
+					duration: input.sourceDuration ?? input.duration,
+					size: 0,
+					cachedAt: 0,
+				}
+			: { ...input, size: 0, cachedAt: 0 }
 		downloadManager.enqueue({
-			track: { ...input, size: 0, cachedAt: 0 },
+			track,
 			url: stream.url,
 			cookie: cookieFrom(ctx.store),
 		})

@@ -1,4 +1,4 @@
-import { parseYrc } from '@bbplayer/core'
+import { hasClipWindow, parseYrc } from '@bbplayer/core'
 
 import { getLogger } from './logger/runtime.ts'
 
@@ -58,6 +58,14 @@ export function preciseMusicNameFromBgm(musicTitle?: string | null) {
 	if (!musicTitle?.trim()) return undefined
 	const filtered = /《(.+?)》/.exec(musicTitle)
 	return filtered?.[1] || musicTitle
+}
+
+export function preciseKeywordForTrack(
+	track: { clipStartSec?: number; clipEndSec?: number },
+	bgmTitle?: string | null,
+): string | undefined {
+	if (hasClipWindow(track)) return undefined
+	return preciseMusicNameFromBgm(bgmTitle)
 }
 
 export function parseNeteaseLyrics(lyricsResponse: NeteaseLyricResponse) {

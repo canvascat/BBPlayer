@@ -3,6 +3,7 @@ import type { LibraryTrack, LocalPlaylist } from './db'
 import type { CachedTrack } from './downloads'
 import type { LyricSource } from './lyric-match'
 import type { MusicMetaEntry } from './music-meta-store'
+import type { TrackLyricsPayload } from './track-lyrics-store'
 
 export type SkinTheme = {
 	name: string
@@ -37,6 +38,7 @@ export type Persisted = {
 	session?: PlaySession
 	lyricOffsets?: Record<string, number>
 	musicMeta?: Record<string, MusicMetaEntry>
+	trackLyrics?: Record<string, TrackLyricsPayload>
 	playlists: LocalPlaylist[]
 	account: BiliAccount | null
 	downloads: CachedTrack[]

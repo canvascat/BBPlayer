@@ -21,6 +21,20 @@ test('缺 id 时与 resolvePlay 同一套键', () => {
 		trackIdForOffset({ id: 'bilibili::BV1aa', bvid: 'BV1xx', cid: 9 }),
 		'bilibili::BV1aa',
 	)
+	assert.equal(
+		trackIdForOffset({
+			bvid: 'BV1xx',
+			cid: 9,
+			clipStartSec: 0,
+			clipEndSec: 10,
+		}),
+		generateUniqueTrackKey({
+			bvid: 'BV1xx',
+			cid: 9,
+			clipStartSec: 0,
+			clipEndSec: 10,
+		}),
+	)
 })
 
 test('写偏移、夹紧、回 0 删键，换词不影响', () => {

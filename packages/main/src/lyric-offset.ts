@@ -17,12 +17,16 @@ export function trackIdForOffset(track: {
 	id?: string
 	bvid: string
 	cid: number
+	clipStartSec?: number
+	clipEndSec?: number
 }) {
 	if (track.id) return track.id
 	return generateUniqueTrackKey({
 		bvid: track.bvid,
 		cid: track.cid,
 		isMultiPage: true,
+		clipStartSec: track.clipStartSec,
+		clipEndSec: track.clipEndSec,
 	})
 }
 
