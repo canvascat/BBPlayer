@@ -53,6 +53,13 @@ export function generateUniqueTrackKey(input: {
 	return `bilibili::${input.bvid}`
 }
 
+function parseNumericSegment(segment: string): number | null {
+	if (segment === '' || segment.trim() === '') return null
+	const num = Number(segment)
+	if (!Number.isFinite(num)) return null
+	return num
+}
+
 export function parseBilibiliTrackKey(id: string): {
 	bvid: string
 	cid?: number
@@ -63,15 +70,16 @@ export function parseBilibiliTrackKey(id: string): {
 	if (parts[0] !== 'bilibili' || !parts[1]) return null
 	if (parts.length === 2) return { bvid: parts[1] }
 	if (parts.length === 3) {
-		const cid = Number(parts[2])
-		if (!Number.isFinite(cid)) return null
+		const cid = parseNumericSegment(parts[2])
+		if (cid === null) return null
 		return { bvid: parts[1], cid }
 	}
 	if (parts.length === 5) {
-		const cid = Number(parts[2])
-		const clipStartSec = Number(parts[3])
-		const clipEndSec = Number(parts[4])
-		if (![cid, clipStartSec, clipEndSec].every(Number.isFinite)) return null
+		const cid = parseNumericSegment(parts[2])
+		const clipStartSec = parseNumericSegment(parts[3])
+		const clipEndSec = parseNumericSegment(parts[4])
+		if (cid === null || clipStartSec === null || clipEndSec === null)
+			return null
 		return { bvid: parts[1], cid, clipStartSec, clipEndSec }
 	}
 	return null

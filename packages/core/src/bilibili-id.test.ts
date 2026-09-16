@@ -36,6 +36,8 @@ test('从键还原 clip；非法键为 null', () => {
 		clipEndSec: 195,
 	})
 	assert.deepEqual(parseBilibiliTrackKey('bilibili::BV1xx'), { bvid: 'BV1xx' })
+	assert.equal(parseBilibiliTrackKey('bilibili::BV1xx::'), null)
+	assert.equal(parseBilibiliTrackKey('bilibili::BV1xx::9::::195'), null)
 	assert.equal(parseBilibiliTrackKey('av123'), null)
 })
 
