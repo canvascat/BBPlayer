@@ -2,6 +2,7 @@ import { test, assert } from 'vitest'
 
 import {
 	audioTimeSec,
+	clipAdvanceDecision,
 	clipEnded,
 	clipStartSecOf,
 	formatClock,
@@ -90,5 +91,78 @@ test('同 cid 且已有 src 时保留', () => {
 	assert.equal(
 		shouldKeepAudioSrc(undefined, { bvid: 'BV1', cid: 1 }, true),
 		false,
+	)
+})
+
+test('越过 clipEnd 且已闩锁时若时间回到窗口内则回臂', () => {
+	const latchedPastEnd = clipAdvanceDecision({
+		latched: true,
+		audioTimeSec: 477,
+		track: clip,
+		hasNeighbor: true,
+		repeat: RepeatMode.OFF,
+	})
+	assert.deepEqual(latchedPastEnd, { latched: true, action: 'none' })
+
+	const rearmed = clipAdvanceDecision({
+		latched: true,
+		audioTimeSec: 400,
+		track: clip,
+		hasNeighbor: true,
+		repeat: RepeatMode.OFF,
+	})
+	assert.deepEqual(rearmed, { latched: false, action: 'none' })
+})
+
+test('队尾章末每次 clipEnded 都暂停且不消耗闩锁', () => {
+	const first = clipAdvanceDecision({
+		latched: false,
+		audioTimeSec: 477,
+		track: clip,
+		hasNeighbor: false,
+		repeat: RepeatMode.OFF,
+	})
+	assert.deepEqual(first, { latched: false, action: 'pause' })
+
+	const again = clipAdvanceDecision({
+		latched: first.latched,
+		audioTimeSec: 480,
+		track: clip,
+		hasNeighbor: false,
+		repeat: RepeatMode.OFF,
+	})
+	assert.deepEqual(again, { latched: false, action: 'pause' })
+})
+
+test('有下一曲时首次章末消耗闩锁并 skip，已闩锁则不再 skip', () => {
+	const first = clipAdvanceDecision({
+		latched: false,
+		audioTimeSec: 477,
+		track: clip,
+		hasNeighbor: true,
+		repeat: RepeatMode.OFF,
+	})
+	assert.deepEqual(first, { latched: true, action: 'skip' })
+
+	const held = clipAdvanceDecision({
+		latched: true,
+		audioTimeSec: 478,
+		track: clip,
+		hasNeighbor: true,
+		repeat: RepeatMode.OFF,
+	})
+	assert.deepEqual(held, { latched: true, action: 'none' })
+})
+
+test('单曲循环章末回起点且不闩锁', () => {
+	assert.deepEqual(
+		clipAdvanceDecision({
+			latched: false,
+			audioTimeSec: 477,
+			track: clip,
+			hasNeighbor: false,
+			repeat: RepeatMode.TRACK,
+		}),
+		{ latched: false, action: 'repeat-track' },
 	)
 })

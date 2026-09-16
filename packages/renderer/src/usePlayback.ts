@@ -12,7 +12,7 @@ import { lyricClockMs, lyricSeekMs, stepLyricOffset } from './lyric-offset'
 import { currentLyricText } from './lyric-text'
 import {
 	audioTimeSec,
-	clipEnded,
+	clipAdvanceDecision,
 	clipStartSecOf,
 	neighborIndex,
 	nextRepeatMode,
@@ -69,15 +69,28 @@ export function usePlayback() {
 		if (!audio) return
 		const onTime = () => {
 			const current = queueRef.current[indexRef.current]
-			if (current && clipEnded(audio.currentTime, current)) {
-				if (!clipAdvanceRef.current) {
-					clipAdvanceRef.current = true
-					if (repeatRef.current === RepeatMode.TRACK) {
-						audio.currentTime = clipStartSecOf(current)
-						clipAdvanceRef.current = false
-					} else {
-						skipRef.current(1)
-					}
+			if (current) {
+				const next = neighborIndex(
+					queueRef.current.length,
+					indexRef.current,
+					1,
+					repeatRef.current,
+					shuffleRef.current ? orderRef.current : null,
+				)
+				const decision = clipAdvanceDecision({
+					latched: clipAdvanceRef.current,
+					audioTimeSec: audio.currentTime,
+					track: current,
+					hasNeighbor: next !== null,
+					repeat: repeatRef.current,
+				})
+				clipAdvanceRef.current = decision.latched
+				if (decision.action === 'repeat-track') {
+					audio.currentTime = clipStartSecOf(current)
+				} else if (decision.action === 'skip') {
+					skipRef.current(1)
+				} else if (decision.action === 'pause') {
+					audio.pause()
 				}
 			}
 			setCurrentTime(uiTimeMs(audio.currentTime, current ?? {}))
@@ -118,6 +131,7 @@ export function usePlayback() {
 			setIndex(start)
 			setStatus('正在获取音频…')
 			setLyricOffsetSec(0)
+			clipAdvanceRef.current = false
 			try {
 				const resolved = await trpcClient.player.resolve.mutate(track)
 				if (playGeneration !== playGenerationRef.current) return
@@ -160,6 +174,7 @@ export function usePlayback() {
 				setStatus(bits.join(' · '))
 			} catch (err) {
 				if (playGeneration !== playGenerationRef.current) return
+				clipAdvanceRef.current = false
 				setError(err instanceof Error ? err.message : String(err))
 				setStatus('')
 			}

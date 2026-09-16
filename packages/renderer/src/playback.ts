@@ -90,6 +90,39 @@ export function clipEnded(
 	return hasClipWindow(track) && audioTimeSec >= track.clipEndSec!
 }
 
+export type ClipAdvanceAction = 'none' | 'repeat-track' | 'skip' | 'pause'
+
+export function clipAdvanceDecision({
+	latched,
+	audioTimeSec,
+	track,
+	hasNeighbor,
+	repeat,
+}: {
+	latched: boolean
+	audioTimeSec: number
+	track: { clipStartSec?: number; clipEndSec?: number }
+	hasNeighbor: boolean
+	repeat: RepeatMode
+}): { latched: boolean; action: ClipAdvanceAction } {
+	if (hasClipWindow(track) && audioTimeSec < track.clipEndSec!) {
+		return { latched: false, action: 'none' }
+	}
+	if (!clipEnded(audioTimeSec, track)) {
+		return { latched, action: 'none' }
+	}
+	if (repeat === RepeatMode.TRACK) {
+		return { latched: false, action: 'repeat-track' }
+	}
+	if (!hasNeighbor) {
+		return { latched, action: 'pause' }
+	}
+	if (latched) {
+		return { latched: true, action: 'none' }
+	}
+	return { latched: true, action: 'skip' }
+}
+
 export function shouldKeepAudioSrc(
 	previous: { bvid: string; cid: number } | undefined,
 	next: { bvid: string; cid: number },
