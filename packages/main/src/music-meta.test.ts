@@ -318,3 +318,61 @@ test('AI 失败只保留规则字段', async () => {
 	assert.equal(result[0]?.musicTitle, '晴天')
 	assert.equal(result[0]?.musicArtist, undefined)
 })
+
+test('章节规则不用稿件书名号，章名经 cleanKeyword', () => {
+	const guessed = ruleGuess({
+		part: '说了再见',
+		videoTitle: '周杰伦专辑《跨时代》音频修复',
+		desc: '',
+		partIsChapter: true,
+	})
+	assert.equal(guessed.title, '说了再见')
+})
+
+test('alwaysAi 时 high+not_music 标记 drop', async () => {
+	const store = memoryStore({ musicAiApiKey: 'sk' })
+	const result = await fillMusicFields(
+		{
+			bvid: 'BV1',
+			title: '周杰伦专辑《跨时代》',
+			pages: [
+				{ id: 'a', part: '片头' },
+				{ id: 'b', part: '说了再见' },
+				{ id: 'c', part: '烟花易冷' },
+			],
+			ownerName: 'UP',
+			isMultiPage: true,
+			alwaysAi: true,
+			partIsChapter: true,
+		},
+		{
+			store,
+			complete: async () => [
+				{
+					index: 1,
+					title: null,
+					artist: null,
+					confidence: 'high',
+					kind: 'not_music',
+				},
+				{
+					index: 2,
+					title: '说了再见',
+					artist: '周杰伦',
+					confidence: 'high',
+					kind: 'original',
+				},
+				{
+					index: 3,
+					title: '烟花易冷',
+					artist: '周杰伦',
+					confidence: 'high',
+					kind: 'original',
+				},
+			],
+		},
+	)
+	assert.equal(result[0]?.drop, true)
+	assert.equal(result[1]?.drop, false)
+	assert.equal(result[1]?.musicTitle, '说了再见')
+})

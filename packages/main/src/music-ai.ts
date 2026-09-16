@@ -18,7 +18,7 @@ export type MusicAiConfig = {
 }
 
 const SYSTEM_PROMPT =
-	'从 B 站投稿信息抽取歌曲名和歌手；禁止编造；UP 名不等于歌手，除非标题或简介明确写了原唱/演唱者。只输出 JSON。'
+	'从 B 站投稿信息抽取歌曲名和歌手；pages 可能是视频章节；禁止编造；UP 名不等于歌手，除非标题或简介明确写了原唱/演唱者。口播/片头/花絮用 kind=not_music。只输出 JSON。'
 
 let active = 0
 const waiters: Array<() => void> = []

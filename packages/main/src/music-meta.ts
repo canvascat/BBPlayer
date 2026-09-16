@@ -1,8 +1,12 @@
 import { createHash } from 'node:crypto'
 
 import { getLogger } from './logger/runtime.ts'
-import { preciseMusicNameFromBgm } from './lyric-match.ts'
-import { readMusicMeta, writeMusicMeta } from './music-meta-store.ts'
+import { cleanKeyword, preciseMusicNameFromBgm } from './lyric-match.ts'
+import {
+	readMusicMeta,
+	writeMusicMeta,
+	type MusicMetaEntry,
+} from './music-meta-store.ts'
 import type { TrpcStore } from './trpc/context.ts'
 
 export const DESC_LIMIT = 2000
@@ -50,16 +54,22 @@ export function ruleGuess(input: {
 	part: string
 	videoTitle: string
 	desc: string
+	partIsChapter?: boolean
 }): { title?: string; artist?: string } {
 	const fromDesc = extractFromDescription(input.desc)
-	const title =
-		extractBracketTitle(input.part) ??
-		extractBracketTitle(input.videoTitle) ??
-		fromDesc.title
+	const title = input.partIsChapter
+		? (extractBracketTitle(input.part) ?? cleanKeyword(input.part))
+		: (extractBracketTitle(input.part) ??
+			extractBracketTitle(input.videoTitle) ??
+			fromDesc.title)
 	const result: { title?: string; artist?: string } = {}
 	if (title) result.title = title
 	if (fromDesc.artist) result.artist = fromDesc.artist
 	return result
+}
+
+export function shouldDropChapter(ai: MusicAiTrack | undefined): boolean {
+	return ai?.confidence === 'high' && ai.kind === 'not_music'
 }
 
 export function musicSourceHash(input: {
@@ -135,6 +145,13 @@ export function mergePageMeta(
 
 type CompleteMusicAi = typeof import('./music-ai.ts').completeMusicAi
 
+type FilledMusicFields = {
+	id: string
+	musicTitle?: string
+	musicArtist?: string
+	drop?: boolean
+}
+
 export async function fillMusicFields(
 	input: {
 		bvid: string
@@ -143,12 +160,14 @@ export async function fillMusicFields(
 		ownerName: string
 		pages: MusicPageInput[]
 		isMultiPage: boolean
+		alwaysAi?: boolean
+		partIsChapter?: boolean
 	},
 	deps: {
 		store: Pick<TrpcStore, 'get' | 'set'>
 		complete?: CompleteMusicAi
 	},
-): Promise<Array<{ id: string; musicTitle?: string; musicArtist?: string }>> {
+): Promise<FilledMusicFields[]> {
 	const desc = truncateDesc(input.desc)
 	const hash = musicSourceHash({
 		title: input.title,
@@ -164,14 +183,17 @@ export async function fillMusicFields(
 	const fieldsComplete = cached.every(
 		(entry) => entry?.musicTitle && entry?.musicArtist,
 	)
-	if (hashMatched && (fieldsComplete || !apiKey)) {
+	const kindsComplete = cached.every((entry) => entry?.kind)
+	const skipModel = input.alwaysAi
+		? hashMatched && kindsComplete
+		: hashMatched && (fieldsComplete || !apiKey)
+	if (skipModel) {
 		return input.pages.map((page, index) => {
 			const entry = cached[index]!
-			const result: {
-				id: string
-				musicTitle?: string
-				musicArtist?: string
-			} = { id: page.id }
+			const result: FilledMusicFields = {
+				id: page.id,
+				drop: entry.kind === 'not_music',
+			}
 			if (entry.musicTitle) result.musicTitle = entry.musicTitle
 			if (entry.musicArtist) result.musicArtist = entry.musicArtist
 			return result
@@ -183,12 +205,13 @@ export async function fillMusicFields(
 			part: page.part,
 			videoTitle: input.title,
 			desc,
+			partIsChapter: input.partIsChapter,
 		}),
 	)
 	const needsAi = rules.some((rule) => !rule.title || !rule.artist)
 	let tracks: MusicAiTrack[] | null | undefined
 
-	if (needsAi && apiKey) {
+	if ((needsAi || input.alwaysAi) && apiKey) {
 		const complete =
 			deps.complete ?? (await import('./music-ai.ts')).completeMusicAi
 		try {
@@ -221,11 +244,14 @@ export async function fillMusicFields(
 
 	const persist = !(needsAi && !apiKey)
 	return input.pages.map((page, index) => {
-		const merged = mergePageMeta(rules[index], aiByIndex.get(index + 1))
+		const ai = aiByIndex.get(index + 1)
+		const merged = mergePageMeta(rules[index], ai)
 		if (persist) {
-			writeMusicMeta(deps.store, page.id, { ...merged, sourceHash: hash })
+			const entry: MusicMetaEntry = { ...merged, sourceHash: hash }
+			if (ai) entry.kind = ai.kind
+			writeMusicMeta(deps.store, page.id, entry)
 		}
-		return { id: page.id, ...merged }
+		return { id: page.id, ...merged, drop: shouldDropChapter(ai) }
 	})
 }
 

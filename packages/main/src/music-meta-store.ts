@@ -4,6 +4,7 @@ export type MusicMetaEntry = {
 	musicTitle?: string
 	musicArtist?: string
 	sourceHash: string
+	kind?: 'original' | 'cover' | 'medley' | 'not_music'
 }
 
 export function readMusicMeta(
