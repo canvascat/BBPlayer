@@ -1,4 +1,4 @@
-import { generateUniqueTrackKey } from '@bbplayer/core'
+import { generateUniqueTrackKey, shouldFetchViewPoints } from '@bbplayer/core'
 import { z } from 'zod'
 
 import {
@@ -11,6 +11,7 @@ import {
 	getReplyComments,
 	getUploaderVideos,
 	getVideoDetails,
+	getVideoViewPoints,
 	getWatchLater,
 	likeComment,
 	searchGarbSkins,
@@ -22,6 +23,7 @@ import {
 	readFilterNonSongs,
 } from '../../filter-non-songs'
 import { fillMusicFields } from '../../music-meta'
+import { expandChapterTracks } from '../../video-chapter-tracks'
 import { cookieFrom } from '../context'
 import { publicProcedure, router } from '../trpc'
 
@@ -121,6 +123,45 @@ export const biliRouter = router({
 					owner: details.owner,
 					pages,
 					filtered: gate.filtered,
+				}
+			}
+			if (
+				shouldFetchViewPoints({
+					pageCount: details.pages.length,
+					tid: details.tid,
+					title: details.title,
+					musicAiApiKey: ctx.store.get('musicAiApiKey'),
+				})
+			) {
+				const points = await getVideoViewPoints(
+					input.bvid,
+					pages[0].cid,
+					cookieFrom(ctx.store),
+				)
+				const expanded = await expandChapterTracks(
+					{
+						bvid: input.bvid,
+						cid: pages[0].cid,
+						videoTitle: details.title,
+						videoDuration: details.duration,
+						tid: details.tid,
+						artist: details.owner.name,
+						artwork: cover,
+						desc: details.desc,
+						ownerName: details.owner.name,
+						points,
+					},
+					{ store: ctx.store },
+				)
+				if (expanded) {
+					return {
+						bvid: details.bvid,
+						title: details.title,
+						cover,
+						owner: details.owner,
+						pages: expanded,
+						filtered: gate.filtered,
+					}
 				}
 			}
 			const filled = await fillMusicFields(

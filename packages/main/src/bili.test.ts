@@ -5,7 +5,7 @@ import {
 	withBiliImageCorsHeaders,
 	withBiliImageHeaders,
 } from './bili-image.ts'
-import { videoTid } from './bili.ts'
+import { readViewPoints, videoTid } from './bili.ts'
 
 test('协议相对封面地址补成 https', () => {
 	assert.equal(
@@ -56,4 +56,12 @@ test('videoTid 读取 tid 或 typeid', () => {
 	assert.equal(videoTid({ typeid: '28' }), 28)
 	assert.equal(videoTid({}), undefined)
 	assert.equal(videoTid({ tid: 0 }), undefined)
+})
+
+test('readViewPoints 缺字段得空数组', () => {
+	assert.deepEqual(readViewPoints(undefined), [])
+	assert.deepEqual(
+		readViewPoints({ view_points: [{ content: 'a', from: 0, to: 1 }] }).length,
+		1,
+	)
 })

@@ -275,6 +275,31 @@ export function videoTid(item: {
 	return n
 }
 
+export function readViewPoints(data: unknown): unknown[] {
+	if (!data || typeof data !== 'object') return []
+	const points = (data as { view_points?: unknown }).view_points
+	return Array.isArray(points) ? points : []
+}
+
+export async function getVideoViewPoints(
+	bvid: string,
+	cid: number,
+	cookie: string,
+): Promise<unknown> {
+	try {
+		const json = await biliFetch(
+			'/x/player/wbi/v2',
+			cookie,
+			{ bvid, cid: String(cid) },
+			true,
+		)
+		return readViewPoints(json.data)
+	} catch (error) {
+		getLogger('bili').warn({ err: error }, 'fetch view points failed')
+		return []
+	}
+}
+
 export interface RemoteVideo {
 	bvid: string
 	title: string
