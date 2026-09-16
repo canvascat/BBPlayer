@@ -1,3 +1,5 @@
+import { hasClipWindow } from '@bbplayer/core'
+
 export interface TrackItem {
 	id: string
 	bvid: string
@@ -9,6 +11,10 @@ export interface TrackItem {
 	tid?: number
 	musicTitle?: string
 	musicArtist?: string
+	clipStartSec?: number
+	clipEndSec?: number
+	videoTitle?: string
+	sourceDuration?: number
 }
 
 export type RepeatMode = 0 | 1 | 2
@@ -29,6 +35,59 @@ export function repeatLabel(mode: RepeatMode) {
 	if (mode === RepeatMode.TRACK) return '单曲循环'
 	if (mode === RepeatMode.QUEUE) return '列表循环'
 	return '循环关闭'
+}
+
+export function clipStartSecOf(track: {
+	clipStartSec?: number
+	clipEndSec?: number
+}): number {
+	return hasClipWindow(track) ? track.clipStartSec! : 0
+}
+
+export function uiTimeMs(
+	audioTimeSec: number,
+	track: { clipStartSec?: number; clipEndSec?: number },
+): number {
+	const start = clipStartSecOf(track)
+	const end = hasClipWindow(track)
+		? track.clipEndSec!
+		: Number.POSITIVE_INFINITY
+	const clamped = Math.min(end, Math.max(start, audioTimeSec))
+	return Math.round((clamped - start) * 1000)
+}
+
+export function uiDurationMs(
+	track: {
+		clipStartSec?: number
+		clipEndSec?: number
+		duration?: number
+	},
+	audioDurationSec?: number,
+): number {
+	if (hasClipWindow(track)) {
+		return Math.round((track.clipEndSec! - track.clipStartSec!) * 1000)
+	}
+	if (Number.isFinite(audioDurationSec) && (audioDurationSec ?? 0) > 0) {
+		return Math.round((audioDurationSec as number) * 1000)
+	}
+	return (track.duration ?? 0) * 1000
+}
+
+export function audioTimeSec(
+	uiTimeMs: number,
+	track: { clipStartSec?: number; clipEndSec?: number },
+): number {
+	const start = clipStartSecOf(track)
+	const raw = start + Math.max(0, uiTimeMs) / 1000
+	if (!hasClipWindow(track)) return raw
+	return Math.min(track.clipEndSec!, Math.max(start, raw))
+}
+
+export function clipEnded(
+	audioTimeSec: number,
+	track: { clipStartSec?: number; clipEndSec?: number },
+): boolean {
+	return hasClipWindow(track) && audioTimeSec >= track.clipEndSec!
 }
 
 export function formatMs(ms: number) {

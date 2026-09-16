@@ -1,12 +1,17 @@
 import { test, assert } from 'vitest'
 
 import {
+	audioTimeSec,
+	clipEnded,
+	clipStartSecOf,
 	formatClock,
 	neighborIndex,
 	nextRepeatMode,
 	progressDurationMs,
 	RepeatMode,
 	shuffleOrder,
+	uiDurationMs,
+	uiTimeMs,
 } from './playback.ts'
 
 test('循环模式按关闭 → 单曲 → 列表切换', () => {
@@ -49,4 +54,25 @@ test('音频时长有效时优先生效', () => {
 test('两边都没有有效时长时仍为 0', () => {
 	assert.equal(progressDurationMs(0, 0), 0)
 	assert.equal(progressDurationMs(0, -1), 0)
+})
+
+const clip = { clipStartSec: 195, clipEndSec: 477, duration: 282 }
+
+test('窗口时间从 clipStart 起算，seek 加回起点并夹紧', () => {
+	assert.equal(clipStartSecOf(clip), 195)
+	assert.equal(uiTimeMs(195, clip), 0)
+	assert.equal(uiTimeMs(200.5, clip), 5500)
+	assert.equal(audioTimeSec(0, clip), 195)
+	assert.equal(audioTimeSec(10_000, clip), 205)
+	assert.equal(audioTimeSec(-1, clip), 195)
+	assert.equal(audioTimeSec(999_000, clip), 477)
+	assert.equal(uiDurationMs(clip), 282_000)
+	assert.equal(clipEnded(477, clip), true)
+	assert.equal(clipEnded(476.9, clip), false)
+})
+
+test('无窗口时音频时间原样进出', () => {
+	assert.equal(uiTimeMs(12, {}), 12_000)
+	assert.equal(audioTimeSec(12_000, {}), 12)
+	assert.equal(clipEnded(12, {}), false)
 })
