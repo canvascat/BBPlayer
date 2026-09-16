@@ -3,7 +3,7 @@ import { assert, test } from 'vitest'
 import { createDesktopEvents } from '../events.ts'
 import { memoryStore, mockTrpcContext } from '../mock-context.ts'
 
-import { downloadsRouter } from './downloads.ts'
+import { cachedTrackForEnqueue, downloadsRouter } from './downloads.ts'
 
 const record = {
 	id: 's',
@@ -16,6 +16,28 @@ const record = {
 	size: 0,
 	cachedAt: 0,
 }
+
+test('cachedTrackForEnqueue 合辑章节只保留 CachedTrack 字段', () => {
+	const track = cachedTrackForEnqueue({
+		id: 'bilibili::BV1xx::9::0::195',
+		bvid: 'BV1xx',
+		cid: 9,
+		title: '章节标题',
+		videoTitle: '稿件标题',
+		artist: 'UP',
+		artwork: 'https://example.com/cover.jpg',
+		duration: 195,
+		sourceDuration: 2726,
+		musicTitle: '章节曲名',
+		clipStartSec: 0,
+		clipEndSec: 195,
+	})
+	assert.equal(track.id, 'bilibili::BV1xx::9')
+	assert.equal(track.title, '稿件标题')
+	assert.equal(track.duration, 2726)
+	assert.equal('clipStartSec' in track, false)
+	assert.equal('musicTitle' in track, false)
+})
 
 test('downloads.updates 叠上 musicMeta 缓存', async () => {
 	const events = createDesktopEvents()

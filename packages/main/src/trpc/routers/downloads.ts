@@ -3,7 +3,7 @@ import { map } from 'rxjs'
 import { z } from 'zod'
 
 import { getAudioStream } from '../../bili'
-import { downloadManager } from '../../downloads'
+import { type CachedTrack, downloadManager } from '../../downloads'
 import { filterSongItems, readFilterNonSongs } from '../../filter-non-songs'
 import { overlayMusicMeta } from '../../music-meta-store'
 import { cookieFrom } from '../context'
@@ -27,6 +27,27 @@ const trackSchema = z.object({
 	sourceDuration: z.number().optional(),
 })
 
+type EnqueueTrackInput = z.infer<typeof trackSchema>
+
+export function cachedTrackForEnqueue(
+	input: EnqueueTrackInput,
+): CachedTrack | (EnqueueTrackInput & { size: 0; cachedAt: 0 }) {
+	if (hasClipWindow(input)) {
+		return {
+			id: audioCacheKey(input),
+			bvid: input.bvid,
+			cid: input.cid,
+			title: input.videoTitle ?? input.title,
+			artist: input.artist,
+			artwork: input.artwork,
+			duration: input.sourceDuration ?? input.duration,
+			size: 0,
+			cachedAt: 0,
+		}
+	}
+	return { ...input, size: 0, cachedAt: 0 }
+}
+
 export const downloadsRouter = router({
 	list: publicProcedure.query(({ ctx }) =>
 		overlayMusicMeta(
@@ -41,16 +62,7 @@ export const downloadsRouter = router({
 			input.cid,
 			cookieFrom(ctx.store),
 		)
-		const track = hasClipWindow(input)
-			? {
-					...input,
-					id: audioCacheKey(input),
-					title: input.videoTitle ?? input.title,
-					duration: input.sourceDuration ?? input.duration,
-					size: 0,
-					cachedAt: 0,
-				}
-			: { ...input, size: 0, cachedAt: 0 }
+		const track = cachedTrackForEnqueue(input)
 		downloadManager.enqueue({
 			track,
 			url: stream.url,
