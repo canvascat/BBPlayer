@@ -1,3 +1,6 @@
+import type { ComponentProps } from 'react'
+
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export function OverflowText({
@@ -31,8 +34,22 @@ export function stripHtml(input: string) {
 	return input.replace(/<[^>]+>/g, '')
 }
 
-export const coverButtonClass =
+const coverButtonClass =
 	'h-auto w-32 min-w-0 flex-col items-stretch gap-2 p-0 whitespace-normal'
+
+export function CoverButton({
+	className,
+	variant = 'ghost',
+	...props
+}: ComponentProps<typeof Button>) {
+	return (
+		<Button
+			variant={variant}
+			className={cn(coverButtonClass, className)}
+			{...props}
+		/>
+	)
+}
 export const pageTitleClass = 'text-3xl font-semibold tracking-tight'
 export const coverGridClass =
 	'grid grid-cols-[repeat(auto-fill,128px)] justify-between gap-4'

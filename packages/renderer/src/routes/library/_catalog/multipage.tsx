@@ -3,19 +3,13 @@ import { useEffect, useState } from 'react'
 
 import { useApp, type SearchHit } from '@/app-context'
 import { LibraryLoginGate } from '@/components/library-login-gate'
-import { Button } from '@/components/ui/button'
 import {
 	Empty,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyTitle,
 } from '@/components/ui/empty'
-import {
-	CoverFace,
-	CoverMeta,
-	coverButtonClass,
-	coverGridClass,
-} from '@/cover-ui'
+import { CoverButton, CoverFace, CoverMeta, coverGridClass } from '@/cover-ui'
 import { multipageFavorite } from '@/library-nav'
 import { trpcClient } from '@/trpc'
 
@@ -91,10 +85,8 @@ function MultipageVideos({
 			) : videos.length > 0 ? (
 				<div className={coverGridClass}>
 					{videos.map((video) => (
-						<Button
-							className={coverButtonClass}
+						<CoverButton
 							key={video.bvid}
-							variant='ghost'
 							nativeButton={false}
 							render={
 								<Link
@@ -111,7 +103,7 @@ function MultipageVideos({
 								title={video.title}
 								subtitle={video.author}
 							/>
-						</Button>
+						</CoverButton>
 					))}
 				</div>
 			) : (

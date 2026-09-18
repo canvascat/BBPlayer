@@ -13,6 +13,7 @@
 		"type-check": "tsgo --build --noEmit"
 	},
 	"devDependencies": {
+		"@shadcn/lint": "^0.1.1",
 		"@types/node": "^25.2.3",
 		"@typescript/native-preview": "beta",
 		"typescript": "~7.0.2",

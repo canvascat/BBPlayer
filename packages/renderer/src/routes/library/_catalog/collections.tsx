@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react'
 
 import { useApp } from '@/app-context'
 import { LibraryLoginGate } from '@/components/library-login-gate'
-import { Button } from '@/components/ui/button'
 import {
 	Empty,
 	EmptyDescription,
@@ -11,12 +10,7 @@ import {
 	EmptyTitle,
 } from '@/components/ui/empty'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
-import {
-	CoverFace,
-	CoverMeta,
-	coverButtonClass,
-	coverGridClass,
-} from '@/cover-ui'
+import { CoverButton, CoverFace, CoverMeta, coverGridClass } from '@/cover-ui'
 
 export const Route = createFileRoute('/library/_catalog/collections')({
 	component: CollectionsPage,
@@ -53,10 +47,8 @@ function CollectionsPage() {
 			{filtered.length > 0 ? (
 				<div className={coverGridClass}>
 					{filtered.map((folder) => (
-						<Button
-							className={coverButtonClass}
+						<CoverButton
 							key={folder.id}
-							variant='ghost'
 							nativeButton={false}
 							render={
 								<Link
@@ -73,7 +65,7 @@ function CollectionsPage() {
 								title={folder.title}
 								subtitle={`${folder.itemCount} 首`}
 							/>
-						</Button>
+						</CoverButton>
 					))}
 				</div>
 			) : (

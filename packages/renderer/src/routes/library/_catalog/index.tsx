@@ -17,12 +17,7 @@ import {
 	EmptyTitle,
 } from '@/components/ui/empty'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
-import {
-	CoverFace,
-	CoverMeta,
-	coverButtonClass,
-	coverGridClass,
-} from '@/cover-ui'
+import { CoverButton, CoverFace, CoverMeta, coverGridClass } from '@/cover-ui'
 
 export const Route = createFileRoute('/library/_catalog/')({
 	component: PlaylistsPage,
@@ -65,9 +60,7 @@ function PlaylistsPage() {
 			{showWatchLater || filtered.length > 0 ? (
 				<div className={coverGridClass}>
 					{showWatchLater ? (
-						<Button
-							className={coverButtonClass}
-							variant='ghost'
+						<CoverButton
 							nativeButton={false}
 							render={<Link to='/library/watch-later' />}
 						>
@@ -76,14 +69,12 @@ function PlaylistsPage() {
 								title='稍后再看'
 								subtitle={`${watchLaterCount} 首`}
 							/>
-						</Button>
+						</CoverButton>
 					) : null}
 					{filtered.map((playlist) => (
 						<ContextMenu key={playlist.id}>
 							<ContextMenuTrigger>
-								<Button
-									className={coverButtonClass}
-									variant='ghost'
+								<CoverButton
 									nativeButton={false}
 									render={
 										<Link
@@ -100,7 +91,7 @@ function PlaylistsPage() {
 										title={playlist.title}
 										subtitle={`${playlist.itemCount} 首`}
 									/>
-								</Button>
+								</CoverButton>
 							</ContextMenuTrigger>
 							<ContextMenuContent>
 								<ContextMenuGroup>

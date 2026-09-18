@@ -15,6 +15,7 @@ export default defineConfig({
 			'import',
 			'promise',
 		],
+		jsPlugins: ['@shadcn/lint'],
 		categories: {
 			suspicious: 'error',
 			perf: 'error',
@@ -82,13 +83,121 @@ export default defineConfig({
 			'style-prop-object': 'allow',
 			'no-map-spread': 'allow',
 			'no-await-in-loop': 'allow',
+			'shadcn/no-restyle': [
+				'error',
+				{
+					allow: ['layout'],
+					contracts: [
+						{
+							pattern: '^Button$',
+							allow: [
+								'layout',
+								'px-*',
+								'py-*',
+								'p-0',
+								'gap-*',
+								'rounded-*',
+								'whitespace-*',
+								'bg-muted',
+								'hover:bg-transparent',
+							],
+							message: {
+								color:
+									'Use a Button variant, or bg-muted for pressed/selected ghost buttons.',
+								spacing:
+									'Use a Button size ({{sizes}}) unless this is a list/cover/nav row.',
+								default:
+									'Use a Button variant ({{variants}}) instead of restyling appearance.',
+							},
+						},
+						{
+							pattern: '^Empty$',
+							allow: ['layout', 'border'],
+						},
+						{
+							pattern: '^Card$',
+							allow: ['layout', 'spacing', 'rounded-*', '[--card-spacing:*]'],
+						},
+						{
+							pattern: '^Card(Header|Content|Footer|Action)$',
+							allow: ['layout', 'spacing'],
+						},
+						{
+							pattern: '^Card(Title|Description)$',
+							allow: ['layout', 'typography'],
+						},
+						{
+							pattern: '^InputGroup$',
+							allow: ['layout', 'bg-background'],
+						},
+						{
+							pattern: '^Slider$',
+							allow: ['layout', 'px-*', 'rounded-none'],
+						},
+					],
+				},
+			],
+			'shadcn/no-raw-colors': [
+				'error',
+				{
+					allow: ['bg-white'],
+					message:
+						'Use a theme token from {{file}} instead of "{{className}}". {{suggestions}}',
+				},
+			],
+			'shadcn/no-arbitrary-values': [
+				'error',
+				{
+					allow: [
+						'layout',
+						'text-[13px]',
+						'text-[22px]',
+						'[--amll-lp-color:*]',
+						'[--amll-lp-hover-bg-color:*]',
+						'[--amll-lp-font-size:*]',
+						'[--amll-lp-line-width-aspect:*]',
+					],
+				},
+			],
+			'shadcn/no-inline-styles': [
+				'error',
+				{
+					allow: [
+						'--*',
+						'display',
+						'animationDuration',
+						'transitionProperty',
+						'transitionDuration',
+						'transitionTimingFunction',
+						'gridTemplateColumns',
+						'maxWidth',
+						'height',
+						'width',
+						'minHeight',
+						'transition',
+					],
+				},
+			],
+			'shadcn/no-unknown-classes': 'error',
+			'shadcn/require-static-classes': 'error',
 		},
 		settings: {
 			react: {
 				version: '19.3',
 			},
+			shadcn: {
+				note: 'Prefer Button/Empty/Card variants and sizes. className is for layout. Tokens: packages/renderer/src/styles.css.',
+			},
 		},
 		overrides: [
+			{
+				files: ['packages/renderer/src/components/ui/**'],
+				rules: {
+					'shadcn/no-restyle': 'off',
+					'shadcn/no-arbitrary-values': 'off',
+					'shadcn/require-static-classes': 'off',
+				},
+			},
 			{
 				files: ['packages/**/*.{ts,tsx,js,jsx}'],
 				rules: {

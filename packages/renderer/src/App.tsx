@@ -16,6 +16,7 @@ import {
 	SkipForwardIcon,
 	UserIcon,
 } from 'lucide-react'
+import type { CSSProperties } from 'react'
 
 import { useApp } from '@/app-context'
 import { Button } from '@/components/ui/button'
@@ -74,15 +75,15 @@ export default function App() {
 		<TooltipProvider>
 			<div
 				className='relative isolate grid h-full grid-rows-[1fr_var(--bar-h)] bg-background text-foreground'
-				style={{
-					['--cover-image' as string]: coverImage,
-					...(app.skin?.primary
-						? {
-								['--app-primary' as string]: app.skin.primary,
-								['--app-primary-hex' as string]: `rgb(${app.skin.primary})`,
-							}
-						: {}),
-				}}
+				style={
+					{
+						'--cover-image': coverImage,
+						'--app-primary': app.skin?.primary,
+						'--app-primary-hex': app.skin?.primary
+							? `rgb(${app.skin.primary})`
+							: undefined,
+					} as CSSProperties
+				}
 			>
 				<div
 					className='grid min-h-0 grid-cols-[var(--sidebar-w)_1px_1fr]'
@@ -288,7 +289,7 @@ export default function App() {
 				</footer>
 				<Slider
 					className={cn(
-						'absolute inset-x-0 bottom-[calc(var(--bar-h)-6px)] z-10 flex h-3 items-center px-[3px]',
+						'absolute inset-x-0 bottom-[calc(var(--bar-h)-6px)] z-10 flex h-3 items-center px-0.75',
 						isPlayer && 'pointer-events-none',
 					)}
 					trackClassName='absolute top-1/2 left-[-3px] mt-[-2px] h-1 min-w-[calc(100%+6px)] rounded-none data-horizontal:w-[calc(100%+6px)]'

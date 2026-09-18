@@ -62,7 +62,7 @@ pnpm type-check                # TypeScript type checking
 
 ## 最佳实践
 
-如果任务涉及 TypeScript / JavaScript，你应当在每个任务完成后都**在项目根目录**运行一次 `vp check`，检查是否引入了新的错误。
+如果任务涉及 TypeScript / JavaScript，你应当在每个任务完成后都**在项目根目录**运行一次 `vp check`，检查是否引入了新的错误。UI 变更后还要修掉全部 `shadcn/*` lint 错误：优先用组件的 `variant` / `size`，`className` 只放 layout。封面格子用 `CoverButton`，不要往 `Button` 上传入动态 class 字符串。主题 token 在 `packages/renderer/src/styles.css`。规则写在根目录 `vite.config.ts` 的 `lint.rules`。
 
 ## 仓库结构
 

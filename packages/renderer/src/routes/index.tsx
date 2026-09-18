@@ -18,9 +18,9 @@ import {
 	EmptyTitle,
 } from '@/components/ui/empty'
 import {
+	CoverButton,
 	CoverFace,
 	CoverMeta,
-	coverButtonClass,
 	coverGridClass,
 	greeting,
 	OverflowText,
@@ -152,11 +152,9 @@ function HomePage() {
 					<div className='text-base font-normal'>{hitsTitle || '搜索结果'}</div>
 					<div className={coverGridClass}>
 						{hits.map((hit) => (
-							<Button
-								className={coverButtonClass}
+							<CoverButton
 								key={hit.bvid}
 								type='button'
-								variant='ghost'
 								onClick={() => openHit(hit)}
 							>
 								<CoverFace src={hit.pic} />
@@ -164,7 +162,7 @@ function HomePage() {
 									title={stripHtml(hit.title)}
 									subtitle={`${hit.author} · ${hit.duration}`}
 								/>
-							</Button>
+							</CoverButton>
 						))}
 					</div>
 				</div>
@@ -183,11 +181,9 @@ function HomePage() {
 					<div className='text-base font-normal'>最近播放</div>
 					<div className={coverGridClass}>
 						{player.queue.slice(0, 5).map((track, i) => (
-							<Button
-								className={coverButtonClass}
+							<CoverButton
 								key={`${track.id}-${i}`}
 								type='button'
-								variant='ghost'
 								onClick={() => {
 									void player.playTrack(player.queue, i)
 								}}
@@ -201,7 +197,7 @@ function HomePage() {
 									subtitle={displayArtist(track)}
 									active={current?.id === track.id}
 								/>
-							</Button>
+							</CoverButton>
 						))}
 					</div>
 				</div>
